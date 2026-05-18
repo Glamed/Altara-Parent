@@ -219,7 +219,7 @@ public abstract class BaseSkyWars extends Game {
         // Island chests (low-tier) — keyed as "BROWN" in WorldConfig.dat
         List<Location> islandChests = arena.getData("BROWN");
         if (!islandChests.isEmpty()) {
-            module.addChestType("Island", islandChests,
+            module.registerChestType("Island", islandChests,
                     new ChestLootPool()
                             .addItem(new ItemStack(Material.GOLDEN_HELMET))
                             .addItem(new ItemStack(Material.GOLDEN_CHESTPLATE))
@@ -257,7 +257,7 @@ public abstract class BaseSkyWars extends Game {
         // Connector chests (mid-tier) — keyed as "GRAY" in WorldConfig.dat
         List<Location> connectorChests = arena.getData("GRAY");
         if (!connectorChests.isEmpty()) {
-            module.addChestType("Connector", connectorChests,
+            module.registerChestType("Connector", connectorChests,
                     new ChestLootPool()
                             .addItem(new ItemStack(Material.CHAINMAIL_HELMET))
                             .addItem(new ItemStack(Material.CHAINMAIL_CHESTPLATE))
@@ -307,7 +307,7 @@ public abstract class BaseSkyWars extends Game {
         middleChests.addAll(arena.getData("BLACK"));
         middleChests.addAll(arena.getData("LIME"));
         if (!middleChests.isEmpty()) {
-            module.addChestType("Middle", middleChests,
+            module.registerChestType("Middle", middleChests,
                     new ChestLootPool()
                             .addItem(new ItemStack(Material.IRON_HELMET))
                             .addItem(new ItemStack(Material.IRON_CHESTPLATE))

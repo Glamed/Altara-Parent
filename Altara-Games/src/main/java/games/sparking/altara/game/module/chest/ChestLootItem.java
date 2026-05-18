@@ -1,82 +1,44 @@
 package games.sparking.altara.game.module.chest;
 
-import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.EnchantmentStorageMeta;
-import org.bukkit.inventory.meta.ItemMeta;
 
-import java.util.Map;
-import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * A single entry in a {@link ChestLootPool}.
+ * A single item entry inside a {@link ChestLootPool}.
  *
- * <p>Each item has a <em>weight</em> (relative probability during weighted-random
- * selection), a min/max stack size, and optional enchantments to apply.
+ * <p>Package-private — instantiated only by {@link ChestLootPool}.
+ * Call {@link #getItem()} to obtain a fresh, randomised clone.
  */
-public class ChestLootItem {
+public class ChestLootItem
+{
 
-    private final ItemStack baseItem;
-    private final int       weight;
-    private final int       minAmount;
-    private final int       maxAmount;
+    private final ItemStack _item;
+    private final int       _lowestAmount;
+    private final int       _highestAmount;
 
-    private Map<Enchantment, Integer> enchantments  = Map.of();
-    private double                    enchantRarity  = 1.0;
-
-    /**
-     * @param baseItem  template – cloned on every call to {@link #generate}
-     * @param weight    relative weight for weighted random selection (higher = more common)
-     * @param minAmount minimum stack size
-     * @param maxAmount maximum stack size (inclusive)
-     */
-    public ChestLootItem(ItemStack baseItem, int weight, int minAmount, int maxAmount) {
-        this.baseItem  = baseItem.clone();
-        this.weight    = Math.max(1, weight);
-        this.minAmount = Math.max(1, minAmount);
-        this.maxAmount = Math.max(this.minAmount, maxAmount);
+    ChestLootItem(ItemStack item, int lowestAmount, int highestAmount)
+    {
+        _item          = item.clone();
+        _lowestAmount  = Math.max(1, lowestAmount);
+        _highestAmount = Math.max(_lowestAmount, highestAmount);
     }
 
-    /** Configures optional enchantments that <em>may</em> be applied. */
-    ChestLootItem withEnchantments(Map<Enchantment, Integer> enchantments, double rarity) {
-        this.enchantments = Map.copyOf(enchantments);
-        this.enchantRarity = rarity;
-        return this;
-    }
-
-    /** @return this item's relative weight */
-    public int getWeight() { return weight; }
-
     /**
-     * Generates a ready-to-give {@link ItemStack} with a randomised amount and optional
-     * enchantments applied according to {@link #enchantRarity}.
-     *
-     * @param rng random source
-     * @return a fresh clone of the base item
+     * Returns a cloned copy of this item with a randomised stack size
+     * (uniformly chosen between {@code lowestAmount} and {@code highestAmount}, inclusive).
      */
-    public ItemStack generate(Random rng) {
-        ItemStack stack = baseItem.clone();
+    public ItemStack getItem()
+    {
+        ItemStack itemStack = _item.clone();
 
-        // randomise stack size
-        int amount = (minAmount == maxAmount)
-                ? minAmount
-                : minAmount + rng.nextInt(maxAmount - minAmount + 1);
-        stack.setAmount(amount);
-
-        // apply enchantments
-        if (!enchantments.isEmpty() && rng.nextDouble() < enchantRarity) {
-            ItemMeta meta = stack.getItemMeta();
-            if (meta instanceof EnchantmentStorageMeta esm) {
-                // enchanted book: use stored enchantments
-                enchantments.forEach((e, lvl) -> esm.addStoredEnchant(e, lvl, true));
-                stack.setItemMeta(esm);
-            } else if (meta != null) {
-                enchantments.forEach((e, lvl) -> meta.addEnchant(e, lvl, true));
-                stack.setItemMeta(meta);
-            }
+        if (_lowestAmount != _highestAmount)
+        {
+            itemStack.setAmount(
+                    _lowestAmount + ThreadLocalRandom.current().nextInt(_highestAmount - _lowestAmount + 1));
         }
 
-        return stack;
+        return itemStack;
     }
 }
 
