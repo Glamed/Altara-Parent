@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>games.sparking</groupId>
+        <artifactId>Altara-Parent</artifactId>
+        <version>1.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>Altara-Paper</artifactId>
+
+    <dependencies>
+        <!-- Paper API (provided by the server at runtime) -->
+        <dependency>
+            <groupId>io.papermc.paper</groupId>
+            <artifactId>paper-api</artifactId>
+        </dependency>
+
+        <!-- Shared module (bundled via shade) -->
+        <dependency>
+            <groupId>games.sparking</groupId>
+            <artifactId>Altara-Shared</artifactId>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <configuration>
+                    <relocations>
+                        <!-- Relocate Redis to avoid classpath conflicts with other plugins -->
+                        <relocation>
+                            <pattern>redis.clients</pattern>
+                            <shadedPattern>games.sparking.altara.libs.redis</shadedPattern>
+                        </relocation>
+                        <!-- Relocate MongoDB to avoid classpath conflicts -->
+                        <relocation>
+                            <pattern>com.mongodb</pattern>
+                            <shadedPattern>games.sparking.altara.libs.mongodb</shadedPattern>
+                        </relocation>
+                        <relocation>
+                            <pattern>org.mongodb</pattern>
+                            <shadedPattern>games.sparking.altara.libs.mongodb.org</shadedPattern>
+                        </relocation>
+                        <relocation>
+                            <pattern>org.bson</pattern>
+                            <shadedPattern>games.sparking.altara.libs.bson</shadedPattern>
+                        </relocation>
+                    </relocations>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>

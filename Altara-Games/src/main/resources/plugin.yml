@@ -1,0 +1,5 @@
+name: Games
+version: 1.1
+api-version: 1.20
+main: games.sparking.altara.AltaraGamesPlugin
+load: STARTUP
