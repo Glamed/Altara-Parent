@@ -12,6 +12,6 @@ public abstract class Packet {
     }
 
     public void publish() {
-        Altara.getRedis().publish(this);
+        Altara.getRedisService().publish(this);
     }
 }

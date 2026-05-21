@@ -66,10 +66,9 @@ public class ServerInfo {
                 .collect(Collectors.toList());
     }
 
-    public static void updateServerInfo(String name, ServerInfo zirconServerInfo) {
-        // PENDING IMPL
-        // Altara.handleServerInfoUpdate(name, zirconServerInfo);
-        servers.put(name.toLowerCase(), zirconServerInfo);
+    public static void updateServerInfo(ServerInfo serverInfo) {
+        Altara.getSharedInstance().handleServerInfoUpdate(serverInfo);
+        servers.put(serverInfo.getName(), serverInfo);
     }
 
     public static int getGlobalPlayerCount() {

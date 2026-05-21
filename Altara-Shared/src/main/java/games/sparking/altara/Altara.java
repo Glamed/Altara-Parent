@@ -2,6 +2,7 @@ package games.sparking.altara;
 
 import games.sparking.altara.mongo.MongoService;
 import games.sparking.altara.redis.RedisService;
+import games.sparking.altara.server.ServerInfo;
 import games.sparking.altara.task.impl.AsynchronousTaskChain;
 import lombok.Getter;
 import lombok.Setter;
@@ -15,7 +16,7 @@ public abstract class Altara {
     @Getter private static SystemType systemType;
 
     @Getter private static MongoService mongoService;
-    @Getter private static RedisService redis;
+    @Getter private static RedisService redisService;
 
     /** The name/identity of this server node (e.g. "Lobby", "Games", "proxy"). */
     @Getter @Setter
@@ -26,9 +27,14 @@ public abstract class Altara {
         Altara.sharedInstance = this;
 
         Altara.systemType = systemType;
+        startServerMonitor();
     }
 
     public abstract void init();
     public abstract void registerCommands();
     public abstract void registerListener();
+
+    public abstract void startServerMonitor();
+    public void handleServerInfoUpdate(ServerInfo serverInfo) {}
+
 }
