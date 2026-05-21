@@ -1,4 +1,4 @@
-# Altara (Learning Example)
+# Altara
 
 A modular Minecraft network example built to demonstrate how multiple server components can communicate through shared services like Redis.
 
