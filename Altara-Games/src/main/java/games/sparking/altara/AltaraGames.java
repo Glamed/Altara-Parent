@@ -37,7 +37,7 @@ public class AltaraGames extends AltaraPaper {
         manager.registerGameType("skywars-teams", TeamSkyWars::new);
 
         registerCommands();
-        registerListener();
+        registerListeners();
         getPaperInstance().getServer().getConsoleSender().sendMessage(Component.text("Altara Games has booted"));
     }
 
@@ -50,8 +50,8 @@ public class AltaraGames extends AltaraPaper {
     }
 
     @Override
-    public void registerListener() {
-        super.registerListener();
+    public void registerListeners() {
+        super.registerListeners();
         // Spectating: visibility adapter (hides spectators from alive players)
         VisibilityService.init();
         VisibilityService.registerVisibilityAdapter(new SpectatorVisibilityAdapter());
