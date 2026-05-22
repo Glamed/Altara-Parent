@@ -60,7 +60,7 @@ public class AltaraPaper extends Altara {
 
             serverInfo.setLastHeartbeat(System.currentTimeMillis());
             serverInfo.setGroup("Lobby");
-            serverInfo.setState(ServerState.ONLINE);
+            serverInfo.setState(Bukkit.getServer().isWhitelistEnforced() ? ServerState.WHITELISTED : ServerState.ONLINE);
             serverInfo.setOnlinePlayers(Bukkit.getOnlinePlayers().size());
             serverInfo.setMaxPlayers(Bukkit.getMaxPlayers());
             serverInfo.setTps(tps);

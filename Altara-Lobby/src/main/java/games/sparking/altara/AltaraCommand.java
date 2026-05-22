@@ -2,7 +2,6 @@ package games.sparking.altara;
 
 import games.sparking.altara.command.annotation.Command;
 import net.kyori.adventure.text.Component;
-import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 public class AltaraCommand {

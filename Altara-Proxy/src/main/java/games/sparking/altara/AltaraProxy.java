@@ -2,6 +2,7 @@ package games.sparking.altara;
 
 import com.velocitypowered.api.proxy.ProxyServer;
 import games.sparking.altara.commands.LobbyCommand;
+import games.sparking.altara.commands.SendCommand;
 import games.sparking.altara.listeners.MotdListener;
 import lombok.Getter;
 import org.slf4j.Logger;
@@ -35,6 +36,10 @@ public class AltaraProxy extends Altara {
                 getProxyInstance().getCommandManager().metaBuilder("lobby").build(),
                 new LobbyCommand()
         );
+        getProxyInstance().getCommandManager().register(
+                getProxyInstance().getCommandManager().metaBuilder("send").build(),
+                new SendCommand()
+        );
     }
 
     @Override
@@ -43,5 +48,10 @@ public class AltaraProxy extends Altara {
                 getProxyPlugin(),
                 new MotdListener()
         );
+    }
+
+    @Override
+    public void startServerMonitor() {
+
     }
 }
