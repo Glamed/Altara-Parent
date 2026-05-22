@@ -51,8 +51,6 @@ public abstract class Altara {
             });
         }
 
-
-
         startServerMonitor();
     }
 

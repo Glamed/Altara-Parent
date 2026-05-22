@@ -7,6 +7,7 @@ import games.sparking.altara.SystemType;
 import games.sparking.altara.connection.RequestHandler;
 import games.sparking.altara.connection.RequestResponse;
 import games.sparking.altara.grant.Grant;
+import games.sparking.altara.grant.GrantProcedure;
 import games.sparking.altara.rank.Rank;
 import games.sparking.altara.task.Tasks;
 import games.sparking.altara.utils.IllegalSystemTypeException;

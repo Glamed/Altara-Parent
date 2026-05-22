@@ -5,7 +5,16 @@ import games.sparking.altara.command.BuildVersionCommand;
 import games.sparking.altara.command.CommandService;
 import games.sparking.altara.configuration.ConfigurationService;
 import games.sparking.altara.configuration.defaults.MainConfig;
+import games.sparking.altara.configuration.entry.LocalConfig;
+import games.sparking.altara.configuration.entry.LocalPermissionConfig;
+import games.sparking.altara.configuration.entry.LocalPermissionEntry;
 import games.sparking.altara.gamemode.GamemodeCommand;
+import games.sparking.altara.menu.listener.MenuListener;
+import games.sparking.altara.permission.PermissionService;
+import games.sparking.altara.profile.Profile;
+import games.sparking.altara.profile.UnloadedProfile;
+import games.sparking.altara.profile.parameters.ProfileParameter;
+import games.sparking.altara.profile.parameters.UnloadedProfileParameter;
 import games.sparking.altara.rank.Rank;
 import games.sparking.altara.server.ServerInfo;
 import games.sparking.altara.server.ServerState;
@@ -19,6 +28,9 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
@@ -29,9 +41,16 @@ public class AltaraPaper extends Altara {
 
     @Getter private ServerInfo serverInfo;
 
-    public AltaraPaper(JavaPlugin paperInstance, ConfigurationService configurationService, MainConfig mainConfig) {
-        super(SystemType.PAPER, configurationService, mainConfig);
+    private PermissionService permissionService;
+    private BukkitProfileService bukkitProfileService;
+
+    @Getter private static LocalPermissionConfig localPermissionConfig;
+    @Getter private final LocalConfig localConfig;
+
+    public AltaraPaper(JavaPlugin paperInstance, ConfigurationService configurationService, LocalConfig localConfig) {
+        super(SystemType.PAPER, configurationService, localConfig);
         AltaraPaper.paperInstance = paperInstance;
+        this.localConfig = localConfig;
 
         init();
     }
@@ -44,6 +63,10 @@ public class AltaraPaper extends Altara {
 
     @Override
     public void registerCommands() {
+        CommandService.registerParameter(Profile.class, new ProfileParameter());
+        CommandService.registerParameter(UnloadedProfile.class, new UnloadedProfileParameter());
+        CommandService.registerParameter(Rank.class, new RankParameter());
+
         CommandService.register(AltaraPaper.getPaperInstance(),
                 new GamemodeCommand(),
                 new BuildVersionCommand()
@@ -53,7 +76,8 @@ public class AltaraPaper extends Altara {
     @Override
     public void registerListeners() {
         Arrays.asList(
-            new ChatListener()
+                new ChatListener(),
+                new MenuListener()
         ).forEach(listener -> getPaperInstance().getServer().getPluginManager().registerEvents(listener, getPaperInstance()));
         new FileUpdater();
     }
@@ -85,27 +109,63 @@ public class AltaraPaper extends Altara {
 
     @Override
     public void updatePermissions(UUID uuid) {
-
+        if (Bukkit.getPlayer(uuid) != null)
+            permissionService.updatePermissions(Bukkit.getPlayer(uuid));
     }
 
     @Override
     public void updatePermissionsWithRank(Rank rank) {
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            Profile profile = getProfileService().getProfile(player);
+            if (profile.hasGrantOf(rank))
+                permissionService.updatePermissions(player);
+        }
+    }
 
+    public void saveLocalPermissionConfig() {
+        try {
+            getConfigurationService().saveConfiguration(this.localPermissionConfig,
+                    new File(getPaperInstance().getDataFolder(), "permissions.json"));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
     public List<String> getLocalPermissions(Rank rank) {
-        return List.of();
+        LocalPermissionEntry entry = localPermissionConfig.getEntry(rank);
+        if (entry != null) {
+            return entry.getPermissions();
+        }
+
+        entry = new LocalPermissionEntry();
+        entry.setUuid(rank.getUuid().toString());
+        localPermissionConfig.getRankPermissions().add(entry);
+        saveLocalPermissionConfig();
+        return new ArrayList<>();
     }
 
     @Override
     public void saveLocalPermissions(Rank rank) {
-
+        LocalPermissionEntry entry = localPermissionConfig.getEntry(rank);
+        if (entry != null) {
+            entry.setPermissions(new ArrayList<>(rank.getLocalPermissions()));
+        } else {
+            entry = new LocalPermissionEntry();
+            entry.setUuid(rank.getUuid().toString());
+            entry.setPermissions(new ArrayList<>(rank.getLocalPermissions()));
+            localPermissionConfig.getRankPermissions().add(entry);
+        }
+        saveLocalPermissionConfig();
     }
 
     @Override
     public void handleRankDeletion(Rank rank) {
-
+        LocalPermissionEntry entry = localPermissionConfig.getEntry(rank);
+        if (entry != null) {
+            localPermissionConfig.getRankPermissions().remove(entry);
+            saveLocalPermissionConfig();
+        }
     }
 
     @Override

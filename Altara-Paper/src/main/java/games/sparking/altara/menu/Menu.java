@@ -1,6 +1,7 @@
 package games.sparking.altara.menu;
 
 import games.sparking.altara.Altara;
+import games.sparking.altara.AltaraPaper;
 import games.sparking.altara.menu.fill.FillTemplate;
 import games.sparking.altara.menu.fill.IMenuFiller;
 import games.sparking.altara.menu.page.PagedMenu;
@@ -181,7 +182,7 @@ public abstract class Menu {
 
                 updateInventory(player, pagedMenu);
             }
-        }.runTaskTimerAsynchronously(Altara.getInstance(), 20L, 20L);
+        }.runTaskTimerAsynchronously(AltaraPaper.getPaperInstance(), 20L, 20L);
     }
 
     public void updateInventory(Player player, boolean pagedMenu) {
