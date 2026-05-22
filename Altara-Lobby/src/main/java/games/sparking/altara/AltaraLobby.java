@@ -1,16 +1,18 @@
 package games.sparking.altara;
 
 import games.sparking.altara.command.CommandService;
+import games.sparking.altara.configuration.ConfigurationService;
+import games.sparking.altara.configuration.defaults.MainConfig;
 import net.kyori.adventure.text.Component;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class AltaraLobby extends AltaraPaper {
 
-    public AltaraLobby(JavaPlugin instance) {
-        super(instance);
+    public AltaraLobby(JavaPlugin instance, ConfigurationService configurationService, MainConfig mainConfig) {
+        super(instance, configurationService, mainConfig);
         Altara.setServerIdentifier("Lobby");
         registerCommands();
-        registerListener();
+        registerListeners();
         getPaperInstance().getServer().getConsoleSender().sendMessage(Component.text("Altara lobby has booted"));
     }
 

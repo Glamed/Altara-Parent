@@ -7,7 +7,6 @@ import net.kyori.adventure.text.Component;
 
 public class LobbyCommand implements SimpleCommand {
 
-
     @Override
     public void execute(Invocation invocation) {
         if (!(invocation.source() instanceof Player player)) {

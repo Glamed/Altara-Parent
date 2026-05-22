@@ -67,6 +67,15 @@ public class ItemBuilder {
         return this;
     }
 
+    public ItemBuilder setLore(List<String> lore) {
+        List<Component> components = new ArrayList<>();
+        for (String line : lore) {
+            components.add(CC.translateToComponent(line));
+        }
+        this.itemMeta.lore(components);
+        return this;
+    }
+
     public ItemBuilder addToLore(Component... entries) {
         List<Component> lore = itemMeta.hasLore()
                 ? new ArrayList<>(itemMeta.lore())

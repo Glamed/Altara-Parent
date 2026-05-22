@@ -9,7 +9,6 @@ public class PacketPubSub extends JedisPubSub {
 
     @Override
     public void onMessage(String channel, String redisMessage) {
-        System.out.println(channel + ": " + redisMessage);
         JsonObject redisJson = JsonParser.parseString(redisMessage).getAsJsonObject();
         String packetClassName = redisJson.get("packet").getAsString();
         String packetJson = redisJson.get("data").getAsString();

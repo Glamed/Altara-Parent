@@ -1,16 +1,12 @@
 package games.sparking.altara.server;
 
 import games.sparking.altara.Altara;
-import games.sparking.altara.SystemType;
-import games.sparking.altara.task.Tasks;
-import games.sparking.altara.utils.Time;
 import lombok.Data;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Data
@@ -20,7 +16,7 @@ public class ServerInfo {
     public static final long MAX_TIMEOUT = 5000L;
 
     private String name = "";
-    private String grantScope = "";
+    private String group = "";
     private long lastHeartbeat = System.currentTimeMillis();
     private ServerState state = ServerState.UNKNOWN;
     private int onlinePlayers = 0;
@@ -31,7 +27,10 @@ public class ServerInfo {
     private long allocatedMemory = 0L;
     private String host = "localhost";
     private int port = 25565;
-
+    /*private boolean queueEnabled = false;
+    private boolean queuePaused = false;
+    private int queueRate = 0;
+    private int playersInQueue = 0;*/
 
     public ServerInfo(String name) {
         this.name = name;
@@ -46,7 +45,7 @@ public class ServerInfo {
     }
 
     public boolean isProxy() {
-        return grantScope.equalsIgnoreCase("proxy");
+        return group.equalsIgnoreCase("proxy");
     }
 
     public int getOnlinePlayers() {
@@ -63,13 +62,13 @@ public class ServerInfo {
 
     public static List<ServerInfo> getByGroup(String group) {
         return servers.values().stream()
-                .filter(serverInfo -> serverInfo.getGrantScope().equalsIgnoreCase(group))
+                .filter(serverInfo -> serverInfo.getGroup().equalsIgnoreCase(group))
                 .collect(Collectors.toList());
     }
 
-    public static void updateServerInfo(String name, ServerInfo zirconServerInfo) {
-        Altara.getSharedInstance().handleServerInfoUpdate(name, zirconServerInfo);
-        servers.put(name.toLowerCase(), zirconServerInfo);
+    public static void updateServerInfo(ServerInfo serverInfo) {
+        Altara.getSharedInstance().handleServerInfoUpdate(serverInfo);
+        servers.put(serverInfo.getName(), serverInfo);
     }
 
     public static int getGlobalPlayerCount() {
@@ -78,4 +77,5 @@ public class ServerInfo {
                 .mapToInt(ServerInfo::getOnlinePlayers)
                 .sum();
     }
+
 }
