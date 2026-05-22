@@ -3,7 +3,7 @@ package games.sparking.altara.chat.impl;
 import games.sparking.altara.chat.ChatService;
 import games.sparking.altara.chat.FilteredChatChannel;
 import games.sparking.altara.chat.GlobalChatPacket;
-import games.sparking.altara.command.playersetting.AltaraSettings;
+import games.sparking.altara.playersetting.AltaraSettings;
 import games.sparking.altara.utils.CC;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;

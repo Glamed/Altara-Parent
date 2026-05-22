@@ -1,10 +1,9 @@
 package games.sparking.altara.server;
 
 import games.sparking.altara.Altara;
-import games.sparking.altara.command.playersetting.AltaraSettings;
+import games.sparking.altara.playersetting.AltaraSettings;
 import games.sparking.altara.redis.packet.Packet;
 import lombok.RequiredArgsConstructor;
-import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Bukkit;
 
 @RequiredArgsConstructor

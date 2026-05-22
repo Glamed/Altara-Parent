@@ -1,11 +1,10 @@
-package games.sparking.altara.command.playersetting;
+package games.sparking.altara.playersetting;
 
-import games.sparking.altara.command.playersetting.impl.BooleanSetting;
+import games.sparking.altara.playersetting.impl.BooleanSetting;
 import games.sparking.altara.utils.CC;
 import games.sparking.altara.utils.ItemBuilder;
 import games.sparking.altara.utils.Statics;
 import games.sparking.altara.visibility.VisibilityService;
-import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.ClickType;

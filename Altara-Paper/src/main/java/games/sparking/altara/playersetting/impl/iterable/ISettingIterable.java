@@ -1,4 +1,4 @@
-package games.sparking.altara.command.playersetting.impl.iterable;
+package games.sparking.altara.playersetting.impl.iterable;
 
 public interface ISettingIterable {
 

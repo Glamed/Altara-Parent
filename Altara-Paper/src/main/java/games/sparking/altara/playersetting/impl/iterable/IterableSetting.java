@@ -1,6 +1,6 @@
-package games.sparking.altara.command.playersetting.impl.iterable;
+package games.sparking.altara.playersetting.impl.iterable;
 
-import games.sparking.altara.command.playersetting.PlayerSetting;
+import games.sparking.altara.playersetting.PlayerSetting;
 import games.sparking.altara.utils.CC;
 import games.sparking.altara.utils.ItemBuilder;
 import org.bukkit.Material;

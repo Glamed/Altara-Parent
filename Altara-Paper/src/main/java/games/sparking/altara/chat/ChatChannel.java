@@ -1,7 +1,7 @@
 package games.sparking.altara.chat;
 
 
-import games.sparking.altara.command.playersetting.AltaraSettings;
+import games.sparking.altara.playersetting.AltaraSettings;
 import lombok.Getter;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;

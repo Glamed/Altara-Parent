@@ -1,4 +1,4 @@
-package games.sparking.altara.command.playersetting;
+package games.sparking.altara.playersetting;
 
 import java.util.List;
 

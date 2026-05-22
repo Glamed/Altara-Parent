@@ -1,4 +1,4 @@
-package games.sparking.altara.command.playersetting;
+package games.sparking.altara.playersetting;
 
 import com.google.common.base.Splitter;
 import games.sparking.altara.Altara;
