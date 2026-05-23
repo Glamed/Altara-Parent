@@ -3,6 +3,7 @@ package games.sparking.altara.profile;
 import games.sparking.altara.connection.RequestHandler;
 import games.sparking.altara.connection.RequestResponse;
 import games.sparking.altara.grant.Grant;
+import games.sparking.altara.grant.GrantBackLogEntry;
 import games.sparking.altara.utils.json.JsonBuilder;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;

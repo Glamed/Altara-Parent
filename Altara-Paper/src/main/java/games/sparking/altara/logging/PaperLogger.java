@@ -6,16 +6,16 @@ public class PaperLogger implements CommonLogger {
 
     @Override
     public void info(String msg) {
-        AltaraPaper.getPaperInstance().getLogger().info(msg);
+        AltaraPaper.getPlugin().getLogger().info(msg);
     }
 
     @Override
     public void warn(String msg) {
-        AltaraPaper.getPaperInstance().getLogger().warning(msg);
+        AltaraPaper.getPlugin().getLogger().warning(msg);
     }
 
     @Override
     public void error(String msg) {
-        AltaraPaper.getPaperInstance().getLogger().severe(msg);
+        AltaraPaper.getPlugin().getLogger().severe(msg);
     }
 }

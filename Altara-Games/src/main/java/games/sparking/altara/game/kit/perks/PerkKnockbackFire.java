@@ -31,7 +31,7 @@ public class PerkKnockbackFire extends Perk implements Listener {
         if (!(event.getEntity() instanceof Player target)) return;
         if (target.getFireTicks() <= 0) return;
 
-        Bukkit.getScheduler().runTaskLater(AltaraPaper.getPaperInstance(), () -> {
+        Bukkit.getScheduler().runTaskLater(AltaraPaper.getPlugin(), () -> {
             Vector kb = target.getVelocity().multiply(1.0 + power);
             target.setVelocity(kb);
         }, 1L);

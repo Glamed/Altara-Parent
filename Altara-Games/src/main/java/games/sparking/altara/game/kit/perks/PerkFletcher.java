@@ -64,7 +64,7 @@ public class PerkFletcher extends Perk implements Listener {
                     }
                 }
             }
-        }.runTaskTimer(games.sparking.altara.AltaraPaper.getPaperInstance(),
+        }.runTaskTimer(games.sparking.altara.AltaraPaper.getPlugin(),
                 GIVE_INTERVAL_SECONDS * 20L, GIVE_INTERVAL_SECONDS * 20L);
     }
 

@@ -1,19 +1,18 @@
 package games.sparking.altara.grant.menu;
 
-
-import games.sparking.blazora.BlazoraPaper;
-import games.sparking.blazora.grant.Grant;
-import games.sparking.blazora.grant.input.GrantRemoveInput;
-import games.sparking.blazora.menu.Button;
-import games.sparking.blazora.menu.page.PagedMenu;
-import games.sparking.blazora.playersetting.ZirconSettings;
-import games.sparking.blazora.profile.Profile;
-import games.sparking.blazora.rank.Rank;
-import games.sparking.blazora.utils.CC;
-import games.sparking.blazora.utils.ItemBuilder;
-import games.sparking.blazora.utils.TimeUtils;
-import games.sparking.blazora.utils.UUIDUtils;
-import games.sparking.blazora.uuid.UUIDCache;
+import games.sparking.altara.Altara;
+import games.sparking.altara.grant.Grant;
+import games.sparking.altara.grant.input.GrantRemoveInput;
+import games.sparking.altara.menu.Button;
+import games.sparking.altara.menu.page.PagedMenu;
+import games.sparking.altara.playersetting.AltaraSettings;
+import games.sparking.altara.profile.Profile;
+import games.sparking.altara.rank.Rank;
+import games.sparking.altara.utils.CC;
+import games.sparking.altara.utils.ItemBuilder;
+import games.sparking.altara.utils.Time;
+import games.sparking.altara.uuid.UUIDCache;
+import games.sparking.altara.uuid.UUIDUtils;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.text.WordUtils;
@@ -24,11 +23,9 @@ import org.bukkit.inventory.ItemStack;
 
 import java.util.*;
 
-
 @RequiredArgsConstructor
 public class GrantsMenu extends PagedMenu {
 
-    private final BlazoraPaper zircon;
     private final Profile target;
     private final List<Grant> grants;
 
@@ -51,11 +48,11 @@ public class GrantsMenu extends PagedMenu {
     }
 
     public boolean canGrant(Player player, Rank rank) {
-        Profile profile = zircon.getProfileService().getProfile(player);
+        Profile profile = Altara.getSharedInstance().getProfileService().getProfile(player);
         if (rank.isDefaultRank()) {
             return false;
         }
-        if (profile.getRealCurrentGrant().asRank().getWeight() >= zircon.getMainConfig().getOwnerWeight()
+        if (profile.getRealCurrentGrant().asRank().getWeight() >= Altara.getSharedInstance().getMainConfig().getOwnerWeight()
                 || player.getUniqueId().equals(UUID.fromString("c7d53cda-a00d-465b-ba55-c2f684ad4ae3"))) {
             return true;
         }
@@ -86,19 +83,19 @@ public class GrantsMenu extends PagedMenu {
                 lore.add(CC.YELLOW + ((UUIDUtils.isUUID(grant.getRemovedBy()) ?
                         UUIDCache.getName(UUID.fromString(grant.getRemovedBy())) : grant.getRemovedBy()))
                         + ": " + CC.RED + grant.getRemovedReason());
-                lore.add(CC.RED + "at " + CC.YELLOW + TimeUtils.formatDate(grant.getRemovedAt(),
-                        ZirconSettings.TIME_ZONE.get(player)));
+                lore.add(CC.RED + "at " + CC.YELLOW + Time.formatDate(grant.getRemovedAt(),
+                        AltaraSettings.TIME_ZONE.get(player)));
                 lore.add(" ");
-                lore.add(CC.YELLOW + "Duration: " + TimeUtils.formatTimeShort(grant.getDuration()));
+                lore.add(CC.YELLOW + "Duration: " + Time.formatTimeShort(grant.getDuration()));
             } else if (!grant.isActive()) {
-                lore.add(CC.YELLOW + "Duration: " + TimeUtils.formatTimeShort(grant.getDuration()));
+                lore.add(CC.YELLOW + "Duration: " + Time.formatTimeShort(grant.getDuration()));
                 lore.add(CC.GREEN + "Expired");
             } else {
                 lore.add(CC.MENU_BAR);
                 if (grant.getDuration() == -1)
                     lore.add(CC.YELLOW + "This is a permanent grant.");
                 else lore.add(CC.YELLOW + "Time remaining: " + CC.RED
-                        + TimeUtils.formatTimeShort(grant.getRemainingTime()));
+                        + Time.formatTimeShort(grant.getRemainingTime()));
                 if (canGrant(player, grant.asRank())) {
                     lore.add(" ");
                     lore.add(CC.RED + CC.BOLD + "Click to remove this grant");
@@ -108,7 +105,7 @@ public class GrantsMenu extends PagedMenu {
             return new ItemBuilder(grant.isActive() ?
                     Material.LIME_WOOL : Material.RED_WOOL)
                     .setDisplayName((grant.isActive() && !grant.isRemoved() ? CC.GREEN : CC.RED) + CC.BOLD
-                            + TimeUtils.formatDate(grant.getGrantedAt(), ZirconSettings.TIME_ZONE.get(player)))
+                            + Time.formatDate(grant.getGrantedAt(), AltaraSettings.TIME_ZONE.get(player)))
                     .setLore(lore)
                     .build();
         }
@@ -119,7 +116,7 @@ public class GrantsMenu extends PagedMenu {
                 return;
 
             player.getOpenInventory().close();
-            new GrantRemoveInput(zircon, target, grant).send(player);
+            new GrantRemoveInput(target, grant).send(player);
         }
     }
 }

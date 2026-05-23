@@ -1,15 +1,14 @@
 package games.sparking.altara.rank.menu;
 
-
-import games.sparking.blazora.BlazoraPaper;
-import games.sparking.blazora.chatinput.ChatInputChain;
-import games.sparking.blazora.menu.Button;
-import games.sparking.blazora.menu.Menu;
-import games.sparking.blazora.profile.Profile;
-import games.sparking.blazora.rank.Rank;
-import games.sparking.blazora.rank.setup.*;
-import games.sparking.blazora.utils.CC;
-import games.sparking.blazora.utils.ItemBuilder;
+import games.sparking.altara.Altara;
+import games.sparking.altara.chatinput.ChatInputChain;
+import games.sparking.altara.menu.Button;
+import games.sparking.altara.menu.Menu;
+import games.sparking.altara.profile.Profile;
+import games.sparking.altara.rank.Rank;
+import games.sparking.altara.rank.setup.*;
+import games.sparking.altara.utils.CC;
+import games.sparking.altara.utils.ItemBuilder;
 import lombok.RequiredArgsConstructor;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -27,12 +26,11 @@ public class RankEditOverviewMenu extends Menu {
 
     private static final ChatInputChain SETUP_CHAIN = new ChatInputChain()
             .next(new NamePrompt())
-            .next(new ColorPrompt(BlazoraPaper.getPaperInstance()))
-            .next(new PrefixPrompt(BlazoraPaper.getPaperInstance()))
-            .next(new WeightPrompt(BlazoraPaper.getPaperInstance()))
-            .next(new QueuePriorityPrompt(BlazoraPaper.getPaperInstance()));
+            .next(new ColorPrompt())
+            .next(new PrefixPrompt())
+            .next(new WeightPrompt())
+            .next(new QueuePriorityPrompt());
 
-    private final BlazoraPaper zircon;
     private final Profile profile;
 
     @Override
@@ -43,7 +41,7 @@ public class RankEditOverviewMenu extends Menu {
     @Override
     public Map<Integer, Button> getButtons(Player player) {
         Map<Integer, Button> buttons = new HashMap<>();
-        zircon.getRankService().getRanksSorted().forEach(rank -> buttons.put(buttons.size(), new RankButton(rank)));
+        Altara.getSharedInstance().getRankService().getRanksSorted().forEach(rank -> buttons.put(buttons.size(), new RankButton(rank)));
         buttons.put(buttons.size(), new SetupRankButton());
         return buttons;
     }
@@ -73,7 +71,7 @@ public class RankEditOverviewMenu extends Menu {
             lore.add(" ");
             lore.add(CC.format("&eInherits: &e%s", rank.getInherits().isEmpty() ? "None" : ""));
             if (!rank.getInherits().isEmpty()) {
-                rank.getInherits().forEach(inherit -> lore.add(CC.GRAY + " - " + BlazoraPaper.getSharedInstance().getRankService().getRank(inherit).getName()));
+                rank.getInherits().forEach(inherit -> lore.add(CC.GRAY + " - " + Altara.getSharedInstance().getRankService().getRank(inherit).getName()));
             }
             lore.add(" ");
             lore.add(CC.format("&ePermissions: &c%d", rank.getPermissions().size()));
@@ -89,7 +87,7 @@ public class RankEditOverviewMenu extends Menu {
 
         @Override
         public void click(Player player, int slot, ClickType clickType, int hotbarButton) {
-            new RankEditingMenu(zircon, profile, rank).openMenu(player);
+            new RankEditingMenu(profile, rank).openMenu(player);
         }
     }
 

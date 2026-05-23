@@ -1,12 +1,8 @@
 package games.sparking.altara.game.kit.perks;
 
 import games.sparking.altara.game.kit.Perk;
-import org.bukkit.Color;
-import org.bukkit.FireworkEffect;
-import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
-import org.bukkit.entity.Firework;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -81,7 +77,7 @@ public class PerkElytraBoost extends Perk implements Listener {
                 if (!player.isGliding()) { cancel(); return; }
                 player.getWorld().spawnParticle(Particle.FIREWORK, player.getLocation(), 5, 0.2, 0.2, 0.2, 0.05);
             }
-        }.runTaskTimer(games.sparking.altara.AltaraPaper.getPaperInstance(), 0L, 1L);
+        }.runTaskTimer(games.sparking.altara.AltaraPaper.getPlugin(), 0L, 1L);
     }
 
     @Override

@@ -1,23 +1,20 @@
 package games.sparking.altara.rank.setup;
 
-import games.sparking.blazora.BlazoraPaper;
-import games.sparking.blazora.chatinput.ChatInput;
-import games.sparking.blazora.rank.Rank;
-import games.sparking.blazora.rank.commands.RankCommands;
-import games.sparking.blazora.rank.menu.RankEditingMenu;
-import games.sparking.blazora.utils.CC;
-import games.sparking.blazora.utils.ChatMessage;
+import games.sparking.altara.Altara;
+import games.sparking.altara.chatinput.ChatInput;
+import games.sparking.altara.rank.Rank;
+import games.sparking.altara.rank.commands.RankCommands;
+import games.sparking.altara.rank.menu.RankEditingMenu;
+import games.sparking.altara.utils.CC;
+import games.sparking.altara.utils.ChatMessage;
 import org.bukkit.entity.Player;
 
 import java.util.UUID;
 
 public class QueuePriorityPrompt extends ChatInput<Integer> {
 
-    private final BlazoraPaper zircon;
-
-    public QueuePriorityPrompt(BlazoraPaper zircon) {
+    public QueuePriorityPrompt() {
         super(Integer.class);
-        this.zircon = zircon;
 
         text(CC.translate("&ePlease enter the queue priority for this rank, or type &ccancel &eto cancel."));
         escapeMessage(CC.RED + "You cancelled the further rank setup.");
@@ -25,7 +22,7 @@ public class QueuePriorityPrompt extends ChatInput<Integer> {
 
         accept((player, input) -> {
             UUID rankId = RankEditingMenu.RANK_SETUPS.get(player.getUniqueId());
-            Rank rank = rankId == null ? null : zircon.getRankService().getRank(rankId);
+            Rank rank = rankId == null ? null : Altara.getSharedInstance().getRankService().getRank(rankId);
             if (rank == null) {
                 player.sendMessage(CC.RED + "The rank you were setting up no longer exists.");
                 return true;
@@ -41,7 +38,7 @@ public class QueuePriorityPrompt extends ChatInput<Integer> {
         super.send(player);
 
         UUID rankId = RankEditingMenu.RANK_SETUPS.get(player.getUniqueId());
-        Rank rank = rankId == null ? null : zircon.getRankService().getRank(rankId);
+        Rank rank = rankId == null ? null : Altara.getSharedInstance().getRankService().getRank(rankId);
 
         if (rank == null)
             return;

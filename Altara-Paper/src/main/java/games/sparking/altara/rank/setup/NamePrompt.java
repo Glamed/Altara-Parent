@@ -1,10 +1,10 @@
 package games.sparking.altara.rank.setup;
 
-import games.sparking.blazora.chatinput.ChatInput;
-import games.sparking.blazora.rank.Rank;
-import games.sparking.blazora.rank.commands.RankCommands;
-import games.sparking.blazora.rank.menu.RankEditingMenu;
-import games.sparking.blazora.utils.CC;
+import games.sparking.altara.chatinput.ChatInput;
+import games.sparking.altara.rank.Rank;
+import games.sparking.altara.rank.commands.RankCommands;
+import games.sparking.altara.rank.menu.RankEditingMenu;
+import games.sparking.altara.utils.CC;
 
 public class NamePrompt extends ChatInput<String> {
 

@@ -39,7 +39,7 @@ public class PerkVanishing extends Perk implements Listener {
 
         invisible.add(killer.getUniqueId());
         killer.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, DURATION_TICKS, 0, true, false, false));
-        org.bukkit.Bukkit.getScheduler().runTaskLater(games.sparking.altara.AltaraPaper.getPaperInstance(),
+        org.bukkit.Bukkit.getScheduler().runTaskLater(games.sparking.altara.AltaraPaper.getPlugin(),
                 () -> invisible.remove(killer.getUniqueId()), DURATION_TICKS + 1L);
     }
 

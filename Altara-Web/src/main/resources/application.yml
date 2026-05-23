@@ -1,0 +1,19 @@
+# Spring Boot essentials only.
+# All Altara settings (MongoDB, Redis, backend key, server name, port, etc.)
+# are loaded from config.json in the working directory at startup.
+# On first run a default config.json is created automatically.
+
+server:
+  # Overridden at runtime by serverPort in config.json — this is just the last-resort fallback.
+  port: 25001
+
+logging:
+  level:
+    root: INFO
+    games.sparking.altara: DEBUG
+
+spring:
+  application:
+    name: Altara-Web
+  cache:
+    type: caffeine

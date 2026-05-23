@@ -58,7 +58,7 @@ public class PerkRemoveElytra extends Perk implements Listener {
 
             // Restore after delay
             long ticks = DISABLE_MS / 50;
-            Bukkit.getScheduler().runTaskLater(AltaraPaper.getPaperInstance(), () -> {
+            Bukkit.getScheduler().runTaskLater(AltaraPaper.getPlugin(), () -> {
                 Long until = disabled.get(target.getUniqueId());
                 if (until != null && System.currentTimeMillis() >= until) {
                     disabled.remove(target.getUniqueId());

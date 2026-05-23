@@ -25,7 +25,7 @@ public class PerkKnockbackMultiplier extends Perk implements Listener {
         if (!(event.getEntity() instanceof Player victim)) return;
         if (!hasPerk(victim)) return;
 
-        Bukkit.getScheduler().runTaskLater(AltaraPaper.getPaperInstance(), () -> {
+        Bukkit.getScheduler().runTaskLater(AltaraPaper.getPlugin(), () -> {
             Vector kb = victim.getVelocity().multiply(power);
             victim.setVelocity(kb);
         }, 1L);

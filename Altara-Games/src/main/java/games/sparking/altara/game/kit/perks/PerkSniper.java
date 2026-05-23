@@ -33,7 +33,7 @@ public class PerkSniper extends Perk implements Listener {
         if (!(event.getEntity() instanceof Player shooter)) return;
         if (!hasPerk(shooter)) return;
         event.getProjectile().setMetadata(META_KEY,
-                new FixedMetadataValue(games.sparking.altara.AltaraPaper.getPaperInstance(),
+                new FixedMetadataValue(games.sparking.altara.AltaraPaper.getPlugin(),
                         event.getProjectile().getLocation().clone()));
     }
 

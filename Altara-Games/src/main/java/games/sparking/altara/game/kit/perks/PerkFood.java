@@ -45,7 +45,7 @@ public class PerkFood extends Perk {
 
     private void ensureTask() {
         if (task != null) return;
-        task = Bukkit.getScheduler().runTaskTimer(AltaraPaper.getPaperInstance(), () -> {
+        task = Bukkit.getScheduler().runTaskTimer(AltaraPaper.getPlugin(), () -> {
             for (UUID id : active) {
                 Player p = Bukkit.getPlayer(id);
                 if (p != null && p.isOnline()) p.setFoodLevel(amount);

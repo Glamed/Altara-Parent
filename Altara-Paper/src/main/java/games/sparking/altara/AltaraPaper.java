@@ -4,18 +4,19 @@ import games.sparking.altara.chat.ChatListener;
 import games.sparking.altara.command.BuildVersionCommand;
 import games.sparking.altara.command.CommandService;
 import games.sparking.altara.configuration.ConfigurationService;
-import games.sparking.altara.configuration.defaults.MainConfig;
-import games.sparking.altara.configuration.entry.LocalConfig;
+import games.sparking.altara.configuration.LocalConfig;
 import games.sparking.altara.configuration.entry.LocalPermissionConfig;
 import games.sparking.altara.configuration.entry.LocalPermissionEntry;
 import games.sparking.altara.gamemode.GamemodeCommand;
 import games.sparking.altara.menu.listener.MenuListener;
 import games.sparking.altara.permission.PermissionService;
+import games.sparking.altara.profile.BukkitProfileService;
 import games.sparking.altara.profile.Profile;
 import games.sparking.altara.profile.UnloadedProfile;
 import games.sparking.altara.profile.parameters.ProfileParameter;
 import games.sparking.altara.profile.parameters.UnloadedProfileParameter;
 import games.sparking.altara.rank.Rank;
+import games.sparking.altara.rank.parameter.RankParameter;
 import games.sparking.altara.server.ServerInfo;
 import games.sparking.altara.server.ServerState;
 import games.sparking.altara.server.UpdateServerPacket;
@@ -37,19 +38,21 @@ import java.util.UUID;
 
 public class AltaraPaper extends Altara {
 
-    @Getter private static JavaPlugin paperInstance;
+    @Getter private static JavaPlugin plugin;
+    @Getter private static AltaraPaper paperInstance;
 
     @Getter private ServerInfo serverInfo;
 
-    private PermissionService permissionService;
-    private BukkitProfileService bukkitProfileService;
+    @Getter private PermissionService permissionService;
+    @Getter private BukkitProfileService bukkitProfileService;
 
-    @Getter private static LocalPermissionConfig localPermissionConfig;
+    @Getter private LocalPermissionConfig localPermissionConfig;
     @Getter private final LocalConfig localConfig;
 
-    public AltaraPaper(JavaPlugin paperInstance, ConfigurationService configurationService, LocalConfig localConfig) {
-        super(SystemType.PAPER, configurationService, localConfig);
-        AltaraPaper.paperInstance = paperInstance;
+    public AltaraPaper(JavaPlugin plugin, ConfigurationService configurationService, LocalConfig localConfig) {
+        super(SystemType.PAPER, configurationService, localConfig, new BukkitTaskImplementor(plugin));
+        AltaraPaper.plugin = plugin;
+        AltaraPaper.paperInstance = this;
         this.localConfig = localConfig;
 
         init();
@@ -57,7 +60,6 @@ public class AltaraPaper extends Altara {
 
     @Override
     public void init() {
-        Tasks.setTaskImplementor(new BukkitTaskImplementor(paperInstance));
         UpdateTask.start();
     }
 
@@ -67,7 +69,7 @@ public class AltaraPaper extends Altara {
         CommandService.registerParameter(UnloadedProfile.class, new UnloadedProfileParameter());
         CommandService.registerParameter(Rank.class, new RankParameter());
 
-        CommandService.register(AltaraPaper.getPaperInstance(),
+        CommandService.register(AltaraPaper.getPlugin(),
                 new GamemodeCommand(),
                 new BuildVersionCommand()
         );
@@ -78,7 +80,7 @@ public class AltaraPaper extends Altara {
         Arrays.asList(
                 new ChatListener(),
                 new MenuListener()
-        ).forEach(listener -> getPaperInstance().getServer().getPluginManager().registerEvents(listener, getPaperInstance()));
+        ).forEach(listener -> getPlugin().getServer().getPluginManager().registerEvents(listener, getPlugin()));
         new FileUpdater();
     }
 
@@ -125,7 +127,7 @@ public class AltaraPaper extends Altara {
     public void saveLocalPermissionConfig() {
         try {
             getConfigurationService().saveConfiguration(this.localPermissionConfig,
-                    new File(getPaperInstance().getDataFolder(), "permissions.json"));
+                    new File(getPlugin().getDataFolder(), "permissions.json"));
         } catch (IOException e) {
             e.printStackTrace();
         }

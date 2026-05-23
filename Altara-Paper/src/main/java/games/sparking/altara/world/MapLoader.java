@@ -2,10 +2,8 @@ package games.sparking.altara.world;
 
 import games.sparking.altara.AltaraPaper;
 import org.bukkit.*;
-import org.bukkit.generator.ChunkGenerator;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
@@ -462,14 +460,14 @@ public final class MapLoader {
     }
 
     private static void runOnMainThread(Runnable action) {
-        Bukkit.getScheduler().runTask(AltaraPaper.getPaperInstance(), action);
+        Bukkit.getScheduler().runTask(AltaraPaper.getPlugin(), action);
     }
 
     private static void log(Level level, String msg, Throwable t) {
         if (t != null) {
-            AltaraPaper.getPaperInstance().getLogger().log(level, msg, t);
+            AltaraPaper.getPlugin().getLogger().log(level, msg, t);
         } else {
-            AltaraPaper.getPaperInstance().getLogger().log(level, msg);
+            AltaraPaper.getPlugin().getLogger().log(level, msg);
         }
     }
 }

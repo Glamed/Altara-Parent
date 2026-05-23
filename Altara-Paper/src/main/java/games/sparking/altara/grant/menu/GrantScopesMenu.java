@@ -1,18 +1,15 @@
 package games.sparking.altara.grant.menu;
 
-
-import games.sparking.blazora.BlazoraPaper;
-import games.sparking.blazora.connection.RequestResponse;
-import games.sparking.blazora.grant.Grant;
-import games.sparking.blazora.grant.procedure.GrantProcedure;
-import games.sparking.blazora.menu.Button;
-import games.sparking.blazora.menu.Menu;
-import games.sparking.blazora.profile.Profile;
-import games.sparking.blazora.server.BlazoraServerInfo;
-import games.sparking.blazora.task.Tasks;
-import games.sparking.blazora.utils.CC;
-import games.sparking.blazora.utils.ItemBuilder;
-import games.sparking.blazora.utils.TimeUtils;
+import games.sparking.altara.Altara;
+import games.sparking.altara.AltaraPaper;
+import games.sparking.altara.connection.RequestResponse;
+import games.sparking.altara.grant.GrantProcedure;
+import games.sparking.altara.menu.Button;
+import games.sparking.altara.menu.Menu;
+import games.sparking.altara.profile.Profile;
+import games.sparking.altara.server.ServerInfo;
+import games.sparking.altara.utils.CC;
+import games.sparking.altara.utils.ItemBuilder;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.text.WordUtils;
@@ -30,7 +27,6 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class GrantScopesMenu extends Menu {
 
-    private final BlazoraPaper zircon;
     private final Profile profile;
     private final List<String> scopes = new ArrayList<>();
     private boolean clicked = false;
@@ -45,10 +41,10 @@ public class GrantScopesMenu extends Menu {
         Map<Integer, Button> buttons = new HashMap<>();
         List<String> existingScopes = new ArrayList<>();
         int index = 0;
-        for (BlazoraServerInfo server : BlazoraServerInfo.getServers()) {
-            if (!existingScopes.contains(server.getGrantScope().toLowerCase())) {
-                buttons.put(index++, new ScopeButton(server.getGrantScope().toLowerCase()));
-                existingScopes.add(server.getGrantScope().toLowerCase());
+        for (ServerInfo server : ServerInfo.getServers()) {
+            if (!existingScopes.contains(server.getGroup().toLowerCase())) {
+                buttons.put(index++, new ScopeButton(server.getGroup().toLowerCase()));
+                existingScopes.add(server.getGroup().toLowerCase());
             }
         }
         buttons.put(22, new ScopeButton("GLOBAL"));
@@ -104,7 +100,7 @@ public class GrantScopesMenu extends Menu {
 
                     /*Packet packet = new GrantAddPacket(target.getUuid(), grant.getRank().getUuid(),
                             grant.getDuration());*/
-                    RequestResponse response = zircon.getBukkitProfileService().addGrant(target, grant);
+                    RequestResponse response = AltaraPaper.getBukkitProfileService().addGrant(target, grant);
                     if (response.couldNotConnect()) {
                         player.sendMessage(CC.format("&cCould not connect to API to create grant. " +
                                         "Adding grant to the queue. Error: %s (%d)",

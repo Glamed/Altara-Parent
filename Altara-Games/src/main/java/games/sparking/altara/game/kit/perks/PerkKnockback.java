@@ -40,7 +40,7 @@ public class PerkKnockback extends Perk implements Listener {
         if (now - cooldowns.getOrDefault(key, 0L) < 400) return;
         cooldowns.put(key, now);
 
-        Bukkit.getScheduler().runTaskLater(AltaraPaper.getPaperInstance(), () -> {
+        Bukkit.getScheduler().runTaskLater(AltaraPaper.getPlugin(), () -> {
             Vector dir = target.getLocation().toVector()
                     .subtract(damager.getLocation().toVector()).setY(0).normalize().multiply(power).setY(0.3);
             target.setVelocity(dir);

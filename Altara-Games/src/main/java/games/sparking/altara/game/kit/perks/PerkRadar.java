@@ -2,7 +2,6 @@ package games.sparking.altara.game.kit.perks;
 
 import games.sparking.altara.AltaraPaper;
 import games.sparking.altara.game.kit.Perk;
-import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.entity.Player;
 
@@ -28,8 +27,8 @@ public class PerkRadar extends Perk {
 
     @Override
     public void onRegister() {
-        taskId = AltaraPaper.getPaperInstance().getServer().getScheduler()
-                .scheduleSyncRepeatingTask(AltaraPaper.getPaperInstance(), () -> {
+        taskId = AltaraPaper.getPlugin().getServer().getScheduler()
+                .scheduleSyncRepeatingTask(AltaraPaper.getPlugin(), () -> {
                     for (Player player : getGame().getAlivePlayers()) {
                         if (!hasPerk(player)) continue;
                         List<Player> nearby = player.getWorld().getNearbyEntitiesByType(
@@ -58,7 +57,7 @@ public class PerkRadar extends Perk {
     @Override
     public void onUnregister() {
         if (taskId != -1) {
-            AltaraPaper.getPaperInstance().getServer().getScheduler().cancelTask(taskId);
+            AltaraPaper.getPlugin().getServer().getScheduler().cancelTask(taskId);
             taskId = -1;
         }
     }

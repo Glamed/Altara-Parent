@@ -94,11 +94,11 @@ public class KitManager implements Listener {
      * Called by {@link Game#setState} when transitioning to {@code Loading}.
      */
     public void initialize() {
-        Bukkit.getPluginManager().registerEvents(this, AltaraPaper.getPaperInstance());
+        Bukkit.getPluginManager().registerEvents(this, AltaraPaper.getPlugin());
 
         for (Kit kit : kits) {
             for (Listener listener : kit.getListeners()) {
-                Bukkit.getPluginManager().registerEvents(listener, AltaraPaper.getPaperInstance());
+                Bukkit.getPluginManager().registerEvents(listener, AltaraPaper.getPlugin());
             }
             for (Perk perk : kit.getPerks()) {
                 if (perk != null) perk.onRegister();

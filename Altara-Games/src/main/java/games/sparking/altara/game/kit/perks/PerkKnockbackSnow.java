@@ -29,7 +29,7 @@ public class PerkKnockbackSnow extends Perk implements Listener {
         Material below = target.getLocation().subtract(0, 1, 0).getBlock().getType();
         if (below != Material.SNOW && below != Material.SNOW_BLOCK && below != Material.POWDER_SNOW) return;
 
-        Bukkit.getScheduler().runTaskLater(AltaraPaper.getPaperInstance(), () -> {
+        Bukkit.getScheduler().runTaskLater(AltaraPaper.getPlugin(), () -> {
             Vector kb = target.getVelocity().multiply(1.0 + power);
             target.setVelocity(kb);
         }, 1L);

@@ -62,6 +62,11 @@ public class MongoService implements AutoCloseable {
         }
     }
 
+    public MongoService collectionsInit() {
+        MongoCollections.init();
+        return this;
+    }
+
     @Override
     public void close() {
         if (client != null) {

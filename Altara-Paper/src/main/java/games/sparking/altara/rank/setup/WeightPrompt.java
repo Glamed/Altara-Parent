@@ -1,17 +1,17 @@
 package games.sparking.altara.rank.setup;
 
-import games.sparking.blazora.BlazoraPaper;
-import games.sparking.blazora.chatinput.ChatInput;
-import games.sparking.blazora.rank.Rank;
-import games.sparking.blazora.rank.commands.RankCommands;
-import games.sparking.blazora.rank.menu.RankEditingMenu;
-import games.sparking.blazora.utils.CC;
+import games.sparking.altara.Altara;
+import games.sparking.altara.chatinput.ChatInput;
+import games.sparking.altara.rank.Rank;
+import games.sparking.altara.rank.commands.RankCommands;
+import games.sparking.altara.rank.menu.RankEditingMenu;
+import games.sparking.altara.utils.CC;
 
 import java.util.UUID;
 
 public class WeightPrompt extends ChatInput<Integer> {
 
-    public WeightPrompt(BlazoraPaper zircon) {
+    public WeightPrompt() {
         super(Integer.class);
         text(CC.translate("&ePlease enter the weight for this rank, or type &ccancel &eto cancel."));
         escapeMessage(CC.RED + "You cancelled the further rank setup.");
@@ -19,7 +19,7 @@ public class WeightPrompt extends ChatInput<Integer> {
 
         accept((player, input) -> {
             UUID rankId = RankEditingMenu.RANK_SETUPS.get(player.getUniqueId());
-            Rank rank = rankId == null ? null : zircon.getRankService().getRank(rankId);
+            Rank rank = rankId == null ? null : Altara.getSharedInstance().getRankService().getRank(rankId);
             if (rank == null) {
                 player.sendMessage(CC.RED + "The rank you were setting up no longer exists.");
                 return true;

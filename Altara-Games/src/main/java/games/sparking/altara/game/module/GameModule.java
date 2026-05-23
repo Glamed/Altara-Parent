@@ -29,7 +29,7 @@ public abstract class GameModule implements Listener {
     /** Called by {@link Game} when the game goes {@code Live}. Not part of the public API. */
     public final void attach(Game owner) {
         this.game = owner;
-        Bukkit.getPluginManager().registerEvents(this, AltaraPaper.getPaperInstance());
+        Bukkit.getPluginManager().registerEvents(this, AltaraPaper.getPlugin());
         onEnable();
     }
 

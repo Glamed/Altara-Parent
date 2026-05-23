@@ -5,7 +5,6 @@ import games.sparking.altara.task.UpdateType;
 import games.sparking.altara.task.events.UpdateEvent;
 import org.bukkit.Material;
 import org.bukkit.Particle;
-import org.bukkit.Sound;
 import org.bukkit.entity.FallingBlock;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -154,7 +153,7 @@ public class PerkDirtCannon extends Perk implements Listener {
                     return;
                 }
             }
-        }.runTaskTimer(games.sparking.altara.AltaraPaper.getPaperInstance(), 1L, 1L);
+        }.runTaskTimer(games.sparking.altara.AltaraPaper.getPlugin(), 1L, 1L);
     }
 
     private void giveDirt(Player player, int amount) {

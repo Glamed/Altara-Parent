@@ -2,8 +2,7 @@ package games.sparking.altara;
 
 import games.sparking.altara.configuration.ConfigurationService;
 import games.sparking.altara.configuration.JsonConfigurationService;
-import games.sparking.altara.configuration.defaults.MainConfig;
-import games.sparking.altara.configuration.entry.LocalConfig;
+import games.sparking.altara.configuration.LocalConfig;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;

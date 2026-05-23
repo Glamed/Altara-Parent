@@ -33,7 +33,7 @@ public class PermissionService {
             player.removeAttachment(attachments.get(player.getUniqueId()));
         }
 
-        PermissionAttachment attachment = player.addAttachment(AltaraPaper.getPaperInstance());
+        PermissionAttachment attachment = player.addAttachment(AltaraPaper.getPlugin());
         attachments.put(player.getUniqueId(), attachment);
 
         updatePermissions(player);

@@ -86,7 +86,7 @@ public class PerkDeadeye extends Perk implements Listener {
                     arrow.setVelocity(towards.multiply(factor));
                 }
             }
-        }.runTaskTimer(AltaraPaper.getPaperInstance(), 1L, 1L);
+        }.runTaskTimer(AltaraPaper.getPlugin(), 1L, 1L);
     }
 
     private UUID findGlidingTarget(Arrow arrow, UUID shooterId) {

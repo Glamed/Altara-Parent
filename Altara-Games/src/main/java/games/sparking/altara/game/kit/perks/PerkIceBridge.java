@@ -3,7 +3,6 @@ package games.sparking.altara.game.kit.perks;
 import games.sparking.altara.game.kit.Perk;
 import org.bukkit.*;
 import org.bukkit.block.Block;
-import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -99,11 +98,11 @@ public class PerkIceBridge extends Perk implements Listener {
 
                 ticks++;
             }
-        }.runTaskTimer(games.sparking.altara.AltaraPaper.getPaperInstance(), 1L, 1L);
+        }.runTaskTimer(games.sparking.altara.AltaraPaper.getPlugin(), 1L, 1L);
     }
 
     private void scheduleRestore(List<Block> blocks) {
-        Bukkit.getScheduler().runTaskLater(games.sparking.altara.AltaraPaper.getPaperInstance(), () -> {
+        Bukkit.getScheduler().runTaskLater(games.sparking.altara.AltaraPaper.getPlugin(), () -> {
             for (Block b : blocks) {
                 if (b.getType() == Material.ICE) {
                     b.setType(Material.AIR);

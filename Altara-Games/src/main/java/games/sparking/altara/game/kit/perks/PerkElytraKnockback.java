@@ -31,7 +31,7 @@ public class PerkElytraKnockback extends Perk implements Listener {
 
         // Apply extra knockback after damage is processed
         org.bukkit.Bukkit.getScheduler().runTaskLater(
-                games.sparking.altara.AltaraPaper.getPaperInstance(), () -> {
+                games.sparking.altara.AltaraPaper.getPlugin(), () -> {
                     Vector kb = target.getVelocity().multiply(2.0);
                     kb.setY(Math.min(kb.getY(), 1.0));
                     target.setVelocity(kb);

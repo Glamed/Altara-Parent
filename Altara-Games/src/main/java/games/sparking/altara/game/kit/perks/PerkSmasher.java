@@ -35,8 +35,8 @@ public class PerkSmasher extends Perk implements Listener {
         if (!hasPerk(player)) return;
 
         // Apply extra knockback next tick (after base knockback is applied)
-        games.sparking.altara.AltaraPaper.getPaperInstance().getServer().getScheduler()
-                .runTaskLater(games.sparking.altara.AltaraPaper.getPaperInstance(), () -> {
+        games.sparking.altara.AltaraPaper.getPlugin().getServer().getScheduler()
+                .runTaskLater(games.sparking.altara.AltaraPaper.getPlugin(), () -> {
                     Vector base = target.getVelocity();
                     target.setVelocity(new Vector(
                             base.getX() * multiplier,

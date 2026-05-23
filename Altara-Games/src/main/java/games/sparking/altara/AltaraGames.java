@@ -38,13 +38,13 @@ public class AltaraGames extends AltaraPaper {
 
         registerCommands();
         registerListeners();
-        getPaperInstance().getServer().getConsoleSender().sendMessage(Component.text("Altara Games has booted"));
+        getPlugin().getServer().getConsoleSender().sendMessage(Component.text("Altara Games has booted"));
     }
 
     @Override
     public void registerCommands() {
         super.registerCommands();
-        CommandService.register(AltaraPaper.getPaperInstance(),
+        CommandService.register(AltaraPaper.getPlugin(),
                 new GameCommand()
         );
     }
@@ -56,7 +56,7 @@ public class AltaraGames extends AltaraPaper {
         VisibilityService.init();
         VisibilityService.registerVisibilityAdapter(new SpectatorVisibilityAdapter());
         // Spectating: global event handler (compass cycling, damage/pickup guards)
-        getPaperInstance().getServer().getPluginManager()
-                .registerEvents(new SpectatorListener(), getPaperInstance());
+        getPlugin().getServer().getPluginManager()
+                .registerEvents(new SpectatorListener(), getPlugin());
     }
 }

@@ -45,8 +45,8 @@ public class PerkWeb extends Perk implements Listener {
         if (block.getType() == Material.AIR) {
             block.setType(Material.COBWEB);
             // Remove web after delay
-            games.sparking.altara.AltaraPaper.getPaperInstance().getServer().getScheduler()
-                    .runTaskLater(games.sparking.altara.AltaraPaper.getPaperInstance(), () -> {
+            games.sparking.altara.AltaraPaper.getPlugin().getServer().getScheduler()
+                    .runTaskLater(games.sparking.altara.AltaraPaper.getPlugin(), () -> {
                         if (block.getType() == Material.COBWEB) {
                             block.setType(Material.AIR);
                         }

@@ -1,21 +1,17 @@
 package games.sparking.altara.grant;
 
-
-import games.sparking.blazora.BlazoraPaper;
-import games.sparking.blazora.connection.BackLogEntry;
-import games.sparking.blazora.connection.RequestResponse;
-import games.sparking.blazora.utils.CC;
-import games.sparking.blazora.utils.PlayerMessagePacket;
-import games.sparking.blazora.utils.UUIDUtils;
-import games.sparking.blazora.uuid.UUIDCache;
+import games.sparking.altara.connection.BackLogEntry;
+import games.sparking.altara.connection.RequestResponse;
+import games.sparking.altara.utils.CC;
+import games.sparking.altara.utils.PlayerMessagePacket;
+import games.sparking.altara.uuid.UUIDCache;
+import games.sparking.altara.uuid.UUIDUtils;
 import okhttp3.Request;
 import org.bukkit.Bukkit;
 
 import java.util.UUID;
 
 public class GrantBackLogEntry extends BackLogEntry {
-
-    private static final BlazoraPaper zircon = BlazoraPaper.getPaperInstance();
 
     private final Grant grant;
     private final UUID uuid;
@@ -45,10 +41,10 @@ public class GrantBackLogEntry extends BackLogEntry {
         );
 
         if (UUIDUtils.isUUID(grant.getGrantedBy()))
-            zircon.getRedisService().publish(new PlayerMessagePacket(
+            new PlayerMessagePacket(
                     UUID.fromString(grant.getGrantedBy()),
                     message
-            ));
+            ).publish();
         else Bukkit.getConsoleSender().sendMessage(message);
     }
 }

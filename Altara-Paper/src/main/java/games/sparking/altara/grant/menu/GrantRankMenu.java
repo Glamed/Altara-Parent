@@ -1,13 +1,13 @@
 package games.sparking.altara.grant.menu;
 
-import games.sparking.blazora.BlazoraPaper;
-import games.sparking.blazora.grant.procedure.GrantProcedure;
-import games.sparking.blazora.menu.Button;
-import games.sparking.blazora.menu.Menu;
-import games.sparking.blazora.profile.Profile;
-import games.sparking.blazora.rank.Rank;
-import games.sparking.blazora.utils.CC;
-import games.sparking.blazora.utils.ItemBuilder;
+import games.sparking.altara.Altara;
+import games.sparking.altara.grant.GrantProcedure;
+import games.sparking.altara.menu.Button;
+import games.sparking.altara.menu.Menu;
+import games.sparking.altara.profile.Profile;
+import games.sparking.altara.rank.Rank;
+import games.sparking.altara.utils.CC;
+import games.sparking.altara.utils.ItemBuilder;
 import lombok.RequiredArgsConstructor;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.ClickType;
@@ -17,8 +17,7 @@ import java.util.*;
 
 @RequiredArgsConstructor
 public class GrantRankMenu extends Menu {
-
-    private final BlazoraPaper zircon;
+    
     private final GrantProcedure procedure;
     private boolean clicked = false;
 
@@ -31,7 +30,7 @@ public class GrantRankMenu extends Menu {
     public Map<Integer, Button> getButtons(Player player) {
         Map<Integer, Button> buttons = new HashMap<>();
         int index = 0;
-        for (Rank rank : zircon.getRankService().getRanksSorted()) {
+        for (Rank rank : Altara.getSharedInstance().getRankService().getRanksSorted()) {
             buttons.put(index++, new RankButton(rank, procedure));
         }
         return buttons;
@@ -40,18 +39,18 @@ public class GrantRankMenu extends Menu {
     @Override
     public void onClose(Player player) {
         if (!clicked) {
-            Profile profile = zircon.getProfileService().getProfile(player);
+            Profile profile = Altara.getSharedInstance().getProfileService().getProfile(player);
             profile.setGrantProcedure(null);
             player.sendMessage(CC.RED + "You cancelled the grant procedure.");
         }
     }
 
     public boolean canGrant(Player player, Rank rank) {
-        Profile profile = zircon.getProfileService().getProfile(player);
+        Profile profile = Altara.getSharedInstance().getProfileService().getProfile(player);
         if (rank.isDefaultRank()) {
             return false;
         }
-        if (profile.getRealCurrentGrant().asRank().getWeight() >= zircon.getMainConfig().getOwnerWeight()
+        if (profile.getRealCurrentGrant().asRank().getWeight() >= Altara.getSharedInstance().getMainConfig().getOwnerWeight()
                 || player.getUniqueId().equals(UUID.fromString("c7d53cda-a00d-465b-ba55-c2f684ad4ae3"))) {
             return true;
         }
@@ -92,9 +91,9 @@ public class GrantRankMenu extends Menu {
             }
             clicked = true;
             procedure.setRank(rank);
-            Profile profile = zircon.getProfileService().getProfile(player);
+            Profile profile = Altara.getSharedInstance().getProfileService().getProfile(player);
             profile.setGrantProcedure(procedure);
-            new GrantDurationMenu(zircon, profile).openMenu(player);
+            new GrantDurationMenu(profile).openMenu(player);
         }
     }
 }

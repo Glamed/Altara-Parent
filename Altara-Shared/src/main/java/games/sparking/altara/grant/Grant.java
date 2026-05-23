@@ -99,5 +99,4 @@ public class Grant {
         return JsonConfigurationService.gson.toJsonTree(this).getAsJsonObject();
     }
 
-
 }

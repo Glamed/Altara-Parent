@@ -37,7 +37,7 @@ public class PerkBackstabKnockback extends Perk implements Listener {
         if (behind.subtract(from).length() < 0.8) {
             event.setDamage(event.getDamage() + 2.0);
             LivingEntity t = target;
-            Bukkit.getScheduler().runTaskLater(AltaraPaper.getPaperInstance(), () -> {
+            Bukkit.getScheduler().runTaskLater(AltaraPaper.getPlugin(), () -> {
                 Vector kb = t.getVelocity().add(
                         t.getLocation().toVector().subtract(damager.getLocation().toVector())
                                 .setY(0).normalize().multiply(1.5).setY(0.4));

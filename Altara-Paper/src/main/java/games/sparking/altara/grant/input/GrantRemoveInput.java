@@ -1,17 +1,17 @@
 package games.sparking.altara.grant.input;
 
-
-import games.sparking.blazora.BlazoraPaper;
-import games.sparking.blazora.chatinput.ChatInput;
-import games.sparking.blazora.connection.RequestResponse;
-import games.sparking.blazora.grant.Grant;
-import games.sparking.blazora.profile.Profile;
-import games.sparking.blazora.task.Tasks;
-import games.sparking.blazora.utils.CC;
+import games.sparking.altara.Altara;
+import games.sparking.altara.AltaraPaper;
+import games.sparking.altara.chatinput.ChatInput;
+import games.sparking.altara.connection.RequestResponse;
+import games.sparking.altara.grant.Grant;
+import games.sparking.altara.profile.Profile;
+import games.sparking.altara.task.Tasks;
+import games.sparking.altara.utils.CC;
 
 public class GrantRemoveInput extends ChatInput<String> {
 
-    public GrantRemoveInput(BlazoraPaper zircon, Profile target, Grant grant) {
+    public GrantRemoveInput(Profile target, Grant grant) {
         super(String.class);
         text(CC.translate("&ePlease enter the reason for the removal of this grant, or say &ccancel &eto cancel."));
         escapeMessage(CC.RED + "You cancelled the grant removal.");
@@ -24,7 +24,7 @@ public class GrantRemoveInput extends ChatInput<String> {
 
             Tasks.runAsync(() -> {
                 //Packet packet = new GrantRemovePacket(target.getUuid(), grant.getRank().getUuid());
-                RequestResponse response = zircon.getBukkitProfileService().removeGrant(target, grant);
+                RequestResponse response = AltaraPaper.getPaperInstance().getBukkitProfileService().removeGrant(target, grant);
                 if (response.couldNotConnect()) {
                     player.sendMessage(CC.format("&cCould not connect to API to remove grant. " +
                                     "Adding grant to the queue. Error: %s (%d)",

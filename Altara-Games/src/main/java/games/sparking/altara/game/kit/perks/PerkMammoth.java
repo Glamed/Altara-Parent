@@ -34,7 +34,7 @@ public class PerkMammoth extends Perk implements Listener {
 
         // Cancel velocity change next tick
         player.getServer().getScheduler().runTaskLater(
-                games.sparking.altara.AltaraPaper.getPaperInstance(), () -> {
+                games.sparking.altara.AltaraPaper.getPlugin(), () -> {
                     Vector vel = player.getVelocity();
                     player.setVelocity(new Vector(
                             vel.getX() * (1 - reductionFactor),

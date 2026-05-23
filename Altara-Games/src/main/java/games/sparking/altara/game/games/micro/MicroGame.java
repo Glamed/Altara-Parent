@@ -169,7 +169,7 @@ public class MicroGame extends TeamGame {
         if (gp == null || !gp.isAlive()) return;
 
         org.bukkit.Bukkit.getScheduler().runTaskLater(
-                games.sparking.altara.AltaraPaper.getPaperInstance(), () -> {
+                games.sparking.altara.AltaraPaper.getPlugin(), () -> {
                     Vector dir = target.getLocation().toVector()
                             .subtract(shooter.getLocation().toVector()).normalize();
                     dir.setY(0.4);

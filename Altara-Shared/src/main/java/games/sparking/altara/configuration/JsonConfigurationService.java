@@ -29,7 +29,8 @@ public class JsonConfigurationService implements ConfigurationService {
 
     @Override
     public <T extends StaticConfiguration> T loadConfiguration(Class<? extends T> clazz, File file) {
-        if ((!file.getParentFile().exists()) && (!file.getParentFile().mkdir())) {
+        File parentFile = file.getParentFile();
+        if (parentFile != null && !parentFile.exists() && !parentFile.mkdirs()) {
             Altara.getSharedInstance().getLogger().warning(
                     "Failed to create parent folder for " + file.getName()
             );

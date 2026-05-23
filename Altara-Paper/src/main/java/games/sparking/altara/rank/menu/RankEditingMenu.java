@@ -1,16 +1,15 @@
 package games.sparking.altara.rank.menu;
 
-import games.sparking.blazora.BlazoraPaper;
-
-import games.sparking.blazora.chatinput.ChatInput;
-import games.sparking.blazora.menu.Button;
-import games.sparking.blazora.menu.Menu;
-import games.sparking.blazora.menu.buttons.BackButton;
-import games.sparking.blazora.menu.fill.FillTemplate;
-import games.sparking.blazora.profile.Profile;
-import games.sparking.blazora.rank.Rank;
-import games.sparking.blazora.utils.CC;
-import games.sparking.blazora.utils.ItemBuilder;
+import games.sparking.altara.AltaraPaper;
+import games.sparking.altara.chatinput.ChatInput;
+import games.sparking.altara.menu.Button;
+import games.sparking.altara.menu.Menu;
+import games.sparking.altara.menu.buttons.BackButton;
+import games.sparking.altara.menu.fill.FillTemplate;
+import games.sparking.altara.profile.Profile;
+import games.sparking.altara.rank.Rank;
+import games.sparking.altara.utils.CC;
+import games.sparking.altara.utils.ItemBuilder;
 import lombok.RequiredArgsConstructor;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -25,7 +24,6 @@ public class RankEditingMenu extends Menu {
 
     public static final Map<UUID, UUID> RANK_SETUPS = new HashMap<>();
 
-    private final BlazoraPaper zircon;
     private final Profile profile;
     private final Rank rank;
     private boolean save = false;
@@ -52,7 +50,7 @@ public class RankEditingMenu extends Menu {
         buttons.put(23, new SetSuffixButton());
         buttons.put(24, new SetChatColorButton());
 
-        buttons.put(35, new BackButton(new RankEditOverviewMenu(zircon, profile)));
+        buttons.put(35, new BackButton(new RankEditOverviewMenu(profile)));
         return buttons;
     }
 
@@ -122,7 +120,7 @@ public class RankEditingMenu extends Menu {
                             rank.getPermissions().add(input.toLowerCase());
                         }
 
-                        rank.save(player, () -> {
+                        rank.save(player::sendMessage, () -> {
                         });
                         player.sendMessage(CC.format("&eYou added permission &c%s &eto rank %s&e.",
                                 input, rank.getName()));
@@ -173,7 +171,7 @@ public class RankEditingMenu extends Menu {
                             rank.getPermissions().remove(input.toLowerCase());
                         }
 
-                        rank.save(player, () -> {
+                        rank.save(player::sendMessage, () -> {
                         });
                         player.sendMessage(CC.format("&eYou removed permission &c%s &efrom rank %s&e.",
                                 input, rank.getName()));
@@ -224,7 +222,7 @@ public class RankEditingMenu extends Menu {
                     .onCancel(RankEditingMenu.this::openMenu)
                     .accept((player, input) -> {
                         rank.setPrefix(CC.translate(input));
-                        rank.save(player, () -> {
+                        rank.save(player::sendMessage, () -> {
                         });
                         player.sendMessage(CC.format("&eYou set the prefix of %s &eto %sExample&e.",
                                 rank.getName(), rank.getPrefix()));
@@ -254,7 +252,7 @@ public class RankEditingMenu extends Menu {
                     .onCancel(RankEditingMenu.this::openMenu)
                     .accept((player, input) -> {
                         rank.setSuffix(CC.translate(input));
-                        rank.save(player, () -> {
+                        rank.save(player::sendMessage, () -> {
                         });
                         player.sendMessage(CC.format("&eYou set the suffix of %s &eto %sExample&e.",
                                 rank.getName(), rank.getSuffix()));
@@ -289,7 +287,7 @@ public class RankEditingMenu extends Menu {
                         }
 
                         rank.setColor(CC.translate(input));
-                        rank.save(player, () -> {
+                        rank.save(player::sendMessage, () -> {
                         });
                         player.sendMessage(CC.format("&eYou set the color of %s &eto %sExample&e.",
                                 rank.getName(), rank.getColor()));
@@ -324,7 +322,7 @@ public class RankEditingMenu extends Menu {
                         }
 
                         rank.setChatColor(CC.translate(input));
-                        rank.save(player, () -> {
+                        rank.save(player::sendMessage, () -> {
                         });
                         player.sendMessage(CC.format("&eYou set the chat color of %s &eto %sExample&e.",
                                 rank.getName(), rank.getColor()));
@@ -343,7 +341,7 @@ public class RankEditingMenu extends Menu {
                 lore.add(CC.YELLOW + "Inherits: " + CC.RED + "None");
             } else {
                 lore.add(CC.YELLOW + "Inherits: ");
-                rank.getInherits().forEach(inherit -> lore.add(CC.GRAY + " - " + BlazoraPaper.getSharedInstance().getRankService().getRank(inherit).getName()));
+                rank.getInherits().forEach(inherit -> lore.add(CC.GRAY + " - " + AltaraPaper.getSharedInstance().getRankService().getRank(inherit).getName()));
             }
 
             return new ItemBuilder(Material.BOOK)
@@ -371,7 +369,7 @@ public class RankEditingMenu extends Menu {
                                     rank.getName(), input.getName()));
                         }
 
-                        rank.save(player, () -> {
+                        rank.save(player::sendMessage, () -> {
                         });
                         openMenu(player);
                         return true;
@@ -399,7 +397,7 @@ public class RankEditingMenu extends Menu {
                     .onCancel(RankEditingMenu.this::openMenu)
                     .accept((player, input) -> {
                         rank.setWeight(input);
-                        rank.save(player, () -> {
+                        rank.save(player::sendMessage, () -> {
                         });
                         player.sendMessage(CC.format("&eYou set the weight of %s &eto &c%d&e.",
                                 rank.getName(), rank.getWeight()));
@@ -429,7 +427,7 @@ public class RankEditingMenu extends Menu {
                     .onCancel(RankEditingMenu.this::openMenu)
                     .accept((player, input) -> {
                         rank.setQueuePriority(input);
-                        rank.save(player, () -> {
+                        rank.save(player::sendMessage, () -> {
                         });
                         player.sendMessage(CC.format("&eYou set the queue priority of %s &eto &c%d&e.",
                                 rank.getName(), rank.getQueuePriority()));

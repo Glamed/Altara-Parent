@@ -68,8 +68,8 @@ public class PerkWoolBomb extends Perk implements Listener {
         }
 
         // Remove blocks after delay
-        games.sparking.altara.AltaraPaper.getPaperInstance().getServer().getScheduler()
-                .runTaskLater(games.sparking.altara.AltaraPaper.getPaperInstance(), () -> {
+        games.sparking.altara.AltaraPaper.getPlugin().getServer().getScheduler()
+                .runTaskLater(games.sparking.altara.AltaraPaper.getPlugin(), () -> {
                     for (Block block : placed) {
                         if (isWool(block.getType())) {
                             block.setType(Material.AIR);

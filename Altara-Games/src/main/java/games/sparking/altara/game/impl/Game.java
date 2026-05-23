@@ -139,7 +139,7 @@ public abstract class Game implements Listener {
             return;
         }
         if (!MapLoader.hasAnyMap(mapType)) {
-            AltaraPaper.getPaperInstance().getLogger()
+            AltaraPaper.getPlugin().getLogger()
                     .warning("[" + getName() + "] No maps found for '" + mapType + "' — starting without a world.");
             setState(GameState.Recruit);
             return;
@@ -147,15 +147,15 @@ public abstract class Game implements Listener {
         MapLoader.loadRandom(mapType, getShortId())
                 .thenAcceptAsync(world -> {
                     setArenaWorld(world);
-                    AltaraPaper.getPaperInstance().getLogger()
+                    AltaraPaper.getPlugin().getLogger()
                             .info("[" + getName() + "] Loaded map '" + world.getMapName()
                                     + "' (instance " + getShortId() + ")");
                     setState(GameState.Recruit);
-                }, r -> Bukkit.getScheduler().runTask(AltaraPaper.getPaperInstance(), r))
+                }, r -> Bukkit.getScheduler().runTask(AltaraPaper.getPlugin(), r))
                 .exceptionally(err -> {
-                    AltaraPaper.getPaperInstance().getLogger()
+                    AltaraPaper.getPlugin().getLogger()
                             .severe("[" + getName() + "] Map load failed: " + err.getMessage());
-                    Bukkit.getScheduler().runTask(AltaraPaper.getPaperInstance(),
+                    Bukkit.getScheduler().runTask(AltaraPaper.getPlugin(),
                             () -> setState(GameState.Recruit));
                     return null;
                 });
@@ -191,7 +191,7 @@ public abstract class Game implements Listener {
      * {@code super.onEnd()}) to show results before cleaning up.
      */
     protected void onEnd() {
-        Bukkit.getScheduler().runTaskLater(AltaraPaper.getPaperInstance(), this::destroy, 100L);
+        Bukkit.getScheduler().runTaskLater(AltaraPaper.getPlugin(), this::destroy, 100L);
     }
 
     /**
@@ -203,7 +203,7 @@ public abstract class Game implements Listener {
     protected void onDead() {
         if (arenaWorld != null) {
             MapLoader.unload(arenaWorld.getWorld()).thenRun(() ->
-                    AltaraPaper.getPaperInstance().getLogger()
+                    AltaraPaper.getPlugin().getLogger()
                             .info("[" + getName() + "] World unloaded for instance " + getShortId()));
             setArenaWorld(null);
         }
@@ -270,7 +270,7 @@ public abstract class Game implements Listener {
         GamePlayer gp = getGamePlayer(player).orElse(null);
         if (gp == null || !gp.isAlive()) return;
 
-        Bukkit.getScheduler().runTaskLater(AltaraPaper.getPaperInstance(), () -> {
+        Bukkit.getScheduler().runTaskLater(AltaraPaper.getPlugin(), () -> {
             if (player.isOnline() && player.getHealth() <= 0) eliminatePlayer(player);
         }, 1L);
     }
@@ -318,7 +318,7 @@ public abstract class Game implements Listener {
 
         switch (newState) {
             case Loading -> {
-                Bukkit.getPluginManager().registerEvents(this, AltaraPaper.getPaperInstance());
+                Bukkit.getPluginManager().registerEvents(this, AltaraPaper.getPlugin());
                 kitManager.initialize();
                 onLoad();
             }

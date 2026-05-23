@@ -1,4 +1,4 @@
-package games.sparking.altara.configuration.entry;
+package games.sparking.altara.configuration;
 
 import games.sparking.altara.configuration.defaults.MainConfig;
 import lombok.Data;

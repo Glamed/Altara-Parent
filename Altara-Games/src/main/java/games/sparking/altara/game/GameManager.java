@@ -78,7 +78,7 @@ public class GameManager implements Listener {
             throw new IllegalStateException("GameManager has already been initialised.");
         }
         instance = new GameManager();
-        Bukkit.getPluginManager().registerEvents(instance, AltaraPaper.getPaperInstance());
+        Bukkit.getPluginManager().registerEvents(instance, AltaraPaper.getPlugin());
         return instance;
     }
 
@@ -97,7 +97,7 @@ public class GameManager implements Listener {
      */
     public void registerGameType(String typeId, Supplier<Game> factory) {
         typeRegistry.put(typeId.toLowerCase(), factory);
-        AltaraPaper.getPaperInstance().getLogger()
+        AltaraPaper.getPlugin().getLogger()
                 .info("[GameManager] Registered game type: " + typeId.toLowerCase());
     }
 
@@ -198,7 +198,7 @@ public class GameManager implements Listener {
         if (game != null) {
             // Clean up player-game mappings for any remaining players
             game.getPlayers().keySet().forEach(playerGameMap::remove);
-            AltaraPaper.getPaperInstance().getLogger()
+            AltaraPaper.getPlugin().getLogger()
                     .info("[GameManager] Game destroyed: " + game);
         }
     }

@@ -6,8 +6,13 @@ import games.sparking.altara.commands.SendCommand;
 import games.sparking.altara.configuration.ConfigurationService;
 import games.sparking.altara.configuration.defaults.MainConfig;
 import games.sparking.altara.listeners.MotdListener;
+import games.sparking.altara.rank.Rank;
+import games.sparking.altara.task.DefaultTaskImplementor;
 import lombok.Getter;
 import org.slf4j.Logger;
+
+import java.util.List;
+import java.util.UUID;
 
 public class AltaraProxy extends Altara {
 
@@ -18,11 +23,10 @@ public class AltaraProxy extends Altara {
     @Getter private static Logger proxyLogger;
 
     public AltaraProxy(Object plugin, ProxyServer server, Logger logger, ConfigurationService configurationService, MainConfig mainConfig) {
-        super(SystemType.PROXY, configurationService, mainConfig);
+        super(SystemType.PROXY, configurationService, mainConfig, new DefaultTaskImplementor());
         proxyPlugin = plugin;
         proxyInstance = server;
         proxyLogger = logger;
-        Altara.setProxyServer(server);
         logger.info("Altara Proxy has loaded successfully!");
         init();
     }
@@ -55,6 +59,31 @@ public class AltaraProxy extends Altara {
 
     @Override
     public void startServerMonitor() {
+
+    }
+
+    @Override
+    public void updatePermissions(UUID uuid) {
+
+    }
+
+    @Override
+    public void updatePermissionsWithRank(Rank rank) {
+
+    }
+
+    @Override
+    public List<String> getLocalPermissions(Rank rank) {
+        return List.of();
+    }
+
+    @Override
+    public void saveLocalPermissions(Rank rank) {
+
+    }
+
+    @Override
+    public void handleRankDeletion(Rank rank) {
 
     }
 

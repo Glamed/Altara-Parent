@@ -1,20 +1,17 @@
 package games.sparking.altara.grant;
 
-import games.sparking.blazora.BlazoraPaper;
-import games.sparking.blazora.connection.BackLogEntry;
-import games.sparking.blazora.connection.RequestResponse;
-import games.sparking.blazora.profile.packets.ProfileUpdatePacket;
-import games.sparking.blazora.utils.CC;
-import games.sparking.blazora.utils.PlayerMessagePacket;
-import games.sparking.blazora.uuid.UUIDCache;
+import games.sparking.altara.connection.BackLogEntry;
+import games.sparking.altara.connection.RequestResponse;
+import games.sparking.altara.profile.packet.ProfileUpdatePacket;
+import games.sparking.altara.utils.CC;
+import games.sparking.altara.utils.PlayerMessagePacket;
+import games.sparking.altara.uuid.UUIDCache;
 import okhttp3.Request;
 import org.bukkit.Bukkit;
 
 import java.util.UUID;
 
 public class GrantClearBackLogEntry extends BackLogEntry {
-
-    private static final BlazoraPaper zircon = BlazoraPaper.getPaperInstance();
 
     private final UUID uuid;
     private final UUID clearedBy;
@@ -36,9 +33,9 @@ public class GrantClearBackLogEntry extends BackLogEntry {
 
         if (clearedBy == null)
             Bukkit.getConsoleSender().sendMessage(message);
-        else zircon.getRedisService().publish(new PlayerMessagePacket(clearedBy, message));
+        else new PlayerMessagePacket(clearedBy, message).publish();
 
         if (response.wasSuccessful())
-            zircon.getRedisService().publish(new ProfileUpdatePacket(uuid));
+            new ProfileUpdatePacket(uuid).publish();
     }
 }

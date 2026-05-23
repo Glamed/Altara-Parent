@@ -1,11 +1,13 @@
 package games.sparking.altara.rank.commands;
 
+import games.sparking.altara.Altara;
 import games.sparking.altara.command.annotation.Command;
 import games.sparking.altara.command.annotation.Flag;
 import games.sparking.altara.command.annotation.Header;
 import games.sparking.altara.command.annotation.Param;
 import games.sparking.altara.connection.RequestHandler;
 import games.sparking.altara.connection.RequestResponse;
+import games.sparking.altara.profile.Profile;
 import games.sparking.altara.rank.Rank;
 import games.sparking.altara.rank.menu.RankEditOverviewMenu;
 import games.sparking.altara.rank.menu.RankEditingMenu;
@@ -31,13 +33,10 @@ import java.util.List;
 )
 public class RankCommands {
 
-    public static final RankCommands INSTANCE = new RankCommands(BlazoraPaper.getPaperInstance());
-
-    private final BlazoraPaper zircon;
+    public static final RankCommands INSTANCE = new RankCommands();
 
     public static Rank createRank(CommandSender sender, String rankName) {
-        BlazoraPaper zircon = BlazoraPaper.getPaperInstance();
-        Rank rank = zircon.getRankService().getRank(rankName);
+        Rank rank = Altara.getSharedInstance().getRankService().getRank(rankName);
         if (rank != null) {
             sender.sendMessage(CC.format("&cRank &e%s &calready exists", rank.getName()));
             return null;
@@ -52,7 +51,7 @@ public class RankCommands {
             return null;
         }
 
-        zircon.getRedisService().publish(new RankCreatePacket(rank.getUuid()));
+        new RankCreatePacket(rank.getUuid()).publish();
         sender.sendMessage(CC.format("&eYou created the rank %s&e.", rank.getName()));
         return rank;
     }
@@ -64,8 +63,8 @@ public class RankCommands {
                             @Flag(names = {"-priority"}, description = "Sort the ranks by queue priority") boolean priority) {
         sender.sendMessage(CC.SMALL_CHAT_BAR);
         sender.sendMessage(CC.RED + CC.BOLD + "Ranks");
-        List<Rank> ranks = priority ? zircon.getRankService().getRanksSortedPriority()
-                : zircon.getRankService().getRanksSorted();
+        List<Rank> ranks = priority ? Altara.getSharedInstance().getRankService().getRanksSortedPriority()
+                : Altara.getSharedInstance().getRankService().getRanksSorted();
         for (Rank rank : ranks) {
             List<String> hover = Arrays.asList(
                     CC.format(" &eName: &f%s", rank.getName()),
@@ -122,21 +121,21 @@ public class RankCommands {
             permission = "rank.command.argument.edit",
             playerOnly = true, description = "Edit an rank")
     public boolean rankEdit(Player sender, @Param(name = "rank", defaultValue = "@menu") String rankName) {
-        Profile profile = zircon.getProfileService().getProfile(sender);
+        Profile profile = Altara.getSharedInstance().getProfileService().getProfile(sender);
 
         if (rankName.equals("@menu")) {
-            new RankEditOverviewMenu(zircon, profile).openMenu(sender);
+            new RankEditOverviewMenu(profile).openMenu(sender);
             return true;
         }
 
-        Rank rank = zircon.getRankService().getRank(rankName);
+        Rank rank = Altara.getSharedInstance().getRankService().getRank(rankName);
 
         if (rank == null) {
             sender.sendMessage(CC.format(CC.errorMsg("Invalid rank.", "Rank &e%s &cnot found."), rankName));
             return false;
         }
 
-        new RankEditingMenu(zircon, profile, rank).openMenu(sender);
+        new RankEditingMenu(profile, rank).openMenu(sender);
         return true;
     }
 
@@ -153,7 +152,7 @@ public class RankCommands {
             description = "Delete an existing rank")
     public boolean rankDelete(CommandSender sender, @Param(name = "rank") Rank rank) {
         sender.sendMessage(CC.format("&eYou deleted the rank %s&e.", rank.getName()));
-        zircon.getRedisService().publish(new RankDeletePacket(rank.getUuid()));
+        new RankDeletePacket(rank.getUuid()).publish();
         return true;
     }
 
@@ -175,7 +174,7 @@ public class RankCommands {
             permission = "rank.command.argument.setdefault",
             description = "Set an rank as default rank")
     public boolean rankSetDefault(CommandSender sender, @Param(name = "rank") Rank rank) {
-        zircon.getRankService().getRanks().forEach(current -> {
+        Altara.getSharedInstance().getRankService().getRanks().forEach(current -> {
             if (current.isDefaultRank()) {
                 current.setDefaultRank(false);
                 current.save(sender, () -> {
@@ -223,7 +222,7 @@ public class RankCommands {
                 builder.append(permission).append("\n");
         }
 
-        builder.append("\nLocal on ").append(zircon.getLocalServerName()).append(":");
+        builder.append("\nLocal on ").append(Altara.getSharedInstance().getLocalServerName()).append(":");
 
         for (String permission : rank.getLocalPermissions()) {
             if (prefix.equals("@none") || permission.startsWith(prefix))

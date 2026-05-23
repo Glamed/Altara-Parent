@@ -31,6 +31,7 @@
         <paper-api.version>1.21.4-R0.1-SNAPSHOT</paper-api.version>
         <velocity-api.version>3.4.0-SNAPSHOT</velocity-api.version>
         <okhttp.version>4.12.0</okhttp.version>
+        <spring-boot.version>3.4.5</spring-boot.version>
     </properties>
 
     <repositories>
@@ -42,6 +43,15 @@
 
     <dependencyManagement>
         <dependencies>
+            <!-- Spring Boot BOM -->
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-dependencies</artifactId>
+                <version>${spring-boot.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
             <!-- Altara Modules -->
             <dependency>
                 <groupId>games.sparking</groupId>
@@ -77,7 +87,17 @@
                 <version>${jedis.version}</version>
             </dependency>
 
-            <!-- MongoDB Driver -->
+            <!-- MongoDB Driver (all three artifacts must be the same version) -->
+            <dependency>
+                <groupId>org.mongodb</groupId>
+                <artifactId>bson</artifactId>
+                <version>${mongodb.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.mongodb</groupId>
+                <artifactId>mongodb-driver-core</artifactId>
+                <version>${mongodb.version}</version>
+            </dependency>
             <dependency>
                 <groupId>org.mongodb</groupId>
                 <artifactId>mongodb-driver-sync</artifactId>
@@ -144,6 +164,7 @@
                     <version>3.13.0</version>
                     <configuration>
                         <release>${java.version}</release>
+                        <parameters>true</parameters>
                         <annotationProcessorPaths>
                             <path>
                                 <groupId>org.projectlombok</groupId>

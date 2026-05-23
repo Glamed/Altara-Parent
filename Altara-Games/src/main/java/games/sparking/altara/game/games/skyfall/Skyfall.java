@@ -18,7 +18,6 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.block.*;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.util.Vector;
 
 import java.util.*;
@@ -94,7 +93,7 @@ public class Skyfall extends SoloGame {
     @Override
     protected void onLoad() {
         if (!MapLoader.hasAnyMap("skyfall")) {
-            AltaraPaper.getPaperInstance().getLogger()
+            AltaraPaper.getPlugin().getLogger()
                     .warning("[Skyfall] No maps found — starting without a world.");
             setState(GameState.Recruit);
             return;
@@ -104,11 +103,11 @@ public class Skyfall extends SoloGame {
                 .thenAcceptAsync(world -> {
                     setArenaWorld(world);
                     setState(GameState.Recruit);
-                }, r -> Bukkit.getScheduler().runTask(AltaraPaper.getPaperInstance(), r))
+                }, r -> Bukkit.getScheduler().runTask(AltaraPaper.getPlugin(), r))
                 .exceptionally(err -> {
-                    AltaraPaper.getPaperInstance().getLogger()
+                    AltaraPaper.getPlugin().getLogger()
                             .severe("[Skyfall] Map load failed: " + err.getMessage());
-                    Bukkit.getScheduler().runTask(AltaraPaper.getPaperInstance(),
+                    Bukkit.getScheduler().runTask(AltaraPaper.getPlugin(),
                             () -> setState(GameState.Recruit));
                     return null;
                 });
@@ -229,14 +228,14 @@ public class Skyfall extends SoloGame {
 
     @Override
     protected void onEnd() {
-        Bukkit.getScheduler().runTaskLater(AltaraPaper.getPaperInstance(), this::destroy, 100L);
+        Bukkit.getScheduler().runTaskLater(AltaraPaper.getPlugin(), this::destroy, 100L);
     }
 
     @Override
     protected void onDead() {
         if (arenaWorld != null) {
             MapLoader.unload(arenaWorld.getWorld()).thenRun(() ->
-                    AltaraPaper.getPaperInstance().getLogger()
+                    AltaraPaper.getPlugin().getLogger()
                             .info("[Skyfall] World unloaded for instance " + getShortId()));
             setArenaWorld(null);
         }
@@ -377,7 +376,7 @@ public class Skyfall extends SoloGame {
         inv.addItem(new ItemStack(Material.BOW));
         inv.addItem(new ItemStack(Material.ARROW, 8));
 
-        Bukkit.getScheduler().runTaskTimer(AltaraPaper.getPaperInstance(), task -> {
+        Bukkit.getScheduler().runTaskTimer(AltaraPaper.getPlugin(), task -> {
             if (!isLive()) { task.cancel(); return; }
             supplyDropLocation.getWorld().spawnParticle(Particle.END_ROD,
                     supplyDropLocation.clone().add(0, 1, 0), 3, 0.1, 1, 0.1, 0.02);
@@ -395,7 +394,7 @@ public class Skyfall extends SoloGame {
         Location max = arenaWorld.getMax();
         Random rng = new Random();
 
-        Bukkit.getScheduler().runTaskTimer(AltaraPaper.getPaperInstance(), task -> {
+        Bukkit.getScheduler().runTaskTimer(AltaraPaper.getPlugin(), task -> {
             if (!isLive()) { task.cancel(); return; }
             for (int i = 0; i < 5; i++) {
                 int x = min.getBlockX() + rng.nextInt(max.getBlockX() - min.getBlockX() + 1);

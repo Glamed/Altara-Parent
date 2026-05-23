@@ -1,6 +1,5 @@
 package games.sparking.altara.visibility;
 
-import games.sparking.altara.Altara;
 import games.sparking.altara.AltaraPaper;
 import games.sparking.altara.utils.CC;
 import lombok.Getter;
@@ -34,13 +33,13 @@ public class VisibilityService {
         }
 
         initialized = true;
-        Bukkit.getPluginManager().registerEvents(new VisibilityListener(), AltaraPaper.getPaperInstance());
+        Bukkit.getPluginManager().registerEvents(new VisibilityListener(), AltaraPaper.getPlugin());
     }
 
     public static void registerVisibilityAdapter(VisibilityAdapter adapter) {
         VISIBILITY_ADAPTERS.add(adapter);
         VISIBILITY_ADAPTERS.sort(Comparator.comparingInt(VisibilityAdapter::getPriority).reversed());
-        AltaraPaper.getPaperInstance().getLogger().info(String.format(
+        AltaraPaper.getPlugin().getLogger().info(String.format(
                 "[VisibilityService] Registered %s with priority %d.",
                 adapter.getName(), adapter.getPriority()));
     }

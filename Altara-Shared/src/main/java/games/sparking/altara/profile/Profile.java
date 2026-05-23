@@ -8,6 +8,7 @@ import games.sparking.altara.connection.RequestHandler;
 import games.sparking.altara.connection.RequestResponse;
 import games.sparking.altara.grant.Grant;
 import games.sparking.altara.grant.GrantProcedure;
+import games.sparking.altara.profile.packet.ProfileUpdatePacket;
 import games.sparking.altara.rank.Rank;
 import games.sparking.altara.task.Tasks;
 import games.sparking.altara.utils.IllegalSystemTypeException;
@@ -193,9 +194,7 @@ public class Profile {
         builder.add("lastlogin", lastlogin);
         builder.add("lastlogout", lastlogout);
 
-        if (options != null) {
-            builder.add("options", options.toJson());
-        }
+        // options field reserved for future use
 
         long totalPlayTime = playTime;
         if (session != null) {
@@ -308,7 +307,7 @@ public class Profile {
     }
 
     public Player player() {
-        IllegalSystemTypeException.checkOrThrow(SystemType.BUKKIT);
+        IllegalSystemTypeException.checkOrThrow(SystemType.PAPER);
 
         return Bukkit.getPlayer(this.uuid);
     }

@@ -8,8 +8,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
-import org.bukkit.potion.PotionEffect;
-import org.bukkit.potion.PotionEffectType;
 
 import java.util.Map;
 import java.util.UUID;
@@ -46,7 +44,7 @@ public class PerkRangedBleeding extends Perk implements Listener {
 
     private void applyBleeding(Player victim, UUID id, int ticks) {
         if (ticks <= 0) { bleeding.remove(id); return; }
-        Bukkit.getScheduler().runTaskLater(AltaraPaper.getPaperInstance(), () -> {
+        Bukkit.getScheduler().runTaskLater(AltaraPaper.getPlugin(), () -> {
             Integer remaining = bleeding.get(id);
             if (remaining == null || remaining <= 0) return;
             bleeding.put(id, remaining - 1);

@@ -38,8 +38,8 @@ public class PerkWoolCloud extends Perk {
 
     @Override
     public void onRegister() {
-        taskId = AltaraPaper.getPaperInstance().getServer().getScheduler()
-                .scheduleSyncRepeatingTask(AltaraPaper.getPaperInstance(), () -> {
+        taskId = AltaraPaper.getPlugin().getServer().getScheduler()
+                .scheduleSyncRepeatingTask(AltaraPaper.getPlugin(), () -> {
                     for (Player player : getGame().getAlivePlayers()) {
                         if (!hasPerk(player)) continue;
                         long now = System.currentTimeMillis();
@@ -55,7 +55,7 @@ public class PerkWoolCloud extends Perk {
     @Override
     public void onUnregister() {
         if (taskId != -1) {
-            AltaraPaper.getPaperInstance().getServer().getScheduler().cancelTask(taskId);
+            AltaraPaper.getPlugin().getServer().getScheduler().cancelTask(taskId);
             taskId = -1;
         }
         nextActivation.clear();
@@ -83,8 +83,8 @@ public class PerkWoolCloud extends Perk {
                 30, CLOUD_RADIUS, CLOUD_RADIUS, CLOUD_RADIUS, 0.05);
 
         // Remove cloud after duration
-        AltaraPaper.getPaperInstance().getServer().getScheduler()
-                .runTaskLater(AltaraPaper.getPaperInstance(), () -> {
+        AltaraPaper.getPlugin().getServer().getScheduler()
+                .runTaskLater(AltaraPaper.getPlugin(), () -> {
                     for (Block block : placed) {
                         if (block.getType() == Material.WHITE_WOOL) {
                             block.setType(Material.AIR);

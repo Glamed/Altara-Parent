@@ -32,7 +32,7 @@ public class PerkKnockbackArrow extends Perk implements Listener {
         if (!hasPerk(shooter)) return;
         if (!(event.getEntity() instanceof Player target)) return;
 
-        Bukkit.getScheduler().runTaskLater(AltaraPaper.getPaperInstance(), () -> {
+        Bukkit.getScheduler().runTaskLater(AltaraPaper.getPlugin(), () -> {
             Vector kb = target.getVelocity().multiply(1.0 + power);
             target.setVelocity(kb);
         }, 1L);

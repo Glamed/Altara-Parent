@@ -4,7 +4,6 @@ import games.sparking.altara.AltaraPaper;
 import games.sparking.altara.game.kit.Perk;
 import org.bukkit.Particle;
 import org.bukkit.entity.Player;
-import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
 /**
@@ -27,8 +26,8 @@ public class PerkRevealer extends Perk {
 
     @Override
     public void onRegister() {
-        taskId = AltaraPaper.getPaperInstance().getServer().getScheduler()
-                .scheduleSyncRepeatingTask(AltaraPaper.getPaperInstance(), () -> {
+        taskId = AltaraPaper.getPlugin().getServer().getScheduler()
+                .scheduleSyncRepeatingTask(AltaraPaper.getPlugin(), () -> {
                     for (Player holder : getGame().getAlivePlayers()) {
                         if (!hasPerk(holder)) continue;
                         for (Player nearby : holder.getWorld().getNearbyEntitiesByType(
@@ -49,7 +48,7 @@ public class PerkRevealer extends Perk {
     @Override
     public void onUnregister() {
         if (taskId != -1) {
-            AltaraPaper.getPaperInstance().getServer().getScheduler().cancelTask(taskId);
+            AltaraPaper.getPlugin().getServer().getScheduler().cancelTask(taskId);
             taskId = -1;
         }
     }

@@ -179,13 +179,13 @@ public class FileUpdater implements Listener {
         // Fire the actual restart event after the full delay
         Tasks.runLater(() -> {
             RestartServerEvent restartEvent = new RestartServerEvent(reason);
-            AltaraPaper.getPaperInstance().getServer().getPluginManager().callEvent(restartEvent);
+            AltaraPaper.getPlugin().getServer().getPluginManager().callEvent(restartEvent);
             if (restartEvent.isCancelled()) {
                 _restartTriggered.set(false); // allow re-trigger if cancelled
                 return;
             }
 
-            AltaraPaper.getPaperInstance().getServer().restart();
+            AltaraPaper.getPlugin().getServer().restart();
         }, (long) totalMinutes * 60 * 20);
     }
 
@@ -199,7 +199,7 @@ public class FileUpdater implements Listener {
             loadBuildProperties();
             getJarHashes();
         }
-        Bukkit.getPluginManager().registerEvents(this, AltaraPaper.getPaperInstance());
+        Bukkit.getPluginManager().registerEvents(this, AltaraPaper.getPlugin());
     }
 
 }

@@ -163,13 +163,13 @@ public class AltaraWorld {
             File configFile = findWorldConfig(world, directory);
 
             if (configFile == null) {
-                AltaraPaper.getPaperInstance().getLogger().warning(
+                AltaraPaper.getPlugin().getLogger().warning(
                         "[AltaraWorld] WorldConfig.dat not found for world '" + world.getName() + "'."
                         + " Searched:"
                         + "\n  1) " + new File(directory, "WorldConfig.dat").getAbsolutePath()
                         + "\n  2) " + new File(world.getWorldFolder(), "WorldConfig.dat").getAbsolutePath());
             } else {
-                AltaraPaper.getPaperInstance().getLogger().info(
+                AltaraPaper.getPlugin().getLogger().info(
                         "[AltaraWorld] Reading WorldConfig.dat for '" + world.getName()
                         + "' from: " + configFile.getAbsolutePath());
 
@@ -217,14 +217,14 @@ public class AltaraWorld {
                     }
                 }
 
-                AltaraPaper.getPaperInstance().getLogger().info(
+                AltaraPaper.getPlugin().getLogger().info(
                         "[AltaraWorld] Parsed '" + world.getName() + "': map=" + mapName
                         + "  redSpawns=" + spawnLocs.getOrDefault("Red", List.of()).size()
                         + "  blueSpawns=" + spawnLocs.getOrDefault("Blue", List.of()).size()
                         + "  allTeams=" + spawnLocs.keySet());
             }
         } catch (Exception e) {
-            AltaraPaper.getPaperInstance().getLogger().log(Level.SEVERE,
+            AltaraPaper.getPlugin().getLogger().log(Level.SEVERE,
                     "[AltaraWorld] Exception parsing WorldConfig.dat for world '" + world.getName() + "'", e);
         }
 
@@ -335,7 +335,7 @@ public class AltaraWorld {
             float pitch = parts.length >= 5 ? Float.parseFloat(parts[4].trim()) : 0f;
             return new Location(world, x, y, z, yaw, pitch);
         } catch (NumberFormatException e) {
-            AltaraPaper.getPaperInstance().getLogger().warning(
+            AltaraPaper.getPlugin().getLogger().warning(
                     "[AltaraWorld] Invalid location string: '" + coord + "'");
             return null;
         }

@@ -57,8 +57,8 @@ public class PerkWraith extends Perk implements Listener {
         player.getWorld().playSound(player.getLocation(), Sound.ENTITY_ENDERMAN_STARE, 0.5f, 1.5f);
         player.getWorld().spawnParticle(Particle.SOUL, player.getLocation().add(0, 1, 0), 15, 0.3, 0.5, 0.3, 0.02);
 
-        int taskId = AltaraPaper.getPaperInstance().getServer().getScheduler()
-                .scheduleSyncDelayedTask(AltaraPaper.getPaperInstance(), () -> {
+        int taskId = AltaraPaper.getPlugin().getServer().getScheduler()
+                .scheduleSyncDelayedTask(AltaraPaper.getPlugin(), () -> {
                     activeTaskIds.remove(player.getUniqueId());
                     player.removePotionEffect(PotionEffectType.INVISIBILITY);
                     player.getWorld().spawnParticle(Particle.SOUL, player.getLocation().add(0, 1, 0),
@@ -72,7 +72,7 @@ public class PerkWraith extends Perk implements Listener {
     public void remove(Player player) {
         Integer taskId = activeTaskIds.remove(player.getUniqueId());
         if (taskId != null) {
-            AltaraPaper.getPaperInstance().getServer().getScheduler().cancelTask(taskId);
+            AltaraPaper.getPlugin().getServer().getScheduler().cancelTask(taskId);
         }
         player.removePotionEffect(PotionEffectType.INVISIBILITY);
         player.removePotionEffect(PotionEffectType.SPEED);
@@ -81,7 +81,7 @@ public class PerkWraith extends Perk implements Listener {
     @Override
     public void onUnregister() {
         for (int taskId : activeTaskIds.values()) {
-            AltaraPaper.getPaperInstance().getServer().getScheduler().cancelTask(taskId);
+            AltaraPaper.getPlugin().getServer().getScheduler().cancelTask(taskId);
         }
         activeTaskIds.clear();
         cooldowns.clear();

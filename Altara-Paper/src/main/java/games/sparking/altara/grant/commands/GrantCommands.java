@@ -1,23 +1,24 @@
 package games.sparking.altara.grant.commands;
 
-import games.sparking.blazora.BlazoraPaper;
-import games.sparking.blazora.command.annotation.Command;
-import games.sparking.blazora.command.annotation.Param;
-import games.sparking.blazora.command.parameter.defaults.Duration;
-import games.sparking.blazora.connection.RequestHandler;
-import games.sparking.blazora.connection.RequestResponse;
-import games.sparking.blazora.grant.Grant;
-import games.sparking.blazora.grant.GrantClearBackLogEntry;
-import games.sparking.blazora.grant.menu.GrantRankMenu;
-import games.sparking.blazora.grant.menu.GrantsMenu;
-import games.sparking.blazora.grant.procedure.GrantProcedure;
-import games.sparking.blazora.profile.Profile;
-import games.sparking.blazora.profile.packets.ProfileUpdatePacket;
-import games.sparking.blazora.rank.Rank;
-import games.sparking.blazora.task.Tasks;
-import games.sparking.blazora.utils.CC;
-import games.sparking.blazora.utils.TimeUtils;
-import games.sparking.blazora.utils.json.JsonBuilder;
+import games.sparking.altara.Altara;
+import games.sparking.altara.AltaraPaper;
+import games.sparking.altara.command.annotation.Command;
+import games.sparking.altara.command.annotation.Param;
+import games.sparking.altara.command.parameter.defaults.Duration;
+import games.sparking.altara.connection.RequestHandler;
+import games.sparking.altara.connection.RequestResponse;
+import games.sparking.altara.grant.Grant;
+import games.sparking.altara.grant.GrantClearBackLogEntry;
+import games.sparking.altara.grant.GrantProcedure;
+import games.sparking.altara.grant.menu.GrantRankMenu;
+import games.sparking.altara.grant.menu.GrantsMenu;
+import games.sparking.altara.profile.Profile;
+import games.sparking.altara.profile.packet.ProfileUpdatePacket;
+import games.sparking.altara.rank.Rank;
+import games.sparking.altara.task.Tasks;
+import games.sparking.altara.utils.CC;
+import games.sparking.altara.utils.Time;
+import games.sparking.altara.utils.json.JsonBuilder;
 import lombok.RequiredArgsConstructor;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
@@ -30,17 +31,15 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class GrantCommands {
 
-    private final BlazoraPaper zircon;
-
     @Command(names = {"grant"},
             permission = "zircon.command.grant",
             description = "Grant a rank to a player",
             playerOnly = true,
             async = true)
     public boolean grant(Player sender, @Param(name = "player") Profile target) {
-        Profile profile = zircon.getProfileService().getProfile(sender);
+        Profile profile = Altara.getSharedInstance().getProfileService().getProfile(sender);
         GrantProcedure grantProcedure = new GrantProcedure(profile, target);
-        Tasks.run(() -> new GrantRankMenu(zircon, grantProcedure).openMenu(sender));
+        Tasks.run(() -> new GrantRankMenu(grantProcedure).openMenu(sender));
         return true;
     }
 
@@ -62,7 +61,7 @@ public class GrantCommands {
         response.asArray().forEach(element -> Bukkit.broadcastMessage(String.valueOf(element.getAsJsonObject())));
         response.asArray().forEach(element -> grants.add(new Grant(element.getAsJsonObject())));
         grants.removeIf(grant -> grant.getRank() == null);
-        Tasks.run(() -> new GrantsMenu(zircon, target, grants).openMenu(sender));
+        Tasks.run(() -> new GrantsMenu(target, grants).openMenu(sender));
         return true;
     }
 
@@ -104,7 +103,7 @@ public class GrantCommands {
         );
 
         //Packet packet = new GrantAddPacket(target.getUuid(), rank.getUuid(), duration.getDuration());
-        RequestResponse response = zircon.getBukkitProfileService().addGrant(target, grant);
+        RequestResponse response = AltaraPaper.getPaperInstance().getBukkitProfileService().addGrant(target, grant);
         if (response.couldNotConnect()) {
             sender.sendMessage(CC.format("&cCould not connect to API to create grant. " +
                             "Adding grant to the queue. Error: %s (%d)",
@@ -126,7 +125,7 @@ public class GrantCommands {
                     "&aYou've granted %s&a the %s&a rank for &e%s&a.",
                     target.getName(),
                     rank.getName(),
-                    TimeUtils.formatDetailed(grant.getDuration())
+                    Time.formatDetailed(grant.getDuration())
             ));
         return true;
     }
@@ -164,7 +163,7 @@ public class GrantCommands {
         sender.sendMessage(CC.format("&aRemoved &e%d &agrants of %s&a.",
                 response.asObject().get("removed").getAsInt(), target.getName()));
 
-        zircon.getRedisService().publish(new ProfileUpdatePacket(target.getUuid()));
+       new ProfileUpdatePacket(target.getUuid()).publish();
         return true;
     }
 
@@ -172,13 +171,13 @@ public class GrantCommands {
         if (!(sender instanceof Player player)) {
             return true;
         }
-        Profile profile = zircon.getProfileService().getProfile(player);
+        Profile profile = Altara.getSharedInstance().getProfileService().getProfile(player);
 
         if (rank.isDefaultRank()) {
             return false;
         }
 
-        if (profile.getRealCurrentGrant().asRank().getWeight() >= zircon.getMainConfig().getOwnerWeight()
+        if (profile.getRealCurrentGrant().asRank().getWeight() >= Altara.getSharedInstance().getMainConfig().getOwnerWeight()
                 || profile.getUuid().equals(UUID.fromString("c7d53cda-a00d-465b-ba55-c2f684ad4ae3"))) {
             return true;
         }

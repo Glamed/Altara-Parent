@@ -1,17 +1,16 @@
 package games.sparking.altara.grant.menu;
 
-
-import games.sparking.blazora.BlazoraPaper;
-import games.sparking.blazora.chatinput.ChatInput;
-import games.sparking.blazora.chatinput.ChatInputChain;
-import games.sparking.blazora.grant.input.GrantDurationInput;
-import games.sparking.blazora.grant.input.GrantReasonInput;
-import games.sparking.blazora.menu.Button;
-import games.sparking.blazora.menu.Menu;
-import games.sparking.blazora.profile.Profile;
-import games.sparking.blazora.utils.CC;
-import games.sparking.blazora.utils.ItemBuilder;
-import games.sparking.blazora.utils.TimeUtils;
+import games.sparking.altara.AltaraPaper;
+import games.sparking.altara.chatinput.ChatInput;
+import games.sparking.altara.chatinput.ChatInputChain;
+import games.sparking.altara.grant.input.GrantDurationInput;
+import games.sparking.altara.grant.input.GrantReasonInput;
+import games.sparking.altara.menu.Button;
+import games.sparking.altara.menu.Menu;
+import games.sparking.altara.profile.Profile;
+import games.sparking.altara.utils.CC;
+import games.sparking.altara.utils.ItemBuilder;
+import games.sparking.altara.utils.Time;
 import lombok.RequiredArgsConstructor;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -36,14 +35,13 @@ public class GrantDurationMenu extends Menu {
             TimeUnit.DAYS.toMillis(90)
     };
 
-    private static final ChatInput<String> REASON_INPUT = new GrantReasonInput(BlazoraPaper.getPaperInstance());
+    private static final ChatInput<String> REASON_INPUT = new GrantReasonInput();
 
     private static final ChatInputChain DURATION_REASON_CHAIN = new ChatInputChain()
-            .next(new GrantDurationInput(BlazoraPaper.getPaperInstance()))
-            .next(new GrantReasonInput(BlazoraPaper.getPaperInstance()));
+            .next(new GrantDurationInput())
+            .next(new GrantReasonInput());
 
 
-    private final BlazoraPaper zircon;
     private final Profile profile;
     private boolean clicked = false;
 
@@ -97,7 +95,7 @@ public class GrantDurationMenu extends Menu {
         @Override
         public ItemStack getItem(Player player) {
             return new ItemBuilder(material)
-                    .setDisplayName(CC.YELLOW + CC.BOLD + TimeUtils.formatDetailed(duration))
+                    .setDisplayName(CC.YELLOW + CC.BOLD + Time.formatDetailed(duration))
                     .build();
         }
 

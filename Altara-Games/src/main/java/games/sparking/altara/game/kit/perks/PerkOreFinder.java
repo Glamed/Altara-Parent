@@ -37,8 +37,8 @@ public class PerkOreFinder extends Perk {
 
     @Override
     public void onRegister() {
-        taskId = AltaraPaper.getPaperInstance().getServer().getScheduler()
-                .scheduleSyncRepeatingTask(AltaraPaper.getPaperInstance(), () -> {
+        taskId = AltaraPaper.getPlugin().getServer().getScheduler()
+                .scheduleSyncRepeatingTask(AltaraPaper.getPlugin(), () -> {
                     for (Player player : getGame().getAlivePlayers()) {
                         if (!hasPerk(player)) continue;
                         org.bukkit.Location loc = player.getLocation();
@@ -64,7 +64,7 @@ public class PerkOreFinder extends Perk {
     @Override
     public void onUnregister() {
         if (taskId != -1) {
-            AltaraPaper.getPaperInstance().getServer().getScheduler().cancelTask(taskId);
+            AltaraPaper.getPlugin().getServer().getScheduler().cancelTask(taskId);
             taskId = -1;
         }
     }
