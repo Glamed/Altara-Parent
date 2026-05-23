@@ -27,10 +27,10 @@ public class ServerInfo {
     private long allocatedMemory = 0L;
     private String host = "localhost";
     private int port = 25565;
-    /*private boolean queueEnabled = false;
+    private boolean queueEnabled = false;
     private boolean queuePaused = false;
     private int queueRate = 0;
-    private int playersInQueue = 0;*/
+    private int playersInQueue = 0;
 
     public ServerInfo(String name) {
         this.name = name;

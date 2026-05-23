@@ -6,9 +6,11 @@ import games.sparking.altara.Altara;
 import games.sparking.altara.SystemType;
 import games.sparking.altara.connection.RequestHandler;
 import games.sparking.altara.connection.RequestResponse;
+import games.sparking.altara.disguise.DisguiseData;
 import games.sparking.altara.grant.Grant;
 import games.sparking.altara.grant.GrantProcedure;
 import games.sparking.altara.profile.packet.ProfileUpdatePacket;
+import games.sparking.altara.punishment.Punishment;
 import games.sparking.altara.rank.Rank;
 import games.sparking.altara.task.Tasks;
 import games.sparking.altara.utils.IllegalSystemTypeException;
@@ -19,6 +21,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.bson.codecs.pojo.annotations.BsonIgnore;
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
+import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 import java.util.*;
@@ -27,154 +31,62 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 @Data
-@AllArgsConstructor
-@NoArgsConstructor(force = true)
 public class Profile {
 
-    private UUID uuid;
-    private String name;
+    public static final Comparator<Profile> WEIGHT_COMPARATOR =
+            Collections.reverseOrder(Comparator.comparingInt(profile
+                    -> profile.getCurrentGrant().asRank().getWeight()));
 
-    @BsonIgnore
+    public static final Comparator<Profile> REAL_WEIGHT_COMPARATOR =
+            Collections.reverseOrder(Comparator.comparingInt(profile
+                    -> profile.getRealCurrentGrant().asRank().getWeight()));
+    
+    private final UUID uuid;
     private final Lock lock = new ReentrantLock();
-
-    private String status;
-    private String lastServer;
+    private String name;
     private String lastIp = "N/A";
     private List<String> knownIps = new ArrayList<>();
-    private long firstLogin = System.currentTimeMillis();
-    private long lastlogin = System.currentTimeMillis();
-    private long lastlogout;
 
-    @BsonIgnore
+    private ProfileOptions options;
+
     private CopyOnWriteArrayList<Grant> activeGrants = new CopyOnWriteArrayList<>();
-    @BsonIgnore
-    private GrantProcedure grantProcedure = null;
-
-    @BsonIgnore
+    private List<Punishment> punishments = new ArrayList<>();
     private List<Profile> alts = null;
-    @BsonIgnore
     private List<String> permissions = new ArrayList<>();
 
-    @BsonIgnore
+    private long firstLogin = System.currentTimeMillis();
+    private long lastSeen = System.currentTimeMillis();
+    private long joinTime = -1;
+    private long lastSpeakMillis;
+
     private Timings session;
     private long playTime = 0;
 
-    private String authToken;
-    private long authTokenExpiry;
+    private String lastServer = null;
+    private boolean nitroBoosted = false;
+    private boolean frozen = false;
+    private boolean devMode = false;
+    private boolean requiresAuthentication = false;
+    private int authenticationFailures = 0;
 
-    private String discordID;
-    private String discordEmail;
-    private String discordAccessToken;
-    private String discordRefreshToken;
+    private DisguiseData disguiseData;
+    private boolean isDisguised = false;
+    private String disguiseName = "N/A";
+
+    private GrantProcedure grantProcedure = null;
+
+    public Profile(JsonObject object) {
+        this.uuid = UUID.fromString(object.get("uuid").getAsString());
+        this.session = new Timings(name + "-session");
+        update(object);
+    }
 
     public Profile(UUID uuid, String name) {
         this.uuid = uuid;
         this.name = name;
         this.session = new Timings(name + "-session");
-    }
-
-    public Profile(JsonObject object) {
-        if (object.has("uuid") && !object.get("uuid").isJsonNull()) {
-            this.uuid = UUID.fromString(object.get("uuid").getAsString());
-        } else {
-            throw new IllegalArgumentException("Profile JSON is missing a valid UUID.");
-        }
-        this.session = new Timings(name + "-session");
-        update(object);
-    }
-
-    public void update(JsonObject object) {
-        this.lock.lock();
-        try {
-            if (object.has("name") && !object.get("name").isJsonNull()) {
-                this.name = object.get("name").getAsString();
-            }
-
-            if (object.has("status") && !object.get("status").isJsonNull()) {
-                this.status = object.get("status").getAsString();
-            }
-
-            if (object.has("lastIp") && !object.get("lastIp").isJsonNull()) {
-                this.lastIp = object.get("lastIp").getAsString();
-            }
-
-            if (object.has("knownIps")) {
-                this.knownIps.clear();
-                object.get("knownIps").getAsJsonArray().forEach(element ->
-                        this.knownIps.add(element.getAsString()));
-            }
-
-            if (object.has("firstLogin") && !object.get("firstLogin").isJsonNull()) {
-                this.firstLogin = object.get("firstLogin").getAsLong();
-            }
-
-            if (object.has("lastlogin") && !object.get("lastlogin").isJsonNull()) {
-                this.lastlogin = object.get("lastlogin").getAsLong();
-            }
-
-            if (object.has("lastlogout") && !object.get("lastlogout").isJsonNull()) {
-                this.lastlogout = object.get("lastlogout").getAsLong();
-            }
-
-            if (object.has("activeGrants")) {
-                this.activeGrants.clear();
-                object.get("activeGrants").getAsJsonArray().forEach(element ->
-                        activeGrants.add(new Grant(element.getAsJsonObject())));
-            }
-
-            if (object.has("playTime") && !object.get("playTime").isJsonNull()) {
-                this.playTime = object.get("playTime").getAsLong();
-            }
-
-            if (object.has("authToken") && !object.get("authToken").isJsonNull()) {
-                this.authToken = object.get("authToken").getAsString();
-            }
-
-            if (object.has("authTokenExpiry") && !object.get("authTokenExpiry").isJsonNull()) {
-                this.authTokenExpiry = object.get("authTokenExpiry").getAsLong();
-            }
-
-            if (object.has("discordID") && !object.get("discordID").isJsonNull()) {
-                this.discordID = object.get("discordID").getAsString();
-            }
-
-            if (object.has("discordEmail") && !object.get("discordEmail").isJsonNull()) {
-                this.discordEmail = object.get("discordEmail").getAsString();
-            }
-
-            if (object.has("discordAccessToken") && !object.get("discordAccessToken").isJsonNull()) {
-                this.discordAccessToken = object.get("discordAccessToken").getAsString();
-            }
-
-            if (object.has("discordRefreshToken") && !object.get("discordRefreshToken").isJsonNull()) {
-                this.discordRefreshToken = object.get("discordRefreshToken").getAsString();
-            }
-
-            if (object.has("lastServer") && !object.get("lastServer").isJsonNull()) {
-                this.lastServer = object.get("lastServer").getAsString();
-            } else {
-                this.lastServer = null;
-            }
-
-            // ✅ Null-safe Bukkit UUID usage
-            if (Altara.getSystemType() == SystemType.PAPER && this.uuid != null) {
-                Player player = Bukkit.getPlayer(this.uuid);
-                if (player != null) {
-                    player.setDisplayName(this.name);
-                }
-            }
-
-        } finally {
-            this.lock.unlock();
-        }
-    }
-
-    public long getTotalPlayTime() {
-        return session != null ? playTime + session.calculateDifference() : playTime;
-    }
-
-    public boolean hasPrimeStatus() {
-        return hasGrantOf("prime");
+        this.disguiseData = new DisguiseData(uuid);
+        this.options = new ProfileOptions();
     }
 
     public JsonObject toJson() {
@@ -182,34 +94,23 @@ public class Profile {
 
         builder.add("uuid", uuid);
         builder.add("name", name);
-        builder.add("status", status);
-        builder.add("lastServer", lastServer);
         builder.add("lastIp", lastIp);
 
         JsonArray knownIpsArray = new JsonArray();
         knownIps.forEach(knownIpsArray::add);
         builder.add("knownIps", knownIpsArray);
 
+        builder.add("options", options.toJson());
+
+        JsonArray permissionsArray = new JsonArray();
+        permissions.forEach(permissionsArray::add);
+        builder.add("permissions", permissionsArray);
+
         builder.add("firstLogin", firstLogin);
-        builder.add("lastlogin", lastlogin);
-        builder.add("lastlogout", lastlogout);
-
-        // options field reserved for future use
-
-        long totalPlayTime = playTime;
-        if (session != null) {
-            totalPlayTime += session.calculateDifference();
-        }
-        builder.add("playTime", totalPlayTime);
-
-        builder.add("authToken", authToken);
-        builder.add("authTokenExpiry", authTokenExpiry);
-
-        builder.add("discordID", discordID);
-        builder.add("discordEmail", discordEmail);
-        builder.add("discordAccessToken", discordAccessToken);
-        builder.add("discordRefreshToken", discordRefreshToken);
-
+        builder.add("lastSeen", lastSeen);
+        builder.add("joinTime", joinTime);
+        builder.add("playTime", playTime + session.calculateDifference());
+        builder.add("lastServer", lastServer);
         return builder.build();
     }
 
@@ -222,15 +123,141 @@ public class Profile {
                 return;
             }
 
-            RequestResponse response = RequestHandler.put("api/profile", toJson());
-            if (response.wasSuccessful()) {
+            this.disguiseData.save(() -> {}, false);
+
+            RequestResponse response = RequestHandler.put("profile", toJson());
+            if (response.wasSuccessful())
                 new ProfileUpdatePacket(this.uuid).publish();
-            }
+            else Altara.getSharedInstance().getLogger().warning(String.format(
+                    "Could not save profile of %s (%s): %s (%d)",
+                    uuid.toString(),
+                    name,
+                    response.getErrorMessage(),
+                    response.getCode()
+            ));
             callable.run();
         } finally {
             if (!async)
                 this.lock.unlock();
         }
+    }
+
+    public void update(JsonObject object) {
+        this.lock.lock();
+        try {
+            this.name = object.get("name").getAsString();
+            this.lastIp = object.get("lastIp").getAsString();
+
+            this.knownIps.clear();
+            object.get("knownIps").getAsJsonArray().forEach(element ->
+                    this.knownIps.add(element.getAsString()));
+
+            this.options = new ProfileOptions(object.get("options").getAsJsonObject());
+
+            this.activeGrants.clear();
+            object.get("activeGrants").getAsJsonArray().forEach(element ->
+                    activeGrants.add(new Grant(element.getAsJsonObject())));
+
+            this.permissions.clear();
+            if (object.has("permissions")) {
+                object.get("permissions").getAsJsonArray().forEach(element ->
+                        permissions.add(element.getAsString()));
+            }
+
+            this.punishments.clear();
+            punishments.addAll(Altara.getSharedInstance().getPunishmentService().getPunishments(uuid));
+
+            this.disguiseData = Altara.getSharedInstance().getDisguiseService().getDisguiseData(this.uuid);
+            this.isDisguised = !disguiseData.getDisguiseName().equals("N/A");
+            this.disguiseName = disguiseData.getDisguiseName();
+            
+            this.firstLogin = object.get("firstLogin").getAsLong();
+            this.lastSeen = object.get("lastSeen").getAsLong();
+            this.playTime = object.get("playTime").getAsLong();
+            this.joinTime = object.get("joinTime").getAsLong();
+
+            if (object.has("lastServer"))
+                this.lastServer = object.get("lastServer").getAsString();
+            else this.lastServer = null;
+
+            if (Altara.getSystemType() == SystemType.PAPER) {
+                if (Bukkit.getPlayer(this.uuid) != null)
+                    Objects.requireNonNull(Bukkit.getPlayer(this.uuid)).setDisplayName(this.getDisplayName());
+            }
+        } finally {
+            this.lock.unlock();
+        }
+    }
+
+    public boolean canInteract(Profile other) {
+        long weight = this.getRealCurrentGrant().asRank().getWeight();
+        long otherWeight = other.getRealCurrentGrant().asRank().getWeight();
+
+        if (weight >= Altara.getSharedInstance().getMainConfig().getOwnerWeight())
+            return true;
+
+        if (weight >= Altara.getSharedInstance().getMainConfig().getAdminWeight()
+                && otherWeight < Altara.getSharedInstance().getMainConfig().getAdminWeight())
+            return true;
+
+        return otherWeight < Altara.getSharedInstance().getMainConfig().getStaffWeight();
+    }
+
+    public List<Grant> getAllActiveGrants() {
+        List<Grant> list = new ArrayList<>();
+        for (Grant grant : activeGrants) {
+            if (grant.isActive() && !grant.isRemoved() && grant.asRank() != null)
+                list.add(grant);
+        }
+
+        list.sort(Grant.COMPARATOR.reversed());
+        return list;
+    }
+
+    public List<Grant> getActiveGrants() {
+        List<Grant> activeGrants = this.getAllActiveGrants();
+        activeGrants.removeIf(grant -> !grant.isActiveOnScope());
+        return activeGrants;
+    }
+
+    public List<Grant> getActiveGrantsOn(String scope) {
+        List<Grant> activeGrants = getAllActiveGrants();
+        activeGrants.removeIf(grant -> !grant.isActiveOn(scope));
+        return activeGrants;
+    }
+
+    public boolean hasGrantOf(Rank rank) {
+        for (Grant grant : getActiveGrants()) {
+            if (grant.getUuid().equals(rank.getUuid()))
+                return true;
+        }
+
+        return false;
+    }
+
+    public boolean hasGrantOf(String rank) {
+        for (Grant grant : getActiveGrants()) {
+            if (grant.asRank().getName().equalsIgnoreCase(rank))
+                return true;
+        }
+
+        return false;
+    }
+
+    public Grant getCurrentGrant() {
+        if (this.isDisguised) {
+            return new Grant(
+                    this.uuid,
+                    this.disguiseData.getDisguiseRank(),
+                    "Console",
+                    System.currentTimeMillis(),
+                    "Disgused",
+                    -1,
+                    Collections.singletonList("GLOBAL")
+            );
+        }
+
+        return this.getRealCurrentGrant();
     }
 
     public Grant getRealCurrentGrant() {
@@ -261,49 +288,109 @@ public class Profile {
         return grant;
     }
 
-    @BsonIgnore
-    public List<Grant> getAllActiveGrants() {
-        List<Grant> list = new ArrayList<>();
-        for (Grant grant : activeGrants) {
-            if (grant.isActive() && !grant.isRemoved() && grant.getRank() != null)
-                list.add(grant);
+    public Grant getCurrentGrantOn(String scope) {
+        if (this.isDisguised) {
+            return new Grant(
+                    this.uuid,
+                    this.disguiseData.getDisguiseRank(),
+                    "Console",
+                    System.currentTimeMillis(),
+                    "Disgused",
+                    -1,
+                    Collections.singletonList("GLOBAL")
+            );
         }
-        list.sort(Grant.COMPARATOR.reversed());
+
+        return this.getRealCurrentGrantOn(scope);
+    }
+
+    public Grant getRealCurrentGrantOn(String scope) {
+        Grant grant = null;
+
+        for (Grant current : this.getActiveGrantsOn(scope)) {
+            if (grant == null) {
+                grant = current;
+                continue;
+            }
+            if (current.asRank().getWeight() > grant.asRank().getWeight()) {
+                grant = current;
+            }
+        }
+
+        if (grant == null) {
+            grant = new Grant(
+                    this.uuid,
+                    Altara.getSharedInstance().getRankService().getDefaultRank(),
+                    "Console",
+                    System.currentTimeMillis(),
+                    "Default Grant",
+                    -1,
+                    Collections.singletonList("GLOBAL")
+            );
+        }
+
+        return grant;
+    }
+
+    public List<Grant> getActiveTeams() {
+        List<Grant> activeTeams = this.getAllActiveGrants();
+        activeTeams.removeIf(grant -> !grant.isActiveOnScope());
+        activeTeams.removeIf(grant -> !grant.asRank().isTeam());
+        return activeTeams;
+    }
+
+    public int getQueuePriority(String scope) {
+        Grant grant = null;
+
+        for (Grant current : this.getActiveGrantsOn(scope)) {
+            if (grant == null) {
+                grant = current;
+                continue;
+            }
+            if (current.asRank().getQueuePriority() > grant.asRank().getQueuePriority()) {
+                grant = current;
+            }
+        }
+
+        return (grant == null ? 0 : grant.asRank().getQueuePriority()) + (hasPrimeStatus() ? 1 : 0);
+    }
+
+    public List<Punishment> getPunishments(Punishment.PunishmentType type) {
+        List<Punishment> list = new ArrayList<>();
+        for (Punishment punishment : punishments) {
+            if (punishment.getPunishmentType().equals(type))
+                list.add(punishment);
+        }
         return list;
     }
 
-    @BsonIgnore
-    public List<Grant> getActiveGrants() {
-        return getActiveGrants(null);
+    public Punishment getActivePunishment(Punishment.PunishmentType type) {
+        for (Punishment punishment : punishments) {
+            if (punishment.isActive() && !punishment.isRemoved() && punishment.getPunishmentType().equals(type))
+                return punishment;
+        }
+        return null;
     }
 
-    @BsonIgnore
-    public List<Grant> getActiveGrants(String scope) {
-        List<Grant> activeGrants = getAllActiveGrants();
-        if (scope == null) {
-            activeGrants.removeIf(grant -> !grant.isActiveOnScope());
-        } else {
-            activeGrants.removeIf(grant -> !grant.isActiveOn(scope));
-        }
-        return activeGrants;
+    public String getCurrentName() {
+        return this.isDisguised ? this.disguiseName : this.name;
     }
 
-    @BsonIgnore
-    public boolean hasGrantOf(Rank rank) {
-        for (Grant grant : getActiveGrants()) {
-            if (grant.getUuid().equals(rank.getUuid()))
-                return true;
-        }
-        return false;
+    public String getDisplayName() {
+        return this.getCurrentGrant().asRank().getColor() + (this.isDisguised ? this.disguiseName : this.name);
     }
 
-    @BsonIgnore
-    public boolean hasGrantOf(String rank) {
-        for (Grant grant : getActiveGrants()) {
-            if (grant.asRank().getName().equalsIgnoreCase(rank))
-                return true;
-        }
-        return false;
+    public String getDisplayName(CommandSender target) {
+        IllegalSystemTypeException.checkOrThrow(SystemType.PAPER);
+
+        return this.getDisplayName() +
+                (((target == null || target.hasPermission("altara.disguise.bypass")) && this.isDisguised) ?
+                        ChatColor.GRAY + "(" + this.name + ")" : "");
+    }
+
+
+    public String getRealDisplayName() {
+        return this.getRealCurrentGrant().asRank().getColor() + this.name;
     }
 
     public Player player() {
@@ -311,4 +398,19 @@ public class Profile {
 
         return Bukkit.getPlayer(this.uuid);
     }
+
+//    public ProxiedPlayer proxiedPlayer() {
+//        IllegalSystemTypeException.checkOrThrow(SystemType.BUNGEE);
+//
+//        return ProxyServer.getInstance().getPlayer(this.uuid);
+//    }
+
+    public long getTotalPlayTime() {
+        return playTime + session.calculateDifference();
+    }
+
+    public boolean hasPrimeStatus() {
+        return hasGrantOf("prime");
+    }
+
 }

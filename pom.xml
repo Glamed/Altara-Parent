@@ -32,12 +32,22 @@
         <velocity-api.version>3.4.0-SNAPSHOT</velocity-api.version>
         <okhttp.version>4.12.0</okhttp.version>
         <spring-boot.version>3.4.5</spring-boot.version>
+        <packetevents.version>2.12.1</packetevents.version>
+        <entitylib.version>2.4.11</entitylib.version>
     </properties>
 
     <repositories>
         <repository>
             <id>papermc</id>
             <url>https://repo.papermc.io/repository/maven-public/</url>
+        </repository>
+        <repository>
+            <id>codemc-releases</id>
+            <url>https://repo.codemc.io/repository/maven-releases/</url>
+        </repository>
+        <repository>
+            <id>jitpack</id>
+            <url>https://jitpack.io</url>
         </repository>
     </repositories>
 
@@ -125,6 +135,21 @@
                 <groupId>com.squareup.okhttp3</groupId>
                 <artifactId>okhttp</artifactId>
                 <version>${okhttp.version}</version>
+            </dependency>
+
+            <!-- PacketEvents (provided — runs as its own server plugin) -->
+            <dependency>
+                <groupId>com.github.retrooper</groupId>
+                <artifactId>packetevents-spigot</artifactId>
+                <version>${packetevents.version}</version>
+                <scope>provided</scope>
+            </dependency>
+
+            <!-- EntityLib (shaded into the plugin jar) -->
+            <dependency>
+                <groupId>com.github.Tofaa2.EntityLib</groupId>
+                <artifactId>spigot</artifactId>
+                <version>${entitylib.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

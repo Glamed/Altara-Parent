@@ -15,6 +15,8 @@ import games.sparking.altara.profile.Profile;
 import games.sparking.altara.profile.UnloadedProfile;
 import games.sparking.altara.profile.parameters.ProfileParameter;
 import games.sparking.altara.profile.parameters.UnloadedProfileParameter;
+import games.sparking.altara.queue.Queue;
+import games.sparking.altara.queue.QueueService;
 import games.sparking.altara.rank.Rank;
 import games.sparking.altara.rank.parameter.RankParameter;
 import games.sparking.altara.server.ServerInfo;
@@ -49,6 +51,9 @@ public class AltaraPaper extends Altara {
     @Getter private LocalPermissionConfig localPermissionConfig;
     @Getter private final LocalConfig localConfig;
 
+    @Getter private Queue queue;
+    @Getter private QueueService queueService;
+
     public AltaraPaper(JavaPlugin plugin, ConfigurationService configurationService, LocalConfig localConfig) {
         super(SystemType.PAPER, configurationService, localConfig, new BukkitTaskImplementor(plugin));
         AltaraPaper.plugin = plugin;
@@ -61,6 +66,10 @@ public class AltaraPaper extends Altara {
     @Override
     public void init() {
         UpdateTask.start();
+
+        this.queue = new Queue();
+        this.queueService = new QueueService();
+        queueService.startTask();
     }
 
     @Override
@@ -83,6 +92,27 @@ public class AltaraPaper extends Altara {
         ).forEach(listener -> getPlugin().getServer().getPluginManager().registerEvents(listener, getPlugin()));
         new FileUpdater();
     }
+
+    @Override
+    public void loadFiles() {
+        if (getConfigurationService() == null) {
+            getLogger().severe("ConfigurationService is null in loadFiles!");
+            return;
+        }
+        this.localPermissionConfig = getConfigurationService().loadConfiguration(LocalPermissionConfig.class,
+                new File(getPlugin().getDataFolder(), "permissions.json"));
+    }
+
+    @Override
+    public void saveMainConfig() {
+        try {
+            getConfigurationService().saveConfiguration(this.getMainConfig(),
+                    new File(getPlugin().getDataFolder(), "config.json"));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
 
     @Override
     public void startServerMonitor() {

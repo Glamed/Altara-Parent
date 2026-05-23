@@ -24,6 +24,18 @@
             <groupId>games.sparking</groupId>
             <artifactId>Altara-Shared</artifactId>
         </dependency>
+
+        <!-- PacketEvents (provided — installed as a server plugin) -->
+        <dependency>
+            <groupId>com.github.retrooper</groupId>
+            <artifactId>packetevents-spigot</artifactId>
+        </dependency>
+
+        <!-- EntityLib (shaded into the plugin jar) -->
+        <dependency>
+            <groupId>com.github.Tofaa2.EntityLib</groupId>
+            <artifactId>spigot</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
@@ -54,6 +66,11 @@
                         <relocation>
                             <pattern>org.bson</pattern>
                             <shadedPattern>games.sparking.altara.libs.bson</shadedPattern>
+                        </relocation>
+                        <!-- EntityLib (shaded; PacketEvents is provided separately) -->
+                        <relocation>
+                            <pattern>me.tofaa.entitylib</pattern>
+                            <shadedPattern>games.sparking.altara.libs.entitylib</shadedPattern>
                         </relocation>
                     </relocations>
                 </configuration>

@@ -6,6 +6,7 @@ import games.sparking.altara.commands.SendCommand;
 import games.sparking.altara.configuration.ConfigurationService;
 import games.sparking.altara.configuration.defaults.MainConfig;
 import games.sparking.altara.listeners.MotdListener;
+import games.sparking.altara.listeners.PermissionListener;
 import games.sparking.altara.rank.Rank;
 import games.sparking.altara.task.DefaultTaskImplementor;
 import lombok.Getter;
@@ -54,6 +55,10 @@ public class AltaraProxy extends Altara {
         getProxyInstance().getEventManager().register(
                 getProxyPlugin(),
                 new MotdListener()
+        );
+        getProxyInstance().getEventManager().register(
+                getProxyPlugin(),
+                new PermissionListener()
         );
     }
 
