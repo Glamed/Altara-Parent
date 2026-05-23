@@ -29,8 +29,8 @@ public class RankService {
 
             RequestResponse response = RequestHandler.get("api/rank");
             if (!response.wasSuccessful()) {
-                System.out.println(String.format("[WARN] Could not load ranks: %s (%d)",
-                        response.getErrorMessage(), response.getCode()));
+                System.out.printf("[WARN] Could not load ranks: %s (%d)%n",
+                        response.getErrorMessage(), response.getCode());
                 return;
             }
 
@@ -43,8 +43,8 @@ public class RankService {
             for (Rank rank : ranks.values()) {
                 response = RequestHandler.get("api/rank/%s", rank.getUuid().toString());
                 if (!response.wasSuccessful()) {
-                    System.out.println(String.format("[WARN] Could not load inherits for %s: %s (%d)",
-                            rank.getName(), response.getErrorMessage(), response.getCode()));
+                    System.out.printf("[WARN] Could not load inherits for %s: %s (%d)%n",
+                            rank.getName(), response.getErrorMessage(), response.getCode());
                     continue;
                 }
 
@@ -55,7 +55,7 @@ public class RankService {
                 object.get("inherits").getAsJsonArray().forEach(element -> {
                     Rank inherit = getRank(UUID.fromString(element.getAsString()));
                     if (inherit != null)
-                        rank.getInherits().add(inherit.getUuid());
+                        rank.getInherits().add(inherit);
                 });
             }
 
@@ -80,7 +80,7 @@ public class RankService {
             object.get("inherits").getAsJsonArray().forEach(element -> {
                 Rank inherit = getRank(UUID.fromString(element.getAsString()));
                 if (inherit != null)
-                    rank.getInherits().add(inherit.getUuid());
+                    rank.getInherits().add(inherit);
             });
             ranks.put(rank.getUuid(), rank);
             callback.accept(rank);
