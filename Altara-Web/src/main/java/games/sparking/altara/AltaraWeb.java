@@ -28,6 +28,8 @@ public class AltaraWeb extends Altara {
     @Override public void registerCommands()  {}
     @Override public void registerListeners() {}
     @Override public void startServerMonitor() {}
+    @Override public void saveMainConfig() {}
+    @Override public void loadFiles() {}
 
     @Override
     public void handleServerInfoUpdate(ServerInfo serverInfo) {

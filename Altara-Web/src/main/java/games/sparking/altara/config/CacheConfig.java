@@ -35,6 +35,12 @@ public class CacheConfig {
     public static final String UUID_BY_NAME   = "uuidByName";
     public static final String UUID_BY_UUID   = "uuidByUuid";
 
+    // Punishment caches
+    public static final String PUNISHMENTS               = "punishments";
+    public static final String PLAYER_PUNISHMENTS        = "playerPunishments";
+    public static final String PLAYER_ACTIVE_PUNISHMENTS = "playerActivePunishments";
+    public static final String PLAYER_BAN_STATUS         = "playerBanStatus";
+
     @Bean
     public CacheManager cacheManager() {
         CaffeineCacheManager manager = new CaffeineCacheManager();
@@ -83,6 +89,38 @@ public class CacheConfig {
                 Caffeine.newBuilder()
                         .maximumSize(5_000)
                         .expireAfterWrite(30, TimeUnit.MINUTES)
+                        .recordStats()
+                        .build());
+
+        // Single punishment record — evicted on revocation
+        manager.registerCustomCache(PUNISHMENTS,
+                Caffeine.newBuilder()
+                        .maximumSize(10_000)
+                        .expireAfterWrite(10, TimeUnit.MINUTES)
+                        .recordStats()
+                        .build());
+
+        // All punishments for a player — evicted on every mutation
+        manager.registerCustomCache(PLAYER_PUNISHMENTS,
+                Caffeine.newBuilder()
+                        .maximumSize(5_000)
+                        .expireAfterWrite(5, TimeUnit.MINUTES)
+                        .recordStats()
+                        .build());
+
+        // Active-punishments subset — short TTL because expiry is time-based
+        manager.registerCustomCache(PLAYER_ACTIVE_PUNISHMENTS,
+                Caffeine.newBuilder()
+                        .maximumSize(5_000)
+                        .expireAfterWrite(1, TimeUnit.MINUTES)
+                        .recordStats()
+                        .build());
+
+        // Boolean ban-status — very short TTL; critical path for login gate
+        manager.registerCustomCache(PLAYER_BAN_STATUS,
+                Caffeine.newBuilder()
+                        .maximumSize(10_000)
+                        .expireAfterWrite(30, TimeUnit.SECONDS)
                         .recordStats()
                         .build());
 

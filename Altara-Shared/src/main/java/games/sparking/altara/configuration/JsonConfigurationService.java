@@ -20,7 +20,7 @@ public class JsonConfigurationService implements ConfigurationService {
             gson.toJson(configuration, writer);
 
         } catch (IOException e) {
-            Altara.getSharedInstance().getLogger().warning(
+            Altara.getSharedInstance().getLogger().warn(
                     "Failed to save configuration " + configuration.getClass().getName() +
                             " to file " + file.getName() + ": " + e.getMessage()
             );
@@ -31,7 +31,7 @@ public class JsonConfigurationService implements ConfigurationService {
     public <T extends StaticConfiguration> T loadConfiguration(Class<? extends T> clazz, File file) {
         File parentFile = file.getParentFile();
         if (parentFile != null && !parentFile.exists() && !parentFile.mkdirs()) {
-            Altara.getSharedInstance().getLogger().warning(
+            Altara.getSharedInstance().getLogger().warn(
                     "Failed to create parent folder for " + file.getName()
             );
             return null;
@@ -42,7 +42,7 @@ public class JsonConfigurationService implements ConfigurationService {
                 T config = clazz.getDeclaredConstructor().newInstance();
 
                 if (!file.createNewFile()) {
-                    Altara.getSharedInstance().getLogger().warning(
+                    Altara.getSharedInstance().getLogger().warn(
                             "Failed to create file for " + file.getName()
                     );
                     return null;
@@ -52,7 +52,7 @@ public class JsonConfigurationService implements ConfigurationService {
                 return config;
             }
         } catch (Exception e) {
-            Altara.getSharedInstance().getLogger().severe(
+            Altara.getSharedInstance().getLogger().error(
                     "Failed to initialize configuration " + clazz.getName() +
                             ": " + e.getMessage()
             );
@@ -72,7 +72,7 @@ public class JsonConfigurationService implements ConfigurationService {
             return config;
 
         } catch (Exception e) {
-            Altara.getSharedInstance().getLogger().severe(
+            Altara.getSharedInstance().getLogger().error(
                     "Failed to load configuration " + clazz.getName() +
                             " from file " + file.getName() + ": " + e.getMessage()
             );

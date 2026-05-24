@@ -355,18 +355,19 @@ public class Profile {
         return (grant == null ? 0 : grant.asRank().getQueuePriority()) + (hasPrimeStatus() ? 1 : 0);
     }
 
-    public List<Punishment> getPunishments(Punishment.PunishmentType type) {
+    public List<Punishment> getPunishments(Punishment.LegacyType type) {
         List<Punishment> list = new ArrayList<>();
         for (Punishment punishment : punishments) {
-            if (punishment.getPunishmentType().equals(type))
+            if (type.name().equals(punishment.getInfractionType()))
                 list.add(punishment);
         }
         return list;
     }
 
-    public Punishment getActivePunishment(Punishment.PunishmentType type) {
+    public Punishment getActivePunishment(Punishment.LegacyType type) {
         for (Punishment punishment : punishments) {
-            if (punishment.isActive() && !punishment.isRemoved() && punishment.getPunishmentType().equals(type))
+            if (punishment.isActive() && !punishment.isRemoved()
+                    && type.name().equals(punishment.getInfractionType()))
                 return punishment;
         }
         return null;

@@ -2,6 +2,9 @@ package games.sparking.altara;
 
 import games.sparking.altara.chat.ChatListener;
 import games.sparking.altara.command.BuildVersionCommand;
+import games.sparking.altara.punishment.commands.PunishCommand;
+import games.sparking.altara.punishment.listener.PunishmentChatListener;
+import games.sparking.altara.punishment.listener.PunishmentLoginListener;
 import games.sparking.altara.logging.PaperLogger;
 import games.sparking.altara.command.CommandService;
 import games.sparking.altara.configuration.ConfigurationService;
@@ -82,7 +85,8 @@ public class AltaraPaper extends Altara {
 
         CommandService.register(AltaraPaper.getPlugin(),
                 new GamemodeCommand(),
-                new BuildVersionCommand()
+                new BuildVersionCommand(),
+                new PunishCommand()
         );
     }
 
@@ -90,7 +94,9 @@ public class AltaraPaper extends Altara {
     public void registerListeners() {
         Arrays.asList(
                 new ChatListener(),
-                new MenuListener()
+                new MenuListener(),
+                new PunishmentLoginListener(),
+                new PunishmentChatListener()
         ).forEach(listener -> getPlugin().getServer().getPluginManager().registerEvents(listener, getPlugin()));
         new FileUpdater();
     }
