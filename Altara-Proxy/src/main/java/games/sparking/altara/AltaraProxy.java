@@ -3,6 +3,7 @@ package games.sparking.altara;
 import com.velocitypowered.api.proxy.ProxyServer;
 import games.sparking.altara.commands.LobbyCommand;
 import games.sparking.altara.commands.SendCommand;
+import games.sparking.altara.logging.VelocityLogger;
 import games.sparking.altara.configuration.ConfigurationService;
 import games.sparking.altara.configuration.defaults.MainConfig;
 import games.sparking.altara.listeners.MotdListener;
@@ -28,6 +29,7 @@ public class AltaraProxy extends Altara {
         proxyPlugin = plugin;
         proxyInstance = server;
         proxyLogger = logger;
+        setLogger(new VelocityLogger());
         logger.info("Altara Proxy has loaded successfully!");
         init();
     }
@@ -60,6 +62,16 @@ public class AltaraProxy extends Altara {
                 getProxyPlugin(),
                 new PermissionListener()
         );
+    }
+
+    @Override
+    public void loadFiles() {
+
+    }
+
+    @Override
+    public void saveMainConfig() {
+
     }
 
     @Override

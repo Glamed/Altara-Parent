@@ -88,14 +88,14 @@ public class DisguiseData {
             if (response.getCode() == 404) {
                 RequestResponse createResponse = RequestHandler.post("disguise", body);
                 if (!createResponse.wasSuccessful())
-                    DisguiseService.LOG.warning(String.format(
+                    Altara.getSharedInstance().getLogger().warn(String.format(
                             "Could not create disguise data of %s: %s (%d)",
                             uuid.toString(),
                             createResponse.getErrorMessage(),
                             createResponse.getCode()
                     ));
 
-            } else DisguiseService.LOG.warning(String.format(
+            } else Altara.getSharedInstance().getLogger().warn(String.format(
                     "Could not save disguise data of %s: %s (%d)",
                     uuid.toString(),
                     response.getErrorMessage(),

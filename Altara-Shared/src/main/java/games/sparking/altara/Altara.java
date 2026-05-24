@@ -18,13 +18,24 @@ import games.sparking.altara.task.impl.AsynchronousTaskChain;
 import lombok.Getter;
 import lombok.Setter;
 
+import games.sparking.altara.logging.CommonLogger;
+
 import java.util.List;
 import java.util.UUID;
 import java.util.logging.Logger;
 
 public abstract class Altara {
 
-    private static final Logger DEFAULT_LOGGER = Logger.getLogger("Altara");
+    /** Fallback JUL logger used until a platform-specific CommonLogger is set. */
+    private static final Logger JUL_FALLBACK = Logger.getLogger("Altara");
+
+    private static final CommonLogger DEFAULT_LOGGER = new CommonLogger() {
+        public void info(String msg)  { JUL_FALLBACK.info(msg); }
+        public void warn(String msg)  { JUL_FALLBACK.warning(msg); }
+        public void error(String msg) { JUL_FALLBACK.severe(msg); }
+    };
+
+    private CommonLogger logger = DEFAULT_LOGGER;
 
     public static final AsynchronousTaskChain TASK_CHAIN = new AsynchronousTaskChain(true);
 
@@ -112,7 +123,11 @@ public abstract class Altara {
     public abstract String getLocalServerName();
     public abstract String getServerGroup();
 
-    public Logger getLogger() {
-        return DEFAULT_LOGGER;
+    public CommonLogger getLogger() {
+        return logger;
+    }
+
+    public void setLogger(CommonLogger logger) {
+        this.logger = logger;
     }
 }

@@ -2,6 +2,7 @@ package games.sparking.altara;
 
 import games.sparking.altara.chat.ChatListener;
 import games.sparking.altara.command.BuildVersionCommand;
+import games.sparking.altara.logging.PaperLogger;
 import games.sparking.altara.command.CommandService;
 import games.sparking.altara.configuration.ConfigurationService;
 import games.sparking.altara.configuration.LocalConfig;
@@ -58,6 +59,7 @@ public class AltaraPaper extends Altara {
         super(SystemType.PAPER, configurationService, localConfig, new BukkitTaskImplementor(plugin));
         AltaraPaper.plugin = plugin;
         AltaraPaper.paperInstance = this;
+        setLogger(new PaperLogger());
         this.localConfig = localConfig;
 
         init();
@@ -96,7 +98,7 @@ public class AltaraPaper extends Altara {
     @Override
     public void loadFiles() {
         if (getConfigurationService() == null) {
-            getLogger().severe("ConfigurationService is null in loadFiles!");
+            getLogger().error("ConfigurationService is null in loadFiles!");
             return;
         }
         this.localPermissionConfig = getConfigurationService().loadConfiguration(LocalPermissionConfig.class,

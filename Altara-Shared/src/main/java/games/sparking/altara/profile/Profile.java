@@ -128,7 +128,7 @@ public class Profile {
             RequestResponse response = RequestHandler.put("profile", toJson());
             if (response.wasSuccessful())
                 new ProfileUpdatePacket(this.uuid).publish();
-            else Altara.getSharedInstance().getLogger().warning(String.format(
+            else Altara.getSharedInstance().getLogger().warn(String.format(
                     "Could not save profile of %s (%s): %s (%d)",
                     uuid.toString(),
                     name,
