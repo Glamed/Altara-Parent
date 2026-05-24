@@ -58,7 +58,7 @@ public enum InfractionType {
             Material.BARRIER, false),
 
     INAPPROPRIATE_CONTENT("Inappropriate Content",
-            List.of("nudity", "nude skins", "nsfw", "inappropriate builds"),
+            List.of("nudity", "nude skins", "NSFW", "inappropriate builds"),
             "Skins, builds, or speech that are sexually explicit or otherwise inappropriate are prohibited.",
             "I acknowledge that my content was inappropriate and will comply with content guidelines.",
             Material.PINK_STAINED_GLASS, false),
@@ -154,7 +154,7 @@ public enum InfractionType {
     }
 
     /**
-     * The default set of {@link RestrictionAction}s pre-loaded in the action builder
+     * The default set of {@link RestrictionAction}s preloaded in the action builder
      * for this infraction type.
      */
     public List<RestrictionAction> getRecommendedActions() {
