@@ -8,7 +8,6 @@ import java.util.UUID;
 
 public class DisguiseService {
 
-
     public DisguiseData getDisguiseData(UUID uuid) {
         RequestResponse response = RequestHandler.get("disguise/%s", uuid.toString());
         if (response.wasSuccessful())
@@ -18,7 +17,7 @@ public class DisguiseService {
             return new DisguiseData(uuid);
         }
 
-        Altara.getSharedInstance().getLogger().warning(String.format(
+        Altara.getSharedInstance().getLogger().warn(String.format(
                 "Could not load disguise data of %s: %s (%d)",
                 uuid,
                 response.getErrorMessage(),
