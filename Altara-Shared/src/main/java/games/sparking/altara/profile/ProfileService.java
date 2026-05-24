@@ -142,8 +142,7 @@ public class ProfileService {
         if (response.wasSuccessful()) {
             List<Profile> alts = new ArrayList<>();
             response.asArray().forEach(element -> {
-                Profile alt = new Profile();
-                alt.update(element.getAsJsonObject());
+                Profile alt = new Profile(element.getAsJsonObject());
                 alts.add(alt);
                 cacheProfile(alt);
             });

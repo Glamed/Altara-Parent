@@ -1,13 +1,8 @@
 package games.sparking.altara.scoreboard;
 
-import lombok.AllArgsConstructor;
+import games.sparking.altara.task.Tasks;
+import games.sparking.altara.utils.CC;
 import lombok.Getter;
-import org.bukkit.Bukkit;
-import org.bukkit.entity.Player;
-import org.bukkit.scheduler.BukkitRunnable;
-import us.mcfriends.socius.InvictusBukkit;
-import us.mcfriends.socius.utils.CC;
-import us.mcfriends.socius.utils.Tasks;
 
 import java.util.HashMap;
 import java.util.List;

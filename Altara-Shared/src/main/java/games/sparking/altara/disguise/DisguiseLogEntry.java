@@ -1,16 +1,15 @@
 package games.sparking.altara.disguise;
 
 import com.google.gson.JsonObject;
+import games.sparking.altara.profile.Profile;
+import games.sparking.altara.utils.Time;
+import games.sparking.altara.utils.json.JsonBuilder;
+import games.sparking.altara.uuid.UUIDCache;
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import us.mcfriends.socius.profile.Profile;
-import us.mcfriends.socius.utils.TimeUtils;
-import us.mcfriends.socius.utils.json.JsonBuilder;
-import us.mcfriends.socius.uuid.UUIDCache;
 
 import java.util.TimeZone;
 import java.util.UUID;
-
 
 @AllArgsConstructor
 @Data
@@ -41,9 +40,9 @@ public class DisguiseLogEntry {
     }
 
     public String formatPasteEntry(TimeZone timeZone, Profile target) {
-        return "(" + TimeUtils.formatDate(timeStamp, timeZone) + "|" + timeStamp + ") " + target.getName() + ": "
+        return "(" + Time.formatDate(timeStamp, timeZone) + "|" + timeStamp + ") " + target.getName() + ": "
                 + name + "(" + rank + ")" + (removedAt == -1 ? ""
-                : " - Removed at (" + TimeUtils.formatDate(removedAt, timeZone) + "|" + removedAt + ")");
+                : " - Removed at (" + Time.formatDate(removedAt, timeZone) + "|" + removedAt + ")");
     }
 
     public String resolveRealName() {

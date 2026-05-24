@@ -1,0 +1,20 @@
+{
+  "backendHost": "http://104.243.41.37:25001/",
+  "backendKey": "1234567890",
+  "mongoConfig": {
+    "host": "10.0.0.55",
+    "port": 27017,
+    "authEnabled": false,
+    "authUsername": "admin",
+    "authPassword": "thankyou2",
+    "authDatabase": "mcfriends"
+  },
+  "redisConfig": {
+    "channel": "altara",
+    "host": "10.0.0.55",
+    "port": 6379,
+    "authEnabled": false,
+    "authPassword": "thankyou2",
+    "dbId": 0
+  }
+}

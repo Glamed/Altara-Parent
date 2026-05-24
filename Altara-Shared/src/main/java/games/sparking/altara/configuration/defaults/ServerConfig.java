@@ -18,5 +18,6 @@ public class ServerConfig implements StaticConfiguration {
     private String localServerName = "Lobby-1";
     private String website = "sparking.games";
     private String ip = "play.sparking.games";
+    private String store = "store.sparking.games";
 
 }
