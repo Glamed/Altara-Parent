@@ -2,6 +2,10 @@ package games.sparking.altara;
 
 import games.sparking.altara.chat.ChatListener;
 import games.sparking.altara.command.BuildVersionCommand;
+import games.sparking.altara.npc.NPCBukkitListener;
+import games.sparking.altara.npc.NPCService;
+import games.sparking.altara.profiler.ProfilerListener;
+import games.sparking.altara.profiler.command.ProfilerCommand;
 import games.sparking.altara.punishment.commands.PunishCommand;
 import games.sparking.altara.punishment.listener.PunishmentChatListener;
 import games.sparking.altara.punishment.listener.PunishmentLoginListener;
@@ -30,7 +34,11 @@ import games.sparking.altara.task.Tasks;
 import games.sparking.altara.task.UpdateTask;
 import games.sparking.altara.task.impl.BukkitTaskImplementor;
 import games.sparking.altara.updater.FileUpdater;
+import com.github.retrooper.packetevents.PacketEvents;
 import lombok.Getter;
+import me.tofaa.entitylib.APIConfig;
+import me.tofaa.entitylib.EntityLib;
+import me.tofaa.entitylib.spigot.SpigotEntityLibPlatform;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -70,6 +78,14 @@ public class AltaraPaper extends Altara {
 
     @Override
     public void init() {
+        SpigotEntityLibPlatform platform = new SpigotEntityLibPlatform(plugin);
+        APIConfig settings = new APIConfig(PacketEvents.getAPI())
+                .debugMode()
+                .tickTickables()
+                .trackPlatformEntities()
+                .usePlatformLogger();
+        EntityLib.init(platform, settings);
+
         UpdateTask.start();
 
         this.queue = new Queue();
@@ -86,7 +102,8 @@ public class AltaraPaper extends Altara {
         CommandService.register(AltaraPaper.getPlugin(),
                 new GamemodeCommand(),
                 new BuildVersionCommand(),
-                new PunishCommand()
+                new PunishCommand(),
+                new ProfilerCommand()
         );
     }
 
@@ -96,7 +113,9 @@ public class AltaraPaper extends Altara {
                 new ChatListener(),
                 new MenuListener(),
                 new PunishmentLoginListener(),
-                new PunishmentChatListener()
+                new PunishmentChatListener(),
+                new ProfilerListener(),
+                new NPCBukkitListener()
         ).forEach(listener -> getPlugin().getServer().getPluginManager().registerEvents(listener, getPlugin()));
         new FileUpdater();
     }

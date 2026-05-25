@@ -5,7 +5,7 @@ import com.github.retrooper.packetevents.protocol.entity.type.EntityTypes;
 import com.github.retrooper.packetevents.protocol.player.GameMode;
 import com.github.retrooper.packetevents.protocol.player.TextureProperty;
 import com.github.retrooper.packetevents.protocol.player.UserProfile;
-import com.github.retrooper.packetevents.util.Vector3d;
+
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerEntityMetadata;
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerTeams;
 import games.sparking.altara.hologram.HologramProvider;
@@ -13,7 +13,6 @@ import io.github.retrooper.packetevents.util.SpigotReflectionUtil;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
-import me.tofaa.entitylib.EntityLib;
 import me.tofaa.entitylib.meta.EntityMeta;
 import me.tofaa.entitylib.meta.other.ArmorStandMeta;
 import me.tofaa.entitylib.meta.types.PlayerMeta;
@@ -154,7 +153,7 @@ public final class NPC {
         if (spawnedFor.contains(player.getUniqueId())) return;
         spawnedFor.add(player.getUniqueId());
 
-        body.teleport(toVector3d(location));
+        body.teleport(toPELocation(location));
         body.updateRotation(location.getYaw(), location.getPitch());
         body.spawn(PacketEvents.getAPI().getPlayerManager().getChannel(player));
 
@@ -239,7 +238,7 @@ public final class NPC {
         for (UUID uuid : spawnedFor) {
             Player player = Bukkit.getPlayer(uuid);
             if (player == null) continue;
-            body.teleport(toVector3d(newLocation));
+            body.teleport(toPELocation(newLocation));
             body.updateRotation(newLocation.getYaw(), newLocation.getPitch());
         }
         new ArrayList<>(nametagEntities.keySet()).forEach(uuid -> {
@@ -326,7 +325,7 @@ public final class NPC {
         for (int i = 0; i < lines.size(); i++) {
             WrapperEntity line = createNametagLine(lines.get(i));
             line.addViewer(player.getUniqueId());
-            line.spawn(nametagLocation(i));
+            line.spawn(toPELocation(nametagLocation(i)));
             entities.add(line);
             NPCService.registerEntityId(line.getEntityId(), this);
         }
@@ -338,13 +337,13 @@ public final class NPC {
      * {@code setMarker(true)} gives it zero hitbox so all clicks pass through to the NPC body.
      */
     private WrapperEntity createNametagLine(String text) {
-        WrapperEntity entity = EntityLib.getApi().createEntity(UUID.randomUUID(), EntityTypes.ARMOR_STAND);
+        WrapperEntity entity = new WrapperEntity(UUID.randomUUID(), EntityTypes.ARMOR_STAND);
         ArmorStandMeta meta = (ArmorStandMeta) entity.getEntityMeta();
         meta.setHasNoGravity(true);
         meta.setInvisible(true);
         meta.setSmall(false);
         meta.setHasArms(false);
-        meta.setHasBasePlate(false);
+        meta.setHasNoBasePlate(true);
         meta.setMarker(true);
         meta.setCustomName(fromLegacy(text));
         meta.setCustomNameVisible(!text.isBlank());
@@ -360,12 +359,13 @@ public final class NPC {
         for (WrapperEntity e : entities) {
             NPCService.unregisterEntityId(e.getEntityId());
             e.despawn();
-            EntityLib.getApi().removeEntity(e);
+            e.remove();
         }
     }
 
-    private static Vector3d toVector3d(Location loc) {
-        return new Vector3d(loc.getX(), loc.getY(), loc.getZ());
+    private static com.github.retrooper.packetevents.protocol.world.Location toPELocation(Location loc) {
+        return new com.github.retrooper.packetevents.protocol.world.Location(
+                loc.getX(), loc.getY(), loc.getZ(), loc.getYaw(), loc.getPitch());
     }
 
     private static Component fromLegacy(String text) {

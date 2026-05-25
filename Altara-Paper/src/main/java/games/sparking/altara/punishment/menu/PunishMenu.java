@@ -6,6 +6,7 @@ import games.sparking.altara.punishment.InfractionType;
 import games.sparking.altara.utils.ItemBuilder;
 import lombok.RequiredArgsConstructor;
 import org.bukkit.ChatColor;
+import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.ClickType;

@@ -1,24 +1,12 @@
 package games.sparking.altara.npc;
 
 import com.github.retrooper.packetevents.PacketEvents;
-import com.github.retrooper.packetevents.event.PacketListenerAbstract;
-import com.github.retrooper.packetevents.event.PacketReceiveEvent;
-import com.github.retrooper.packetevents.protocol.packettype.PacketType;
-import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientInteractEntity;
-import games.sparking.altara.hologram.HologramService;
 import org.bukkit.Bukkit;
-import org.bukkit.entity.Player;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.EventPriority;
-import org.bukkit.event.Listener;
-import org.bukkit.event.player.PlayerJoinEvent;
-import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -26,7 +14,6 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * <h2>Responsibilities</h2>
  * <ul>
- *   <li>Ensures EntityLib is initialised (delegates to {@link HologramService}).</li>
  *   <li>Registers a PacketEvents {@code INTERACT_ENTITY} listener that routes clicks to
  *       the correct {@link NPCClickHandler} via a fast entity-ID lookup.</li>
  *   <li>Registers a Bukkit player-join/quit listener that auto-spawns and cleans up
@@ -37,7 +24,6 @@ import java.util.concurrent.ConcurrentHashMap;
  * <h2>Initialisation</h2>
  * <pre>{@code
  * // Call once in your plugin's onEnable(), before creating any NPCs.
- * // This also covers HologramService initialisation – you do not need to call both.
  * NPCService.init(this);
  * }</pre>
  *
@@ -67,8 +53,7 @@ public final class NPCService {
     // =========================================================================
 
     /**
-     * Initialises the NPC subsystem.  Calling this method also satisfies the
-     * {@link HologramService} initialisation requirement — you only need to call one.
+     * Initialises the NPC subsystem.
      *
      * <p>Idempotent: safe to call multiple times.
      *
@@ -77,9 +62,6 @@ public final class NPCService {
     public static void init(JavaPlugin plugin) {
         if (initialised) return;
         initialised = true;
-
-        // Ensure EntityLib + PacketEvents are initialised (HologramService owns this)
-        HologramService.ensureEntityLibInitialized(plugin);
 
         // -- PacketEvents click listener --------------------------------------
         PacketEvents.getAPI().getEventManager().registerListener(new NPCInteractListener());
@@ -123,6 +105,11 @@ public final class NPCService {
         ENTITY_ID_MAP.remove(entityId);
     }
 
+    /** Returns the NPC that owns the entity with the given ID, or {@code null}. */
+    static NPC getNpcForEntityId(int entityId) {
+        return ENTITY_ID_MAP.get(entityId);
+    }
+
     // =========================================================================
     // Read-only view
     // =========================================================================
@@ -130,57 +117,5 @@ public final class NPCService {
     /** Returns an unmodifiable snapshot of all currently registered NPCs. */
     public static List<NPC> getNpcs() {
         return List.copyOf(NPCS);
-    }
-
-    // =========================================================================
-    // Inner – PacketEvents click listener
-    // =========================================================================
-
-    private static final class NPCInteractListener extends PacketListenerAbstract {
-
-        @Override
-        public void onPacketReceive(PacketReceiveEvent event) {
-            if (event.getPacketType() != PacketType.Play.Client.INTERACT_ENTITY) return;
-
-            WrapperPlayClientInteractEntity packet = new WrapperPlayClientInteractEntity(event);
-            int entityId = packet.getEntityId();
-
-            NPC npc = ENTITY_ID_MAP.get(entityId);
-            if (npc == null || npc.getClickHandler() == null) return;
-
-            UUID playerUuid = event.getUser().getUUID();
-            Player player = Bukkit.getPlayer(playerUuid);
-            if (player == null) return;
-
-            NPCClickHandler.ClickType clickType =
-                    packet.getAction() == WrapperPlayClientInteractEntity.InteractAction.ATTACK
-                            ? NPCClickHandler.ClickType.LEFT_CLICK
-                            : NPCClickHandler.ClickType.RIGHT_CLICK;
-
-            npc.getClickHandler().click(player, npc, clickType);
-        }
-    }
-
-    // =========================================================================
-    // Inner – Bukkit join/quit listener
-    // =========================================================================
-
-    private static final class NPCBukkitListener implements Listener {
-
-        @EventHandler(priority = EventPriority.MONITOR)
-        public void onPlayerJoin(PlayerJoinEvent event) {
-            Player player = event.getPlayer();
-            for (NPC npc : NPCS) {
-                npc.spawn(player);
-            }
-        }
-
-        @EventHandler
-        public void onPlayerQuit(PlayerQuitEvent event) {
-            Player player = event.getPlayer();
-            for (NPC npc : NPCS) {
-                npc.despawn(player);
-            }
-        }
     }
 }

@@ -1,10 +1,10 @@
 package games.sparking.altara.playersetting.menu;
 
-import games.sparking.blazora.menu.Button;
-import games.sparking.blazora.menu.Menu;
-import games.sparking.blazora.menu.fill.FillTemplate;
-import games.sparking.blazora.playersetting.PlayerSetting;
-import games.sparking.blazora.playersetting.PlayerSettingService;
+import games.sparking.altara.menu.Button;
+import games.sparking.altara.menu.Menu;
+import games.sparking.altara.menu.fill.FillTemplate;
+import games.sparking.altara.playersetting.PlayerSetting;
+import games.sparking.altara.playersetting.PlayerSettingService;
 import lombok.RequiredArgsConstructor;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.ClickType;

@@ -3,13 +3,16 @@ package games.sparking.altara.grant.menu;
 import games.sparking.altara.Altara;
 import games.sparking.altara.AltaraPaper;
 import games.sparking.altara.connection.RequestResponse;
+import games.sparking.altara.grant.Grant;
 import games.sparking.altara.grant.GrantProcedure;
 import games.sparking.altara.menu.Button;
 import games.sparking.altara.menu.Menu;
 import games.sparking.altara.profile.Profile;
 import games.sparking.altara.server.ServerInfo;
+import games.sparking.altara.task.Tasks;
 import games.sparking.altara.utils.CC;
 import games.sparking.altara.utils.ItemBuilder;
+import games.sparking.altara.utils.Time;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.text.WordUtils;
@@ -71,7 +74,7 @@ public class GrantScopesMenu extends Menu {
                                 CC.YELLOW + (scopes.contains("GLOBAL") ? "This grant will be " + CC.RED + "Global"
                                         : "This grant will apply on: " + CC.RED + StringUtils.join(scopes, ", ")),
                                 CC.format("&eReasoning: &c%s", procedure.getReason()),
-                                CC.format("&eDuration: &c%s", TimeUtils.formatDetailed(procedure.getDuration())),
+                                CC.format("&eDuration: &c%s", Time.formatDetailed(procedure.getDuration())),
                                 CC.MENU_BAR
                         ).build();
             }
@@ -100,7 +103,7 @@ public class GrantScopesMenu extends Menu {
 
                     /*Packet packet = new GrantAddPacket(target.getUuid(), grant.getRank().getUuid(),
                             grant.getDuration());*/
-                    RequestResponse response = AltaraPaper.getBukkitProfileService().addGrant(target, grant);
+                    RequestResponse response = AltaraPaper.getPaperInstance().getBukkitProfileService().addGrant(target, grant);
                     if (response.couldNotConnect()) {
                         player.sendMessage(CC.format("&cCould not connect to API to create grant. " +
                                         "Adding grant to the queue. Error: %s (%d)",
@@ -122,7 +125,7 @@ public class GrantScopesMenu extends Menu {
                                 "&aYou've granted %s&a the %s&a rank for &e%s&a.",
                                 target.getName(),
                                 procedure.getRank().getName(),
-                                TimeUtils.formatDetailed(grant.getDuration())
+                                Time.formatDetailed(grant.getDuration())
                         ));
                 });
             }
@@ -133,7 +136,7 @@ public class GrantScopesMenu extends Menu {
     @Override
     public void onClose(Player player) {
         if (!clicked) {
-            Profile profile = zircon.getProfileService().getProfile(player);
+            Profile profile = AltaraPaper.getPaperInstance().getProfileService().getProfile(player);
             profile.setGrantProcedure(null);
             player.sendMessage(CC.RED + "You cancelled the grant procedure.");
         }

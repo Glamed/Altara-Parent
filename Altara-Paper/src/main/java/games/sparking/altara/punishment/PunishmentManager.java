@@ -61,7 +61,7 @@ public class PunishmentManager {
             if (punishment == null) {
                 // Best-effort fallback: log warning — the packet won't be sent but at least
                 // the staff member gets feedback.
-                Tasks.runSync(() -> {
+                Tasks.run(() -> {
                     // Caller's error handling goes here; keep this minimal.
                 });
             }

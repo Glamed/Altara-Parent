@@ -5,6 +5,7 @@ import games.sparking.altara.configuration.defaults.MainConfig;
 import games.sparking.altara.configuration.defaults.MongoConfig;
 import games.sparking.altara.configuration.defaults.RedisConfig;
 import games.sparking.altara.disguise.DisguiseService;
+import games.sparking.altara.profiler.ProfilerService;
 import games.sparking.altara.punishment.PunishmentService;
 import games.sparking.altara.task.TaskImplementor;
 import games.sparking.altara.task.Tasks;
@@ -53,10 +54,7 @@ public abstract class Altara {
     @Getter private final ProfileService profileService;
     @Getter private final PunishmentService punishmentService;
     @Getter private final DisguiseService disguiseService;
-
-    /** The name/identity of this server node (e.g. "Lobby", "Games", "proxy"). */
-    @Getter @Setter
-    private static String serverIdentifier;
+    @Getter private final ProfilerService profilerService;
 
     public Altara(SystemType systemType, ConfigurationService configurationService, MainConfig mainConfig, TaskImplementor taskImplementor)  {
         Altara.systemType = systemType;
@@ -91,6 +89,7 @@ public abstract class Altara {
         this.rankService = new RankService();
         this.punishmentService = new PunishmentService();
         this.disguiseService = new DisguiseService();
+        this.profilerService = new ProfilerService();
 
         // The WEB module IS the rank API — skip the HTTP-based rank load that
         // would be attempted before Spring Boot (Tomcat) has started.

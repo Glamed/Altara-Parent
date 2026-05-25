@@ -1,40 +1,15 @@
 package games.sparking.altara;
 
 import games.sparking.altara.command.CommandService;
-import games.sparking.altara.game.GameIdRef;
-import games.sparking.altara.game.GameManager;
-import games.sparking.altara.game.GameTypeRef;
-import games.sparking.altara.game.command.GameCommand;
-import games.sparking.altara.game.command.parameter.GameIdParameter;
-import games.sparking.altara.game.command.parameter.GameTypeParameter;
-import games.sparking.altara.game.games.bomblobbers.BombLobbers;
-import games.sparking.altara.game.games.micro.MicroGame;
-import games.sparking.altara.game.games.skywars.SkyWars;
-import games.sparking.altara.game.games.skywars.TeamSkyWars;
-import games.sparking.altara.game.spectator.SpectatorListener;
-import games.sparking.altara.game.spectator.SpectatorVisibilityAdapter;
-import games.sparking.altara.visibility.VisibilityService;
+import games.sparking.altara.configuration.ConfigurationService;
+import games.sparking.altara.configuration.LocalConfig;
 import net.kyori.adventure.text.Component;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class AltaraGames extends AltaraPaper {
 
-    public AltaraGames(JavaPlugin instance) {
-        super(instance);
-        Altara.setServerIdentifier("Games");
-
-        // Initialise the game framework (registry + player routing + disconnect handler)
-        GameManager manager = GameManager.init();
-
-        // ── Register game-specific parameter types ────────────────────────
-        CommandService.registerParameter(GameTypeRef.class, new GameTypeParameter());
-        CommandService.registerParameter(GameIdRef.class, new GameIdParameter());
-
-        // ── Register game types ───────────────────────────────────────────
-        manager.registerGameType("bomblobbers",   BombLobbers::new);
-        manager.registerGameType("micro",         MicroGame::new);
-        manager.registerGameType("skywars",       SkyWars::new);
-        manager.registerGameType("skywars-teams", TeamSkyWars::new);
+    public AltaraGames(JavaPlugin instance, ConfigurationService configurationService, LocalConfig localConfig) {
+        super(instance, configurationService, localConfig);
 
         registerCommands();
         registerListeners();
@@ -44,19 +19,12 @@ public class AltaraGames extends AltaraPaper {
     @Override
     public void registerCommands() {
         super.registerCommands();
-        CommandService.register(AltaraPaper.getPlugin(),
-                new GameCommand()
+        CommandService.register(AltaraPaper.getPlugin(), null
         );
     }
 
     @Override
     public void registerListeners() {
         super.registerListeners();
-        // Spectating: visibility adapter (hides spectators from alive players)
-        VisibilityService.init();
-        VisibilityService.registerVisibilityAdapter(new SpectatorVisibilityAdapter());
-        // Spectating: global event handler (compass cycling, damage/pickup guards)
-        getPlugin().getServer().getPluginManager()
-                .registerEvents(new SpectatorListener(), getPlugin());
     }
 }

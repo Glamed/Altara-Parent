@@ -1,11 +1,10 @@
 package games.sparking.altara.grant.packets;
 
-
-import games.sparking.blazora.BlazoraPaper;
-import games.sparking.blazora.rank.Rank;
-import games.sparking.blazora.redis.packet.Packet;
-import games.sparking.blazora.utils.CC;
-import games.sparking.blazora.utils.TimeUtils;
+import games.sparking.altara.AltaraPaper;
+import games.sparking.altara.rank.Rank;
+import games.sparking.altara.redis.packet.Packet;
+import games.sparking.altara.utils.CC;
+import games.sparking.altara.utils.Time;
 import lombok.NoArgsConstructor;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -14,9 +13,8 @@ import java.util.UUID;
 
 
 @NoArgsConstructor
-public class GrantAddPacket implements Packet {
+public class GrantAddPacket extends Packet {
 
-    private static final BlazoraPaper zircon = BlazoraPaper.getPaperInstance();
     private UUID uuid;
     private UUID rankUuid;
     private long duration;
@@ -30,12 +28,12 @@ public class GrantAddPacket implements Packet {
     @Override
     public void receive() {
         Player player = Bukkit.getPlayer(uuid);
-        Rank rank = zircon.getRankService().getRank(rankUuid);
+        Rank rank = AltaraPaper.getPaperInstance().getRankService().getRank(rankUuid);
         if (player == null) {
             return;
         }
 
-        zircon.getPermissionService().updatePermissions(player);
+        AltaraPaper.getPaperInstance().getPermissionService().updatePermissions(player);
 
         if (duration == -1)
             player.sendMessage(CC.format(
@@ -46,12 +44,7 @@ public class GrantAddPacket implements Packet {
             player.sendMessage(CC.format(
                     "&aYou've been granted the %s&a rank for &e%s&a.",
                     rank.getName(),
-                    TimeUtils.formatDetailed(duration)
+                    Time.formatDetailed(duration)
             ));
-    }
-
-    @Override
-    public String getId() {
-        return "";
     }
 }

@@ -1,11 +1,20 @@
 package games.sparking.altara;
 
+import games.sparking.altara.configuration.ConfigurationService;
+import games.sparking.altara.configuration.JsonConfigurationService;
+import games.sparking.altara.configuration.LocalConfig;
+import games.sparking.altara.configuration.defaults.MainConfig;
 import org.bukkit.plugin.java.JavaPlugin;
+
+import java.io.File;
 
 public class AltaraGamesPlugin extends JavaPlugin {
 
     @Override
     public void onEnable() {
-        new AltaraGames(this);
+        ConfigurationService configurationService = new JsonConfigurationService();
+        LocalConfig localConfig = configurationService.loadConfiguration(LocalConfig.class, new File(getDataFolder(), "config" +
+                ".json"));
+        new AltaraGames(this, configurationService, localConfig);
     }
 }

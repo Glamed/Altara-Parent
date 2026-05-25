@@ -76,7 +76,7 @@ public class PermissionService {
 
         effectivePermissions.putAll(convert(profile.getPermissions()));
 
-        LocalPermissionEntry entry = AltaraPaper.getLocalPermissionConfig().getEntry(profile);
+        LocalPermissionEntry entry = AltaraPaper.getPaperInstance().getLocalPermissionConfig().getEntry(profile);
         if (entry != null) {
             effectivePermissions.putAll(convert(entry.getPermissions()));
         }

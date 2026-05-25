@@ -154,36 +154,216 @@ public enum InfractionType {
     }
 
     /**
-     * The default set of {@link RestrictionAction}s preloaded in the action builder
-     * for this infraction type.
+     * Returns recommended actions for a first-time / clean-account offence.
+     * Delegates to {@link #getRecommendedActions(AccountStatus)} with {@link AccountStatus#CLEAN}.
      */
     public List<RestrictionAction> getRecommendedActions() {
+        return getRecommendedActions(AccountStatus.CLEAN);
+    }
+
+    /**
+     * Returns the default set of {@link RestrictionAction}s for this infraction type,
+     * scaled to the player's current {@link AccountStatus}.
+     *
+     * <p>Progressive discipline tiers:
+     * <ul>
+     *   <li>{@link AccountLevel#LOW}    – first / isolated offence, baseline sanction</li>
+     *   <li>{@link AccountLevel#MEDIUM} – repeat offender, noticeably longer sanction</li>
+     *   <li>{@link AccountLevel#HIGH}   – pattern of behaviour, maximum recommended sanction</li>
+     * </ul>
+     *
+     * <p>The unified {@link AccountStatus#getLevel()} covers all sanction types —
+     * <p>All infractions scale on the single unified {@link AccountStatus#getLevel()}.
+     * Warnings are never stacked on top of a real restriction.
+     *
+     * @param status the player's computed account status (never {@code null})
+     */
+    public List<RestrictionAction> getRecommendedActions(AccountStatus status) {
+        AccountLevel level = status.getLevel();
+
         return switch (this) {
-            case PROFANITY, SPAM, DISRESPECT, FOREIGN_LANGUAGE -> List.of(
-                    RestrictionAction.temporary(PunishmentType.CHAT_RESTRICTION, 30 * 60 * 1000L)
-            );
-            case ADVERTISING, DISRUPTION, HARASSMENT, FALSE_REPORTS, MINI_MODDING, POLITICAL_CONTENT -> List.of(
-                    RestrictionAction.temporary(PunishmentType.CHAT_RESTRICTION, 6 * 60 * 60 * 1000L),
-                    RestrictionAction.temporary(PunishmentType.WARN, 0)
-            );
-            case INAPPROPRIATE_CONTENT, COMBAT_LOGGING -> List.of(
-                    RestrictionAction.temporary(PunishmentType.CHAT_RESTRICTION, 24 * 60 * 60 * 1000L),
-                    RestrictionAction.temporary(PunishmentType.SUSPENSION, 24 * 60 * 60 * 1000L)
-            );
-            case HATE_SPEECH, STAFF_IMPERSONATION -> List.of(
-                    RestrictionAction.temporary(PunishmentType.CHAT_RESTRICTION, 7 * 24 * 60 * 60 * 1000L),
-                    RestrictionAction.temporary(PunishmentType.SUSPENSION, 7 * 24 * 60 * 60 * 1000L)
-            );
-            case UNAUTHORIZED_MODS, EXPLOITING -> List.of(
-                    RestrictionAction.temporary(PunishmentType.SUSPENSION, 7 * 24 * 60 * 60 * 1000L)
-            );
-            case META_GAMING -> List.of(
-                    RestrictionAction.temporary(PunishmentType.WARN, 0),
-                    RestrictionAction.temporary(PunishmentType.CHAT_RESTRICTION, 2 * 60 * 60 * 1000L)
-            );
-            case TEMP_AUTOMATED -> List.of(
-                    RestrictionAction.temporary(PunishmentType.CHAT_RESTRICTION, 24 * 60 * 60 * 1000L)
-            );
+
+            // ── Minor chat offences ────────────────────────────────────────────
+            // SPAM: 30 min → 3 h → 12 h
+            case SPAM -> List.of(RestrictionAction.temporary(PunishmentType.CHAT_RESTRICTION,
+                    level == AccountLevel.HIGH   ? 12 * 60 * 60 * 1000L
+                    : level == AccountLevel.MEDIUM ?  3 * 60 * 60 * 1000L
+                    :                               30 * 60 * 1000L));
+
+            // FOREIGN_LANGUAGE / MINI_MODDING: 30 min → 2 h → 6 h
+            case FOREIGN_LANGUAGE, MINI_MODDING -> List.of(RestrictionAction.temporary(PunishmentType.CHAT_RESTRICTION,
+                    level == AccountLevel.HIGH   ?  6 * 60 * 60 * 1000L
+                    : level == AccountLevel.MEDIUM ?  2 * 60 * 60 * 1000L
+                    :                               30 * 60 * 1000L));
+
+            // PROFANITY: 1 h → 6 h → 24 h
+            case PROFANITY -> List.of(RestrictionAction.temporary(PunishmentType.CHAT_RESTRICTION,
+                    level == AccountLevel.HIGH   ? 24 * 60 * 60 * 1000L
+                    : level == AccountLevel.MEDIUM ?  6 * 60 * 60 * 1000L
+                    :                                1 * 60 * 60 * 1000L));
+
+            // DISRESPECT / POLITICAL_CONTENT: 2 h → 12 h → 3 days
+            case DISRESPECT, POLITICAL_CONTENT -> List.of(RestrictionAction.temporary(PunishmentType.CHAT_RESTRICTION,
+                    level == AccountLevel.HIGH   ?  3L * 24 * 60 * 60 * 1000L
+                    : level == AccountLevel.MEDIUM ? 12 * 60 * 60 * 1000L
+                    :                                2 * 60 * 60 * 1000L));
+
+            // ── Moderate offences ──────────────────────────────────────────────
+            // ADVERTISING: 12 h mute → 3-day mute + 12 h ban → 7-day mute + 3-day ban
+            case ADVERTISING -> level == AccountLevel.HIGH
+                    ? List.of(
+                            RestrictionAction.temporary(PunishmentType.CHAT_RESTRICTION, 7L  * 24 * 60 * 60 * 1000L),
+                            RestrictionAction.temporary(PunishmentType.SUSPENSION,       3L  * 24 * 60 * 60 * 1000L))
+                    : level == AccountLevel.MEDIUM
+                    ? List.of(
+                            RestrictionAction.temporary(PunishmentType.CHAT_RESTRICTION, 3L  * 24 * 60 * 60 * 1000L),
+                            RestrictionAction.temporary(PunishmentType.SUSPENSION,       12  * 60 * 60 * 1000L))
+                    : List.of(
+                            RestrictionAction.temporary(PunishmentType.CHAT_RESTRICTION, 12  * 60 * 60 * 1000L));
+
+            // DISRUPTION: 6 h mute + 3 h ban → 24 h mute + 12 h ban → 3-day mute + 3-day ban
+            case DISRUPTION -> level == AccountLevel.HIGH
+                    ? List.of(
+                            RestrictionAction.temporary(PunishmentType.CHAT_RESTRICTION, 3L  * 24 * 60 * 60 * 1000L),
+                            RestrictionAction.temporary(PunishmentType.SUSPENSION,       3L  * 24 * 60 * 60 * 1000L))
+                    : level == AccountLevel.MEDIUM
+                    ? List.of(
+                            RestrictionAction.temporary(PunishmentType.CHAT_RESTRICTION, 24  * 60 * 60 * 1000L),
+                            RestrictionAction.temporary(PunishmentType.SUSPENSION,       12  * 60 * 60 * 1000L))
+                    : List.of(
+                            RestrictionAction.temporary(PunishmentType.CHAT_RESTRICTION,  6  * 60 * 60 * 1000L),
+                            RestrictionAction.temporary(PunishmentType.SUSPENSION,         3  * 60 * 60 * 1000L));
+
+            // ── Reporting abuse ────────────────────────────────────────────────
+            // FALSE_REPORTS: 30-day report + 6 h mute → 90-day report + 24 h mute → permanent report + 3-day ban
+            case FALSE_REPORTS -> level == AccountLevel.HIGH
+                    ? List.of(
+                            RestrictionAction.permanent(PunishmentType.REPORT),
+                            RestrictionAction.temporary(PunishmentType.SUSPENSION,       3L  * 24 * 60 * 60 * 1000L))
+                    : level == AccountLevel.MEDIUM
+                    ? List.of(
+                            RestrictionAction.temporary(PunishmentType.REPORT,           90L * 24 * 60 * 60 * 1000L),
+                            RestrictionAction.temporary(PunishmentType.CHAT_RESTRICTION, 24  * 60 * 60 * 1000L))
+                    : List.of(
+                            RestrictionAction.temporary(PunishmentType.REPORT,           30L * 24 * 60 * 60 * 1000L),
+                            RestrictionAction.temporary(PunishmentType.CHAT_RESTRICTION,  6  * 60 * 60 * 1000L));
+
+            // ── Serious behaviour offences ─────────────────────────────────────
+            // HARASSMENT: 1-day ban + 3-day mute → 3-day ban + 7-day mute → 7-day ban + 14-day mute
+            case HARASSMENT -> level == AccountLevel.HIGH
+                    ? List.of(
+                            RestrictionAction.temporary(PunishmentType.SUSPENSION,        7L * 24 * 60 * 60 * 1000L),
+                            RestrictionAction.temporary(PunishmentType.CHAT_RESTRICTION, 14L * 24 * 60 * 60 * 1000L))
+                    : level == AccountLevel.MEDIUM
+                    ? List.of(
+                            RestrictionAction.temporary(PunishmentType.SUSPENSION,        3L * 24 * 60 * 60 * 1000L),
+                            RestrictionAction.temporary(PunishmentType.CHAT_RESTRICTION,  7L * 24 * 60 * 60 * 1000L))
+                    : List.of(
+                            RestrictionAction.temporary(PunishmentType.SUSPENSION,        1L * 24 * 60 * 60 * 1000L),
+                            RestrictionAction.temporary(PunishmentType.CHAT_RESTRICTION,  3L * 24 * 60 * 60 * 1000L));
+
+            // INAPPROPRIATE_CONTENT: 3-day ban + 7-day mute → 7-day ban + 14-day mute → 14-day ban + 30-day mute
+            case INAPPROPRIATE_CONTENT -> level == AccountLevel.HIGH
+                    ? List.of(
+                            RestrictionAction.temporary(PunishmentType.SUSPENSION,        14L * 24 * 60 * 60 * 1000L),
+                            RestrictionAction.temporary(PunishmentType.CHAT_RESTRICTION,  30L * 24 * 60 * 60 * 1000L))
+                    : level == AccountLevel.MEDIUM
+                    ? List.of(
+                            RestrictionAction.temporary(PunishmentType.SUSPENSION,         7L * 24 * 60 * 60 * 1000L),
+                            RestrictionAction.temporary(PunishmentType.CHAT_RESTRICTION,  14L * 24 * 60 * 60 * 1000L))
+                    : List.of(
+                            RestrictionAction.temporary(PunishmentType.SUSPENSION,         3L * 24 * 60 * 60 * 1000L),
+                            RestrictionAction.temporary(PunishmentType.CHAT_RESTRICTION,   7L * 24 * 60 * 60 * 1000L));
+
+            // ── Zero-tolerance offences ────────────────────────────────────────
+            // HATE_SPEECH: 7-day ban + 30-day mute + 7-day DC → 14-day ban + 60-day mute + 14-day DC → permanent all
+            case HATE_SPEECH -> level == AccountLevel.HIGH
+                    ? List.of(
+                            RestrictionAction.permanent(PunishmentType.SUSPENSION),
+                            RestrictionAction.permanent(PunishmentType.CHAT_RESTRICTION),
+                            RestrictionAction.permanent(PunishmentType.DISCORD_RESTRICTION))
+                    : level == AccountLevel.MEDIUM
+                    ? List.of(
+                            RestrictionAction.temporary(PunishmentType.SUSPENSION,          14L * 24 * 60 * 60 * 1000L),
+                            RestrictionAction.temporary(PunishmentType.CHAT_RESTRICTION,    60L * 24 * 60 * 60 * 1000L),
+                            RestrictionAction.temporary(PunishmentType.DISCORD_RESTRICTION, 14L * 24 * 60 * 60 * 1000L))
+                    : List.of(
+                            RestrictionAction.temporary(PunishmentType.SUSPENSION,           7L * 24 * 60 * 60 * 1000L),
+                            RestrictionAction.temporary(PunishmentType.CHAT_RESTRICTION,    30L * 24 * 60 * 60 * 1000L),
+                            RestrictionAction.temporary(PunishmentType.DISCORD_RESTRICTION,  7L * 24 * 60 * 60 * 1000L));
+
+            // STAFF_IMPERSONATION: 7-day ban + 14-day mute + 7-day DC → 14-day ban + 30-day mute + 14-day DC → 30-day ban + 60-day mute + permanent DC
+            case STAFF_IMPERSONATION -> level == AccountLevel.HIGH
+                    ? List.of(
+                            RestrictionAction.temporary(PunishmentType.SUSPENSION,          30L * 24 * 60 * 60 * 1000L),
+                            RestrictionAction.temporary(PunishmentType.CHAT_RESTRICTION,    60L * 24 * 60 * 60 * 1000L),
+                            RestrictionAction.permanent(PunishmentType.DISCORD_RESTRICTION))
+                    : level == AccountLevel.MEDIUM
+                    ? List.of(
+                            RestrictionAction.temporary(PunishmentType.SUSPENSION,          14L * 24 * 60 * 60 * 1000L),
+                            RestrictionAction.temporary(PunishmentType.CHAT_RESTRICTION,    30L * 24 * 60 * 60 * 1000L),
+                            RestrictionAction.temporary(PunishmentType.DISCORD_RESTRICTION, 14L * 24 * 60 * 60 * 1000L))
+                    : List.of(
+                            RestrictionAction.temporary(PunishmentType.SUSPENSION,           7L * 24 * 60 * 60 * 1000L),
+                            RestrictionAction.temporary(PunishmentType.CHAT_RESTRICTION,    14L * 24 * 60 * 60 * 1000L),
+                            RestrictionAction.temporary(PunishmentType.DISCORD_RESTRICTION,  7L * 24 * 60 * 60 * 1000L));
+
+            // ── Competitive / game-integrity offences ──────────────────────────
+            // COMBAT_LOGGING: 1-day ban + 3-day comp → 3-day ban + 7-day comp → 7-day ban + 14-day comp
+            case COMBAT_LOGGING -> level == AccountLevel.HIGH
+                    ? List.of(
+                            RestrictionAction.temporary(PunishmentType.SUSPENSION,    7L * 24 * 60 * 60 * 1000L),
+                            RestrictionAction.temporary(PunishmentType.COMP_GAMEPLAY,14L * 24 * 60 * 60 * 1000L))
+                    : level == AccountLevel.MEDIUM
+                    ? List.of(
+                            RestrictionAction.temporary(PunishmentType.SUSPENSION,   3L * 24 * 60 * 60 * 1000L),
+                            RestrictionAction.temporary(PunishmentType.COMP_GAMEPLAY, 7L * 24 * 60 * 60 * 1000L))
+                    : List.of(
+                            RestrictionAction.temporary(PunishmentType.SUSPENSION,   1L * 24 * 60 * 60 * 1000L),
+                            RestrictionAction.temporary(PunishmentType.COMP_GAMEPLAY, 3L * 24 * 60 * 60 * 1000L));
+
+            // META_GAMING: 1-day ban + 3-day comp → 3-day ban + 7-day comp → 7-day ban + 14-day comp
+            case META_GAMING -> level == AccountLevel.HIGH
+                    ? List.of(
+                            RestrictionAction.temporary(PunishmentType.SUSPENSION,    7L * 24 * 60 * 60 * 1000L),
+                            RestrictionAction.temporary(PunishmentType.COMP_GAMEPLAY, 14L * 24 * 60 * 60 * 1000L))
+                    : level == AccountLevel.MEDIUM
+                    ? List.of(
+                            RestrictionAction.temporary(PunishmentType.SUSPENSION,    3L * 24 * 60 * 60 * 1000L),
+                            RestrictionAction.temporary(PunishmentType.COMP_GAMEPLAY,  7L * 24 * 60 * 60 * 1000L))
+                    : List.of(
+                            RestrictionAction.temporary(PunishmentType.SUSPENSION,    1L * 24 * 60 * 60 * 1000L),
+                            RestrictionAction.temporary(PunishmentType.COMP_GAMEPLAY,  3L * 24 * 60 * 60 * 1000L));
+
+            // EXPLOITING: 7-day ban + 14-day comp → 14-day ban + 30-day comp → 30-day ban + 90-day comp
+            case EXPLOITING -> level == AccountLevel.HIGH
+                    ? List.of(
+                            RestrictionAction.temporary(PunishmentType.SUSPENSION,    30L * 24 * 60 * 60 * 1000L),
+                            RestrictionAction.temporary(PunishmentType.COMP_GAMEPLAY, 90L * 24 * 60 * 60 * 1000L))
+                    : level == AccountLevel.MEDIUM
+                    ? List.of(
+                            RestrictionAction.temporary(PunishmentType.SUSPENSION,    14L * 24 * 60 * 60 * 1000L),
+                            RestrictionAction.temporary(PunishmentType.COMP_GAMEPLAY, 30L * 24 * 60 * 60 * 1000L))
+                    : List.of(
+                            RestrictionAction.temporary(PunishmentType.SUSPENSION,     7L * 24 * 60 * 60 * 1000L),
+                            RestrictionAction.temporary(PunishmentType.COMP_GAMEPLAY, 14L * 24 * 60 * 60 * 1000L));
+
+            // UNAUTHORIZED_MODS (hacking): 7-day ban + 30-day comp → 14-day ban + 90-day comp → 30-day ban + permanent comp
+            case UNAUTHORIZED_MODS -> level == AccountLevel.HIGH
+                    ? List.of(
+                            RestrictionAction.temporary(PunishmentType.SUSPENSION,    30L * 24 * 60 * 60 * 1000L),
+                            RestrictionAction.permanent(PunishmentType.COMP_GAMEPLAY))
+                    : level == AccountLevel.MEDIUM
+                    ? List.of(
+                            RestrictionAction.temporary(PunishmentType.SUSPENSION,    14L * 24 * 60 * 60 * 1000L),
+                            RestrictionAction.temporary(PunishmentType.COMP_GAMEPLAY, 90L * 24 * 60 * 60 * 1000L))
+                    : List.of(
+                            RestrictionAction.temporary(PunishmentType.SUSPENSION,     7L * 24 * 60 * 60 * 1000L),
+                            RestrictionAction.temporary(PunishmentType.COMP_GAMEPLAY, 30L * 24 * 60 * 60 * 1000L));
+
+            // ── Automated / pending-review placeholder ─────────────────────────
+            case TEMP_AUTOMATED ->
+                    List.of(RestrictionAction.temporary(PunishmentType.CHAT_RESTRICTION, 24 * 60 * 60 * 1000L));
         };
     }
 }

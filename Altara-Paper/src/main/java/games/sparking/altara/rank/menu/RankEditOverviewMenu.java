@@ -71,12 +71,12 @@ public class RankEditOverviewMenu extends Menu {
             lore.add(" ");
             lore.add(CC.format("&eInherits: &e%s", rank.getInherits().isEmpty() ? "None" : ""));
             if (!rank.getInherits().isEmpty()) {
-                rank.getInherits().forEach(inherit -> lore.add(CC.GRAY + " - " + Altara.getSharedInstance().getRankService().getRank(inherit).getName()));
+                rank.getInherits().forEach(inherit -> lore.add(CC.GRAY + " - " + Altara.getSharedInstance().getRankService().getRank(inherit.getUuid()).getName()));
             }
             lore.add(" ");
             lore.add(CC.format("&ePermissions: &c%d", rank.getPermissions().size()));
             lore.add(CC.format("&eLocal Permissions: &c%d", rank.getLocalPermissions().size()));
-            lore.add(CC.format("&eInherited Permissions: &c%d", rank.getInheritedPermissions().size()));
+            lore.add(CC.format("&eInherited Permissions: &c%d", rank.getInheritPermissions().size()));
             lore.add(CC.MENU_BAR);
 
             return new ItemBuilder(rank.getMaterial())

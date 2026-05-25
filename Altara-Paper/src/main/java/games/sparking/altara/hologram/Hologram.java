@@ -6,7 +6,6 @@ import games.sparking.altara.hologram.clickhandler.HologramClickHandler;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
-import me.tofaa.entitylib.EntityLib;
 import me.tofaa.entitylib.meta.other.ArmorStandMeta;
 import me.tofaa.entitylib.wrapper.WrapperEntity;
 import net.kyori.adventure.text.Component;
@@ -28,7 +27,7 @@ import java.util.function.Predicate;
  *   <li><b>Static</b> – pass {@link HologramProvider#fixed(String...)} as the provider and
  *       leave the update interval at 0.</li>
  *   <li><b>Updating</b> – supply a dynamic provider and call
- *       {@link HologramBuilder#updateInterval(long)} before building.</li>
+ *       {@link HologramBuilder#updateIntervalTicks(long)} before building.</li>
  * </ul>
  *
  * <p>Holograms are <em>per-player</em>: each online player gets their own set of armor-stand
@@ -123,7 +122,7 @@ public class Hologram {
         for (int i = 0; i < lines.size(); i++) {
             WrapperEntity entity = createLineEntity(lines.get(i));
             entity.addViewer(player.getUniqueId());
-            entity.spawn(lineLocation(i));
+            entity.spawn(toPELocation(lineLocation(i)));
             entities.add(entity);
             HologramService.registerEntityId(entity.getEntityId(), this);
         }
@@ -211,7 +210,7 @@ public class Hologram {
     public void startUpdateTask() {
         if (updateIntervalTicks <= 0 || updateTask != null) return;
         updateTask = Bukkit.getScheduler().runTaskTimerAsynchronously(
-                AltaraPaper.getPlugin(), this::update, 0L, updateIntervalTicks);
+                AltaraPaper.getPlugin(), (Runnable) this::update, 0L, updateIntervalTicks);
     }
 
     /** Stops the auto-update task. */
@@ -260,6 +259,12 @@ public class Hologram {
         return location.clone().subtract(0, lineIndex * lineSpacing, 0);
     }
 
+    /** Converts a Bukkit {@link Location} to a PacketEvents {@link com.github.retrooper.packetevents.protocol.world.Location}. */
+    private static com.github.retrooper.packetevents.protocol.world.Location toPELocation(Location loc) {
+        return new com.github.retrooper.packetevents.protocol.world.Location(
+                loc.getX(), loc.getY(), loc.getZ(), loc.getYaw(), loc.getPitch());
+    }
+
     /**
      * Creates an invisible armor-stand entity with the given line text.
      * The entity is NOT spawned or shown to any viewer yet; callers are responsible for that.
@@ -268,7 +273,7 @@ public class Hologram {
      * but its body is invisible.  Only the custom name tag (the hologram text) is visible.
      */
     private WrapperEntity createLineEntity(String text) {
-        WrapperEntity entity = EntityLib.getApi().createEntity(
+        WrapperEntity entity = new WrapperEntity(
                 UUID.randomUUID(), EntityTypes.ARMOR_STAND);
 
         ArmorStandMeta meta = (ArmorStandMeta) entity.getEntityMeta();
@@ -276,7 +281,7 @@ public class Hologram {
         meta.setInvisible(true);      // invisible body
         meta.setSmall(false);
         meta.setHasArms(false);
-        meta.setHasBasePlate(false);
+        meta.setHasNoBasePlate(true);
         // NOTE: setMarker(true) is intentionally NOT set so that the hitbox is preserved
         // for click detection via HologramClickHandler.
         meta.setCustomName(fromLegacy(text));
@@ -290,7 +295,7 @@ public class Hologram {
         for (WrapperEntity entity : entities) {
             HologramService.unregisterEntityId(entity.getEntityId());
             entity.despawn();
-            EntityLib.getApi().removeEntity(entity);
+            entity.remove();
         }
     }
 

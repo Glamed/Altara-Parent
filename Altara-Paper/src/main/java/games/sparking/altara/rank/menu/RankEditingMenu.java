@@ -341,7 +341,7 @@ public class RankEditingMenu extends Menu {
                 lore.add(CC.YELLOW + "Inherits: " + CC.RED + "None");
             } else {
                 lore.add(CC.YELLOW + "Inherits: ");
-                rank.getInherits().forEach(inherit -> lore.add(CC.GRAY + " - " + AltaraPaper.getSharedInstance().getRankService().getRank(inherit).getName()));
+                rank.getInherits().forEach(inherit -> lore.add(CC.GRAY + " - " + AltaraPaper.getSharedInstance().getRankService().getRank(inherit.getUuid()).getName()));
             }
 
             return new ItemBuilder(Material.BOOK)
@@ -364,7 +364,7 @@ public class RankEditingMenu extends Menu {
                             player.sendMessage(CC.format("&eYou made %s &eno longer inherit %s&e.",
                                     rank.getName(), input.getName()));
                         } else {
-                            rank.getInherits().add(input.getUuid());
+                            rank.getInherits().add(input);
                             player.sendMessage(CC.format("&eYou made %s &einherit %s&e.",
                                     rank.getName(), input.getName()));
                         }

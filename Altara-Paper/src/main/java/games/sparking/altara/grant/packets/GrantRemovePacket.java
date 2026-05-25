@@ -1,9 +1,9 @@
 package games.sparking.altara.grant.packets;
 
-import games.sparking.blazora.BlazoraPaper;
-import games.sparking.blazora.rank.Rank;
-import games.sparking.blazora.redis.packet.Packet;
-import games.sparking.blazora.utils.CC;
+import games.sparking.altara.AltaraPaper;
+import games.sparking.altara.rank.Rank;
+import games.sparking.altara.redis.packet.Packet;
+import games.sparking.altara.utils.CC;
 import lombok.NoArgsConstructor;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -11,9 +11,8 @@ import org.bukkit.entity.Player;
 import java.util.UUID;
 
 @NoArgsConstructor
-public class GrantRemovePacket implements Packet {
+public class GrantRemovePacket extends Packet {
 
-    private static final BlazoraPaper zircon = BlazoraPaper.getPaperInstance();
     private UUID uuid;
     private UUID rankUuid;
 
@@ -25,21 +24,16 @@ public class GrantRemovePacket implements Packet {
     @Override
     public void receive() {
         Player player = Bukkit.getPlayer(uuid);
-        Rank rank = zircon.getRankService().getRank(rankUuid);
+        Rank rank = AltaraPaper.getPaperInstance().getRankService().getRank(rankUuid);
         if (player == null) {
             return;
         }
 
-        zircon.getPermissionService().updatePermissions(player);
+        AltaraPaper.getPaperInstance().getPermissionService().updatePermissions(player);
 
         player.sendMessage(CC.format(
                 "&aYour %s&a grant has been removed.",
                 rank.getName()
         ));
-    }
-
-    @Override
-    public String getId() {
-        return "";
     }
 }

@@ -77,7 +77,7 @@ public class FileUpdater implements Listener {
 
     private void collectHashes(File[] files) {
         if (files == null) return;
-        String serverName = Altara.getServerIdentifier();
+        String serverName = Altara.getSharedInstance().getLocalServerName();
         for (File file : files) {
             try (FileInputStream stream = new FileInputStream(file)) {
                 String fileName = (serverName != null)
@@ -109,7 +109,7 @@ public class FileUpdater implements Listener {
         File[] files = updateDir.listFiles(JAR_FILTER);
         if (files == null) return;
 
-        String serverName = Altara.getServerIdentifier();
+        String serverName = Altara.getSharedInstance().getLocalServerName();
         for (File file : files) {
             String key = (serverName != null)
                     ? file.getName().replace(serverName, "server")

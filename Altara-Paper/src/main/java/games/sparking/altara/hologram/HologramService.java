@@ -1,26 +1,12 @@
 package games.sparking.altara.hologram;
 
 import com.github.retrooper.packetevents.PacketEvents;
-import com.github.retrooper.packetevents.event.PacketListenerAbstract;
-import com.github.retrooper.packetevents.event.PacketReceiveEvent;
-import com.github.retrooper.packetevents.protocol.packettype.PacketType;
-import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientInteractEntity;
-import games.sparking.altara.hologram.clickhandler.HologramClickHandler;
-import me.tofaa.entitylib.EntityLib;
-import me.tofaa.entitylib.spigot.SpigotEntityLibPlatform;
 import org.bukkit.Bukkit;
-import org.bukkit.entity.Player;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.EventPriority;
-import org.bukkit.event.Listener;
-import org.bukkit.event.player.PlayerJoinEvent;
-import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -28,7 +14,6 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * <h2>Responsibilities</h2>
  * <ul>
- *   <li>Initialises EntityLib (once per server startup).</li>
  *   <li>Registers a PacketEvents listener that maps incoming
  *       {@code INTERACT_ENTITY} packets to hologram click callbacks.</li>
  *   <li>Registers a Bukkit listener that auto-spawns / cleans up holograms as
@@ -71,8 +56,7 @@ public final class HologramService {
     // =========================================================================
 
     /**
-     * Initialises EntityLib, registers the PacketEvents click listener, and sets up the
-     * Bukkit join/quit listener.
+     * Registers the PacketEvents click listener and the Bukkit join/quit listener.
      *
      * <p>This method is idempotent: calling it more than once is a no-op after the first call.
      *
@@ -82,27 +66,11 @@ public final class HologramService {
         if (initialised) return;
         initialised = true;
 
-        // -- EntityLib setup (idempotent – safe to call from NPCService too) --
-        ensureEntityLibInitialized(plugin);
-
         // -- PacketEvents click listener --------------------------------------
         PacketEvents.getAPI().getEventManager().registerListener(new HologramInteractListener());
 
         // -- Bukkit join/quit listener ----------------------------------------
         Bukkit.getPluginManager().registerEvents(new HologramBukkitListener(), plugin);
-    }
-
-    /**
-     * Initialises EntityLib exactly once.  Both {@link HologramService} and
-     * {@link games.sparking.altara.npc.NPCService} call this so that either service
-     * can be initialised first without causing a double-init error.
-     */
-    public static void ensureEntityLibInitialized(JavaPlugin plugin) {
-        try {
-            EntityLib.init(new SpigotEntityLibPlatform(plugin), PacketEvents.getAPI());
-        } catch (IllegalStateException ignored) {
-            // Already initialised — safe to continue
-        }
     }
 
     // =========================================================================
@@ -153,60 +121,5 @@ public final class HologramService {
     /** Returns an unmodifiable snapshot of all currently registered holograms. */
     public static List<Hologram> getHolograms() {
         return List.copyOf(HOLOGRAMS);
-    }
-
-    // =========================================================================
-    // Inner – PacketEvents click listener
-    // =========================================================================
-
-    private static final class HologramInteractListener extends PacketListenerAbstract {
-
-        @Override
-        public void onPacketReceive(PacketReceiveEvent event) {
-            if (event.getPacketType() != PacketType.Play.Client.INTERACT_ENTITY) return;
-
-            WrapperPlayClientInteractEntity packet = new WrapperPlayClientInteractEntity(event);
-            int entityId = packet.getEntityId();
-
-            Hologram hologram = ENTITY_ID_MAP.get(entityId);
-            if (hologram == null || hologram.getClickHandler() == null) return;
-
-            // Resolve the Bukkit Player from the PacketEvents user UUID
-            UUID playerUuid = event.getUser().getUUID();
-            Player player = Bukkit.getPlayer(playerUuid);
-            if (player == null) return;
-
-            HologramClickHandler.ClickType clickType =
-                    packet.getAction() == WrapperPlayClientInteractEntity.InteractAction.ATTACK
-                            ? HologramClickHandler.ClickType.LEFT_CLICK
-                            : HologramClickHandler.ClickType.RIGHT_CLICK;
-
-            hologram.getClickHandler().click(player, hologram, clickType);
-        }
-    }
-
-    // =========================================================================
-    // Inner – Bukkit join/quit listener
-    // =========================================================================
-
-    private static final class HologramBukkitListener implements Listener {
-
-        @EventHandler(priority = EventPriority.MONITOR)
-        public void onPlayerJoin(PlayerJoinEvent event) {
-            // Spawn all registered holograms for the joining player (each will check canSee)
-            Player player = event.getPlayer();
-            for (Hologram hologram : HOLOGRAMS) {
-                hologram.spawn(player);
-            }
-        }
-
-        @EventHandler
-        public void onPlayerQuit(PlayerQuitEvent event) {
-            // Release all entity resources for the leaving player
-            Player player = event.getPlayer();
-            for (Hologram hologram : HOLOGRAMS) {
-                hologram.despawn(player);
-            }
-        }
     }
 }

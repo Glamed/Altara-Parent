@@ -1,7 +1,7 @@
 package games.sparking.altara.playersetting.command;
 
-import games.sparking.blazora.command.annotation.Command;
-import games.sparking.blazora.playersetting.menu.SettingsMenu;
+import games.sparking.altara.command.annotation.Command;
+import games.sparking.altara.playersetting.menu.SettingsMenu;
 import org.bukkit.entity.Player;
 
 public class SettingsCommands {

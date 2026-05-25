@@ -112,7 +112,7 @@ public class RankCommands {
         sender.sendMessage(CC.format(" &bLocal Permissions: &f(%d) %s",
                 rank.getLocalPermissions().size(), String.join(", ", rank.getLocalPermissions())));
         sender.sendMessage(CC.format(" &bInherited Permissions: &f(%d) %s",
-                rank.getInheritedPermissions().size(), String.join(", ", rank.getInheritedPermissions())));
+                rank.getInheritPermissions().size(), String.join(", ", rank.getInheritPermissions())));
         sender.sendMessage(CC.genLine("&8", "&3"));
         return true;
     }
@@ -331,7 +331,7 @@ public class RankCommands {
             sender.sendMessage(CC.format("&eYou made %s &eno longer inherit %s&e.",
                     parent.getName(), child.getName()));
         } else {
-            parent.getInherits().add(child.getUuid());
+            parent.getInherits().add(child);
             sender.sendMessage(CC.format("&eYou made %s &einherit %s&e.",
                     parent.getName(), child.getName()));
         }

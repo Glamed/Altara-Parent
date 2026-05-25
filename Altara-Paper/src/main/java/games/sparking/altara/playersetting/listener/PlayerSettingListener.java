@@ -1,7 +1,7 @@
 package games.sparking.altara.playersetting.listener;
 
-import games.sparking.blazora.playersetting.PlayerSetting;
-import games.sparking.blazora.playersetting.PlayerSettingService;
+import games.sparking.altara.playersetting.PlayerSetting;
+import games.sparking.altara.playersetting.PlayerSettingService;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.AsyncPlayerPreLoginEvent;

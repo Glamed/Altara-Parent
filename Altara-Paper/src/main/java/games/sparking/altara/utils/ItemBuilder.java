@@ -45,7 +45,7 @@ public class ItemBuilder {
 
     // --- Lore ---
 
-    public ItemBuilder setLore(List<Component> lore) {
+    public ItemBuilder setLore(ArrayList<Component> lore) {
         this.itemMeta.lore(lore);
         return this;
     }

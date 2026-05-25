@@ -3,10 +3,8 @@ package games.sparking.altara.server;
 import games.sparking.altara.Altara;
 import games.sparking.altara.playersetting.AltaraSettings;
 import games.sparking.altara.redis.packet.Packet;
-import lombok.RequiredArgsConstructor;
 import org.bukkit.Bukkit;
 
-@RequiredArgsConstructor
 public class NetworkBroadcastPacket extends Packet {
     private final String message;
     private final String permission;
