@@ -143,6 +143,8 @@ public class AltaraPaper extends Altara {
 
     @Override
     public void startServerMonitor() {
+        this.serverInfo = new ServerInfo(getLocalServerName());
+
         Tasks.runTimerAsync(() -> {
             ServerInfo.getServers().stream()
                     .filter(server -> System.currentTimeMillis() - server.getLastHeartbeat() > ServerInfo.MAX_TIMEOUT
