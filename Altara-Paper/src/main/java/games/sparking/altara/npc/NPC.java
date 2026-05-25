@@ -373,5 +373,3 @@ public final class NPC {
     }
 }
 
-
-

@@ -18,6 +18,13 @@ public class SimpleLocationConfig implements StaticConfiguration {
     private double x = 0;
     private double y = 0;
     private double z = 0;
+    public SimpleLocationConfig(String world, double x, double y, double z) {
+        this.world = world;
+        this.x = x;
+        this.y = y;
+        this.z = z;
+    }
+
     public SimpleLocationConfig(Location location) {
         this(location, false);
     }

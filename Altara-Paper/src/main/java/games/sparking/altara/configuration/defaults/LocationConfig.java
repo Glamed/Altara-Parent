@@ -16,6 +16,16 @@ public class LocationConfig extends SimpleLocationConfig implements StaticConfig
     private float pitch = 0;
     private float yaw = 0;
 
+    public LocationConfig(String world, double x, double y, double z) {
+        super(world, x, y, z);
+    }
+
+    public LocationConfig(String world, double x, double y, double z, float pitch, float yaw) {
+        super(world, x, y, z);
+        this.pitch = pitch;
+        this.yaw = yaw;
+    }
+
     public LocationConfig(Location location) {
         this(location, false);
     }

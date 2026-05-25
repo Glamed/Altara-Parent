@@ -3,6 +3,7 @@ package games.sparking.altara;
 import games.sparking.altara.chat.ChatListener;
 import games.sparking.altara.command.BuildVersionCommand;
 import games.sparking.altara.npc.NPCBukkitListener;
+import games.sparking.altara.npc.NPCInteractListener;
 import games.sparking.altara.profiler.ProfilerListener;
 import games.sparking.altara.profiler.command.ProfilerCommand;
 import games.sparking.altara.punishment.commands.PunishCommand;
@@ -109,6 +110,8 @@ public class AltaraPaper extends Altara {
 
     @Override
     public void registerListeners() {
+        PacketEvents.getAPI().getEventManager().registerListener(new NPCInteractListener());
+
         Arrays.asList(
                 new ChatListener(),
                 new MenuListener(),

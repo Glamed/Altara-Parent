@@ -10,8 +10,6 @@ import games.sparking.altara.utils.CC;
 import games.sparking.altara.utils.ItemBuilder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.bukkit.Bukkit;
-import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -39,7 +37,7 @@ public class ServerSelectorEntry implements StaticConfiguration {
             "&7&m------------------------"
     );
 
-    private LocationConfig npcLocation = new LocationConfig(new Location(Bukkit.getWorlds().get(0), 63, 68, 88));
+    private LocationConfig npcLocation = new LocationConfig("world", 63, 68, 88);
     private String npcSkin = "Notch";
     private List<String> npcLines = Arrays.asList(
             "&5&lDev",

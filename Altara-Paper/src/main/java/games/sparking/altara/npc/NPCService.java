@@ -64,7 +64,7 @@ public final class NPCService {
         initialised = true;
 
         // -- PacketEvents click listener --------------------------------------
-        PacketEvents.getAPI().getEventManager().registerListener(new NPCInteractListener());
+
 
         // -- Bukkit join/quit listener ----------------------------------------
         Bukkit.getPluginManager().registerEvents(new NPCBukkitListener(), plugin);
