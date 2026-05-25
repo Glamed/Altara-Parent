@@ -3,7 +3,6 @@ package games.sparking.altara;
 import games.sparking.altara.chat.ChatListener;
 import games.sparking.altara.command.BuildVersionCommand;
 import games.sparking.altara.npc.NPCBukkitListener;
-import games.sparking.altara.npc.NPCService;
 import games.sparking.altara.profiler.ProfilerListener;
 import games.sparking.altara.profiler.command.ProfilerCommand;
 import games.sparking.altara.punishment.commands.PunishCommand;
@@ -29,7 +28,8 @@ import games.sparking.altara.rank.Rank;
 import games.sparking.altara.rank.parameter.RankParameter;
 import games.sparking.altara.server.ServerInfo;
 import games.sparking.altara.server.ServerState;
-import games.sparking.altara.server.UpdateServerPacket;
+import games.sparking.altara.server.packet.UpdateServerPacket;
+import games.sparking.altara.server.parameter.AllServersParameter;
 import games.sparking.altara.task.Tasks;
 import games.sparking.altara.task.UpdateTask;
 import games.sparking.altara.task.impl.BukkitTaskImplementor;
@@ -98,6 +98,7 @@ public class AltaraPaper extends Altara {
         CommandService.registerParameter(Profile.class, new ProfileParameter());
         CommandService.registerParameter(UnloadedProfile.class, new UnloadedProfileParameter());
         CommandService.registerParameter(Rank.class, new RankParameter());
+        CommandService.registerParameter(ServerInfo.class, new AllServersParameter());
 
         CommandService.register(AltaraPaper.getPlugin(),
                 new GamemodeCommand(),
@@ -166,6 +167,11 @@ public class AltaraPaper extends Altara {
             serverInfo.setAllocatedMemory(Runtime.getRuntime().totalMemory() / 1048576L);
             new UpdateServerPacket(serverInfo).publish();
         }, 20L, 1L);
+    }
+
+    @Override
+    public void dispatchConsoleCommand(String command) {
+        Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command);
     }
 
     @Override

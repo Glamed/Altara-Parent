@@ -36,6 +36,11 @@ public class AltaraWeb extends Altara {
         log.debug("Server info updated: {} ({})", serverInfo.getName(), serverInfo.getState());
     }
 
+    @Override
+    public void dispatchConsoleCommand(String command) {
+
+    }
+
     @Override public void updatePermissions(UUID uuid)           {}
     @Override public void updatePermissionsWithRank(Rank rank)   {}
     @Override public List<String> getLocalPermissions(Rank rank) { return Collections.emptyList(); }

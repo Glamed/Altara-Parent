@@ -1,4 +1,4 @@
-package games.sparking.altara.server;
+package games.sparking.altara.server.packet;
 
 import games.sparking.altara.Altara;
 import games.sparking.altara.playersetting.AltaraSettings;

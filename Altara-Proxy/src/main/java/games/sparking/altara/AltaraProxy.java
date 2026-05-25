@@ -80,6 +80,14 @@ public class AltaraProxy extends Altara {
     }
 
     @Override
+    public void dispatchConsoleCommand(String command) {
+        getProxyInstance().getCommandManager().executeAsync(
+                getProxyInstance().getConsoleCommandSource(),
+                command
+        );
+    }
+
+    @Override
     public void updatePermissions(UUID uuid) {
 
     }

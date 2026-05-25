@@ -1,6 +1,8 @@
-package games.sparking.altara.server;
+package games.sparking.altara.server.packet;
 
 import games.sparking.altara.redis.packet.Packet;
+import games.sparking.altara.server.ServerInfo;
+import games.sparking.altara.server.ServerState;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor

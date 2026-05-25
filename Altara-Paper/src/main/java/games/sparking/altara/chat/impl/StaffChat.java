@@ -3,7 +3,7 @@ package games.sparking.altara.chat.impl;
 import games.sparking.altara.Altara;
 import games.sparking.altara.chat.ChatChannel;
 import games.sparking.altara.playersetting.AltaraSettings;
-import games.sparking.altara.server.NetworkBroadcastPacket;
+import games.sparking.altara.server.packet.NetworkBroadcastPacket;
 import games.sparking.altara.utils.CC;
 import lombok.Getter;
 import games.sparking.altara.profile.Profile;

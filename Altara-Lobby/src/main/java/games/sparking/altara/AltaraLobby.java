@@ -3,18 +3,13 @@ package games.sparking.altara;
 import games.sparking.altara.command.CommandService;
 import games.sparking.altara.configuration.ConfigurationService;
 import games.sparking.altara.configuration.LobbyConfig;
-import games.sparking.altara.configuration.LocalConfig;
 import games.sparking.altara.npc.LobbyNPC;
-import games.sparking.altara.npc.NPCCommands;
 import games.sparking.altara.scoreboard.HubBoardAdapter;
 import games.sparking.altara.scoreboard.ScoreboardService;
 import games.sparking.altara.spawn.SpawnCommands;
 import lombok.Getter;
-import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
-import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.scoreboard.ScoreboardManager;
 
 public class AltaraLobby extends AltaraPaper {
 
@@ -40,8 +35,7 @@ public class AltaraLobby extends AltaraPaper {
     public void registerCommands() {
         super.registerCommands();
         CommandService.register(AltaraPaper.getPlugin(),
-                new SpawnCommands(),
-                new NPCCommands()
+                new SpawnCommands()
         );
     }
 

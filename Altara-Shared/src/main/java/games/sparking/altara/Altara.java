@@ -110,6 +110,8 @@ public abstract class Altara {
     public abstract void startServerMonitor();
     public void handleServerInfoUpdate(ServerInfo serverInfo) {}
 
+    public abstract void dispatchConsoleCommand(String command);
+
     public abstract void updatePermissions(UUID uuid);
     public abstract void updatePermissionsWithRank(Rank rank);
     public abstract List<String> getLocalPermissions(Rank rank);
