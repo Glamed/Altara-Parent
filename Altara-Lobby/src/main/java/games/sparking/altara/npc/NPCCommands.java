@@ -2,6 +2,8 @@ package games.sparking.altara.npc;
 
 import games.sparking.altara.AltaraLobby;
 import games.sparking.altara.command.annotation.Command;
+import games.sparking.altara.command.annotation.Header;
+import games.sparking.altara.command.annotation.Param;
 import games.sparking.altara.configuration.defaults.LocationConfig;
 import games.sparking.altara.selector.ServerSelectorEntry;
 import net.md_5.bungee.api.ChatColor;
@@ -9,6 +11,12 @@ import org.bukkit.entity.Player;
 
 import java.util.List;
 
+@Header(
+        primaryColor = "&5",
+        secondaryColor = "&8",
+        tertiaryColor = "&d",
+        header = "NPC"
+)
 public class NPCCommands {
 
     @Command(
@@ -17,7 +25,7 @@ public class NPCCommands {
             permission = "altara.command.npc.setlocation",
             description = "Set the NPC location for a server selector entry"
     )
-    public boolean setNpcLocation(Player player, String serverName) {
+    public boolean setNpcLocation(Player player, @Param(name = "serverName") String serverName) {
         AltaraLobby lobby = AltaraLobby.getLobbyInstance();
         List<ServerSelectorEntry> entries = lobby.getLobbyConfig().getServerSelector();
 
@@ -42,4 +50,3 @@ public class NPCCommands {
         return true;
     }
 }
-
