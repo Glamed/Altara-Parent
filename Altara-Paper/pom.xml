@@ -33,7 +33,7 @@
 
         <!-- EntityLib (shaded into the plugin jar) -->
         <dependency>
-            <groupId>com.github.Tofaa2.EntityLib</groupId>
+            <groupId>io.github.tofaa2</groupId>
             <artifactId>spigot</artifactId>
         </dependency>
     </dependencies>

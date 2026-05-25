@@ -82,7 +82,6 @@ public class AltaraPaper extends Altara {
         APIConfig settings = new APIConfig(PacketEvents.getAPI())
                 .debugMode()
                 .tickTickables()
-                .trackPlatformEntities()
                 .usePlatformLogger();
         EntityLib.init(platform, settings);
 
