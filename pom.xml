@@ -34,6 +34,7 @@
         <spring-boot.version>3.4.5</spring-boot.version>
         <packetevents.version>2.12.1</packetevents.version>
         <entitylib.version>3.3.2-SNAPSHOT</entitylib.version>
+        <developertobi-entitylib.version>1.0-SNAPSHOT</developertobi-entitylib.version>
     </properties>
 
     <repositories>
@@ -60,6 +61,14 @@
             <id>pvphub-maven-tofaa</id>
             <name>PvPHub Maven</name>
             <url>https://maven.pvphub.me/tofaa</url>
+        </repository>
+        <repository>
+            <id>github-developertobi-entitylib</id>
+            <name>GitHub Packages – DeveloperTobi EntityLib</name>
+            <url>https://maven.pkg.github.com/DeveloperTobi-Server/entity-library</url>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
         </repository>
     </repositories>
 
@@ -162,6 +171,13 @@
                 <groupId>io.github.tofaa2</groupId>
                 <artifactId>spigot</artifactId>
                 <version>${entitylib.version}</version>
+            </dependency>
+
+            <!-- DeveloperTobi EntityLib (GitHub Packages) -->
+            <dependency>
+                <groupId>net.developertobi.entitylib</groupId>
+                <artifactId>entity-api</artifactId>
+                <version>${developertobi-entitylib.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

@@ -2,8 +2,6 @@ package games.sparking.altara;
 
 import games.sparking.altara.chat.ChatListener;
 import games.sparking.altara.command.BuildVersionCommand;
-import games.sparking.altara.npc.NPCBukkitListener;
-import games.sparking.altara.npc.NPCInteractListener;
 import games.sparking.altara.profiler.ProfilerListener;
 import games.sparking.altara.profiler.command.ProfilerCommand;
 import games.sparking.altara.punishment.commands.PunishCommand;
@@ -36,6 +34,7 @@ import games.sparking.altara.task.UpdateTask;
 import games.sparking.altara.task.impl.BukkitTaskImplementor;
 import games.sparking.altara.updater.FileUpdater;
 import com.github.retrooper.packetevents.PacketEvents;
+import io.github.retrooper.packetevents.factory.spigot.SpigotPacketEventsBuilder;
 import lombok.Getter;
 import me.tofaa.entitylib.APIConfig;
 import me.tofaa.entitylib.EntityLib;
@@ -79,6 +78,9 @@ public class AltaraPaper extends Altara {
 
     @Override
     public void init() {
+        PacketEvents.setAPI(SpigotPacketEventsBuilder.build(getPlugin()));
+        PacketEvents.getAPI().load();
+        PacketEvents.getAPI().init();
         SpigotEntityLibPlatform platform = new SpigotEntityLibPlatform(plugin);
         APIConfig settings = new APIConfig(PacketEvents.getAPI())
                 .debugMode()
@@ -110,15 +112,14 @@ public class AltaraPaper extends Altara {
 
     @Override
     public void registerListeners() {
-        PacketEvents.getAPI().getEventManager().registerListener(new NPCInteractListener());
+//        PacketEvents.getAPI().getEventManager().registerListener(new NPCInteractListener());
 
         Arrays.asList(
                 new ChatListener(),
                 new MenuListener(),
                 new PunishmentLoginListener(),
                 new PunishmentChatListener(),
-                new ProfilerListener(),
-                new NPCBukkitListener()
+                new ProfilerListener()
         ).forEach(listener -> getPlugin().getServer().getPluginManager().registerEvents(listener, getPlugin()));
         new FileUpdater();
     }

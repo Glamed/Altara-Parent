@@ -25,6 +25,14 @@
             <artifactId>Altara-Paper</artifactId>
             <scope>compile</scope>
         </dependency>
+
+        <!-- DeveloperTobi EntityLib (provided by the server at runtime) -->
+        <dependency>
+            <groupId>net.developertobi.entitylib</groupId>
+            <artifactId>entity-bukkit</artifactId>
+            <version>1.0-SNAPSHOT</version>
+            <scope>provided</scope>
+        </dependency>
     </dependencies>
 
     <build>
