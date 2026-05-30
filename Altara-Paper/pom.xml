@@ -31,11 +31,6 @@
             <artifactId>packetevents-spigot</artifactId>
         </dependency>
 
-        <!-- EntityLib (shaded into the plugin jar) -->
-        <dependency>
-            <groupId>io.github.tofaa2</groupId>
-            <artifactId>spigot</artifactId>
-        </dependency>
     </dependencies>
 
     <build>

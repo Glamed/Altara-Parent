@@ -19,6 +19,12 @@
             <artifactId>paper-api</artifactId>
         </dependency>
 
+        <!-- PacketEvents (provided — installed as a server plugin) -->
+        <dependency>
+            <groupId>com.github.retrooper</groupId>
+            <artifactId>packetevents-spigot</artifactId>
+        </dependency>
+
         <!-- Altara-Paper core: bundled into this JAR via shade since it has no standalone plugin.yml -->
         <dependency>
             <groupId>games.sparking</groupId>
@@ -26,13 +32,7 @@
             <scope>compile</scope>
         </dependency>
 
-        <!-- DeveloperTobi EntityLib (provided by the server at runtime) -->
-        <dependency>
-            <groupId>net.developertobi.entitylib</groupId>
-            <artifactId>entity-bukkit</artifactId>
-            <version>1.0-SNAPSHOT</version>
-            <scope>provided</scope>
-        </dependency>
+
     </dependencies>
 
     <build>
@@ -46,6 +46,13 @@
                 <artifactId>maven-shade-plugin</artifactId>
                 <configuration>
                     <outputFile>C:\Users\andre\Desktop\Sparking\Update\Altara-Lobby.jar</outputFile>
+                    <relocations>
+                        <!-- Must match the relocation in Altara-Paper so both share the same runtime package -->
+                        <relocation>
+                            <pattern>me.tofaa.entitylib</pattern>
+                            <shadedPattern>games.sparking.altara.libs.entitylib</shadedPattern>
+                        </relocation>
+                    </relocations>
                 </configuration>
             </plugin>
         </plugins>

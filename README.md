@@ -1,8 +1,7 @@
 # Altara
 
-A modular Minecraft network example built to demonstrate how multiple server components can communicate through shared services like Redis.
-
-This project is designed as a **learning reference** for structuring a multi-module Minecraft network codebase.
+This project is a very heavy WIP, but it serves as a demonstration of how to structure a modular Minecraft network project with shared code and Redis communication.
+Modules such as `Altara-Web` may be placeholders for future functionality, but the overall structure is meant to show how to organize a complex network project in a maintainable way.
 
 ---
 

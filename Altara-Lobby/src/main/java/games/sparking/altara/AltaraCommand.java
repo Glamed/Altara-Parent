@@ -1,32 +1,21 @@
 package games.sparking.altara;
 
+import com.github.retrooper.packetevents.protocol.world.Location;
 import games.sparking.altara.command.annotation.Command;
-import me.tofaa.entitylib.wrapper.hologram.Hologram;
-import net.developertobi.entitylib.api.dsl.EntityDsl;
-import net.developertobi.entitylib.api.hologram.FakeHologram;
-import net.developertobi.entitylib.api.hologram.HologramType;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.entity.Player;
 
 public class AltaraCommand {
 
-    @Command(names = "test", description = "A test command")
-    public void testCommand(Player player) {
+    @Command(names = "altara", description = "Altara debug / test command", permission = "altara.admin")
+    public void altaraCommand(Player player) {
+        org.bukkit.Location loc = player.getLocation().add(0, 2.2, 0);
+        Location peLoc = new Location(loc.getX(), loc.getY(), loc.getZ(), loc.getYaw(), loc.getPitch());
 
-        FakeHologram hologram = EntityDsl.fakeHologram(
-                "my-legacy-hologram-" + player.getUniqueId(),
-                HologramType.LEGACY,
-                player.getLocation().add(0, 2.2, 0),
-                builder -> {
-                    builder.line(Component.text("Hello"));
-                    builder.line(Component.text("Only you can see this"));
-                    builder.interaction(event -> {
-                        event.getPlayer().sendMessage("Clicked!");
-                    });
-                }
-        );
+        
 
-        hologram.spawn(player.getUniqueId());
-        player.sendMessage(Component.text("Altara test command"));
+        player.sendMessage(Component.text("Spawned hologram above you.", NamedTextColor.GREEN));
     }
 }
+

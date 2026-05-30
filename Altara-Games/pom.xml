@@ -25,6 +25,11 @@
             <artifactId>Altara-Paper</artifactId>
             <scope>compile</scope>
         </dependency>
+        <dependency>
+            <groupId>com.github.retrooper</groupId>
+            <artifactId>packetevents-spigot</artifactId>
+            <scope>compile</scope>
+        </dependency>
     </dependencies>
 
     <build>

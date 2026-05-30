@@ -64,7 +64,8 @@ public class Rank extends JsonObjClass {
         this.queuePriority = object.get("queuePriority").getAsInt();
         this.defaultRank = object.get("defaultRank").getAsBoolean();
         this.disguisable = object.get("disguisable").getAsBoolean();
-        object.get("permissions").getAsJsonArray().forEach(element -> permissions.add(element.getAsString()));
+        if (object.get("permissions").isJsonArray())
+            object.get("permissions").getAsJsonArray().forEach(element -> permissions.add(element.getAsString()));
 
         if (object.has("discordId"))
             this.discordId = object.get("discordId").getAsString();

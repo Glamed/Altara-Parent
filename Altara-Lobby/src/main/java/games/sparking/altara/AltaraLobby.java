@@ -9,6 +9,7 @@ import games.sparking.altara.spawn.SpawnCommands;
 import lombok.Getter;
 import org.bukkit.plugin.java.JavaPlugin;
 
+
 public class AltaraLobby extends AltaraPaper {
 
     @Getter
@@ -29,7 +30,8 @@ public class AltaraLobby extends AltaraPaper {
     public void registerCommands() {
         super.registerCommands();
         CommandService.register(AltaraPaper.getPlugin(),
-                new SpawnCommands()
+                new SpawnCommands(),
+                new AltaraCommand()
         );
     }
 

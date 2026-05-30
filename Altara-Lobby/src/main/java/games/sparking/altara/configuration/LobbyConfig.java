@@ -26,20 +26,19 @@ public class LobbyConfig extends LocalConfig {
 
     private boolean hidePlayers = false;
 
-    //private String scoreboardTitle = "&6&lArson &7┃ &fHub";
-    private String scoreboardTitle = "Hub";
+    private String scoreboardTitle = "Spaking Games";
 
     private List<String> scoreBoardLines =
             Arrays.asList(
                     "&1&7&m--------------------",
                     "&4Online:",
-                    " &f%onlinecount% / 1,000",
+                    " &f%onlinecount% / %maxcount%",
                     " ",
                     "&4Rank:",
                     " %rank%",
                     " ",
-                    "%queue%",
-                    "%reboot%",
+                    "%rotate%",
+                    "",
                     "&7&o%server_address%",
                     "&7&m--------------------");
 

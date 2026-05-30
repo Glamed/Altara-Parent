@@ -49,7 +49,7 @@ public class RankService {
                 }
 
                 JsonObject object = response.asObject();
-                if (!object.has("inherits"))
+                if (!object.has("inherits") || !object.get("inherits").isJsonArray())
                     continue;
 
                 object.get("inherits").getAsJsonArray().forEach(element -> {
@@ -77,11 +77,13 @@ public class RankService {
 
             JsonObject object = response.asObject();
             Rank rank = new Rank(object);
-            object.get("inherits").getAsJsonArray().forEach(element -> {
-                Rank inherit = getRank(UUID.fromString(element.getAsString()));
-                if (inherit != null)
-                    rank.getInherits().add(inherit);
-            });
+            if (object.has("inherits") && object.get("inherits").isJsonArray()) {
+                object.get("inherits").getAsJsonArray().forEach(element -> {
+                    Rank inherit = getRank(UUID.fromString(element.getAsString()));
+                    if (inherit != null)
+                        rank.getInherits().add(inherit);
+                });
+            }
             ranks.put(rank.getUuid(), rank);
             callback.accept(rank);
         });

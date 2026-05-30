@@ -76,7 +76,27 @@ public class JsonConfigurationService implements ConfigurationService {
                     "Failed to load configuration " + clazz.getName() +
                             " from file " + file.getName() + ": " + e.getMessage()
             );
-            return null;
+
+            // The file is corrupt / unreadable.  Reset it to a clean default so the
+            // server can start.  A backup copy is kept alongside the original.
+            try {
+                File backup = new File(file.getParent(), file.getName() + ".bak");
+                if (backup.exists()) backup.delete();
+                file.renameTo(backup);
+                Altara.getSharedInstance().getLogger().warn(
+                        "Corrupt config backed up to " + backup.getName() +
+                                " — starting with an empty default."
+                );
+                T config = clazz.getDeclaredConstructor().newInstance();
+                saveConfiguration(config, file);
+                return config;
+            } catch (Exception fallbackEx) {
+                Altara.getSharedInstance().getLogger().error(
+                        "Could not recover from corrupt config " + file.getName() +
+                                ": " + fallbackEx.getMessage()
+                );
+                return null;
+            }
         }
     }
 }

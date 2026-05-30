@@ -32,36 +32,36 @@ public class HubBoardAdapter implements ScoreboardAdapter {
         StringAnimation animation = new StringAnimation();
 
         animation.add(new StaticAnimation(
-                CC.DAQUA + CC.BOLD + AltaraLobby.getLobbyInstance().getLobbyConfig().getScoreboardTitle(),
+                CC.DRED + CC.BOLD + AltaraLobby.getLobbyInstance().getLobbyConfig().getScoreboardTitle(),
                 10
         ));
         animation.add(new FadeAnimation(
                 AltaraLobby.getLobbyInstance().getLobbyConfig().getScoreboardTitle(),
-                CC.DAQUA + CC.BOLD,
-                CC.AQUA + CC.BOLD,
+                CC.DRED + CC.BOLD,
+                CC.RED + CC.BOLD,
                 false
         ));
         animation.add(new BlinkAnimation(
                 AltaraLobby.getLobbyInstance().getLobbyConfig().getScoreboardTitle(),
-                CC.DAQUA + CC.BOLD,
-                CC.AQUA + CC.BOLD,
+                CC.DRED + CC.BOLD,
+                CC.RED + CC.BOLD,
                 3,
                 2
         ));
         animation.add(new StaticAnimation(
-                CC.DAQUA + CC.BOLD + AltaraLobby.getLobbyInstance().getLobbyConfig().getScoreboardTitle(),
+                CC.DRED + CC.BOLD + AltaraLobby.getLobbyInstance().getLobbyConfig().getScoreboardTitle(),
                 10
         ));
         animation.add(new FadeAnimation(
                 AltaraLobby.getLobbyInstance().getLobbyConfig().getScoreboardTitle(),
-                CC.DAQUA + CC.BOLD,
-                CC.AQUA + CC.BOLD,
+                CC.DRED + CC.BOLD,
+                CC.RED + CC.BOLD,
                 true
         ));
         animation.add(new BlinkAnimation(
                 AltaraLobby.getLobbyInstance().getLobbyConfig().getScoreboardTitle(),
-                CC.DAQUA + CC.BOLD,
-                CC.AQUA + CC.BOLD,
+                CC.DRED + CC.BOLD,
+                CC.RED + CC.BOLD,
                 3,
                 2
         ));
@@ -85,7 +85,9 @@ public class HubBoardAdapter implements ScoreboardAdapter {
 
     @Override
     public List<String> getLines(Player player) {
-        Profile profile = Altara.getSharedInstance().getProfileService().getProfile(player);
+//        Profile profile = Altara.getSharedInstance().getProfileService().getProfile(player);
+        Profile profile = new Profile(player.getUniqueId(), "GLamify");
+
         QueueService queueService = AltaraPaper.getPaperInstance().getQueueService();
         String primaryQueue = queueService.getPrimaryQueue(player.getUniqueId());
 
