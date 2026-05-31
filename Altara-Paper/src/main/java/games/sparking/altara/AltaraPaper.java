@@ -30,12 +30,14 @@ import games.sparking.altara.punishment.listener.PunishmentChatListener;
 import games.sparking.altara.punishment.listener.PunishmentLoginListener;
 import games.sparking.altara.queue.Queue;
 import games.sparking.altara.queue.QueueService;
+import games.sparking.altara.queue.commands.QueueCommands;
 import games.sparking.altara.rank.Rank;
 import games.sparking.altara.rank.parameter.RankParameter;
 import games.sparking.altara.reboot.RebootCommands;
 import games.sparking.altara.scoreboard.ScoreboardListener;
 import games.sparking.altara.server.ServerInfo;
 import games.sparking.altara.server.ServerState;
+import games.sparking.altara.server.command.ServerMonitorCommands;
 import games.sparking.altara.server.packet.UpdateServerPacket;
 import games.sparking.altara.server.parameter.AllServersParameter;
 import games.sparking.altara.task.Tasks;
@@ -46,7 +48,6 @@ import games.sparking.altara.utils.json.adapter.ItemStackAdapter;
 import games.sparking.altara.utils.json.adapter.UUIDAdapter;
 import lombok.Getter;
 import org.bukkit.Bukkit;
-import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -81,6 +82,8 @@ public class AltaraPaper extends Altara {
         AltaraPaper.paperInstance = this;
         setLogger(new PaperLogger());
         this.localConfig = localConfig;
+
+        getPlugin().getServer().getMessenger().registerOutgoingPluginChannel(getPlugin(), "BungeeCord");
 
         init();
     }
@@ -126,7 +129,9 @@ public class AltaraPaper extends Altara {
                 new PunishCommand(),
                 new ProfilerCommand(),
                 new HologramCommands(hologramService),
-                new RebootCommands()
+                new RebootCommands(),
+                new ServerMonitorCommands(),
+                new QueueCommands()
         );
     }
 

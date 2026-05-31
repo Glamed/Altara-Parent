@@ -68,7 +68,7 @@ public class ServerInfo {
 
     public static void updateServerInfo(ServerInfo serverInfo) {
         Altara.getSharedInstance().handleServerInfoUpdate(serverInfo);
-        servers.put(serverInfo.getName(), serverInfo);
+        servers.put(serverInfo.getName().toLowerCase(), serverInfo);
     }
 
     public static int getGlobalPlayerCount() {

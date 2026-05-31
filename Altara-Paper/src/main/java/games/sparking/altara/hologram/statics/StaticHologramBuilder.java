@@ -19,6 +19,8 @@ public class StaticHologramBuilder extends HologramBuilder {
         this.at(builder.getLocation());
         this.withSpacing(builder.getLineSpacing());
         this.clickHandler(builder.getClickHandler());
+        if (!builder.getViewers().isEmpty())
+            this.visibleTo(builder.getViewers());
     }
 
     public StaticHologramBuilder addLines(String... lines) {

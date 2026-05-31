@@ -13,20 +13,25 @@ public class HologramLine {
 
     private String text;
     private ArmorStand entity;
-    /** Invisible click-hitbox entity paired with the armor stand. */
     private Interaction interactionEntity;
 
     public HologramLine(String text) {
         this.text = text;
     }
 
-    /** Sets text and updates the live entity's name tag if it already exists. */
+    /** Updates stored text and refreshes the live entity's name tag if present. */
     public void setText(String text) {
         this.text = text;
         if (entity != null && !entity.isDead()) {
             entity.customName(toComponent(text));
             entity.setCustomNameVisible(!text.isEmpty());
         }
+    }
+
+    /** Removes both the armor stand and the interaction entity from the world. */
+    public void remove() {
+        if (entity != null && !entity.isDead()) entity.remove();
+        if (interactionEntity != null && !interactionEntity.isDead()) interactionEntity.remove();
     }
 
     public static Component toComponent(String legacyText) {

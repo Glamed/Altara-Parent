@@ -12,7 +12,7 @@ import org.bukkit.command.CommandSender;
 public class RebootCommands {
 
     @Command(names = {"reboot"},
-             permission = "ilib.command.reboot",
+             permission = "command.reboot",
              description = "Start the reboot timer")
     public boolean reboot(CommandSender sender, @Param(name = "duration") Duration duration) {
         if (duration.isPermanent()) {
@@ -31,7 +31,7 @@ public class RebootCommands {
     }
 
     @Command(names = {"reboot cancel"},
-             permission = "ilib.command.reboot",
+             permission = "command.reboot",
              description = "Cancel the reboot timer")
     public boolean cancel(CommandSender sender) {
         if (!RebootService.isRebooting()) {

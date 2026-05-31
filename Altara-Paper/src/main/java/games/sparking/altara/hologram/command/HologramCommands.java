@@ -7,14 +7,17 @@ import games.sparking.altara.hologram.HologramBuilder;
 import games.sparking.altara.hologram.HologramLine;
 import games.sparking.altara.hologram.HologramService;
 import games.sparking.altara.hologram.statics.StaticHologram;
+import games.sparking.altara.hologram.updating.UpdatingHologram;
 import games.sparking.altara.utils.CC;
 import games.sparking.altara.utils.ChatMessage;
 import lombok.RequiredArgsConstructor;
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 @RequiredArgsConstructor
@@ -27,6 +30,34 @@ import java.util.List;
 public class HologramCommands {
 
     private final HologramService hologramService;
+
+
+    @Command(names = {"hologram test", "holo test"},
+             permission = "altara.holograms",
+             description = "Spawn a temporary updating hologram (only visible to you)",
+             playerOnly = true)
+    public boolean test(Player sender) {
+        UpdatingHologram hologram = new HologramBuilder()
+                .at(sender.getLocation())
+                .visibleTo(sender)
+                .updating()
+                .intervalTicks(20L)
+                .lines(() -> Arrays.asList(
+                        "§e§lPlayers Online",
+                        "§f" + Bukkit.getOnlinePlayers().size()
+                ))
+                .clickHandler((player, holo, line, clickType) -> {
+                    if (line == 0) {
+                        player.sendMessage(CC.GREEN + "There are currently " + Bukkit.getOnlinePlayers().size() + " players online.");
+                    }
+                })
+                .build();
+
+        hologram.spawn();
+        hologram.start();
+        sender.sendMessage(CC.GREEN + "Test hologram spawned — only you can see it.");
+        return true;
+    }
 
     @Command(names = {"hologram create", "holo create"},
              permission = "altara.holograms",

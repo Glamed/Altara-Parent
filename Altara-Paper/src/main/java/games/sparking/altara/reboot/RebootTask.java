@@ -40,7 +40,7 @@ public class RebootTask extends BukkitRunnable {
 
         if (secondsRemaining == 0) {
             cancel();
-            Bukkit.getServer().shutdown();
+            Bukkit.getServer().restart();
             return;
         }
 

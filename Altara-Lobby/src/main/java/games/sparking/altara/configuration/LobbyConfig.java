@@ -39,7 +39,7 @@ public class LobbyConfig extends LocalConfig {
                     " ",
                     "%rotate%",
                     "",
-                    "&7&o%server_address%",
+                    "&7&o%connnection_address%",
                     "&7&m--------------------");
 
     private List<String> scoreBoardQueueLines =

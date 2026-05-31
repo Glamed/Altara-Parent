@@ -1,6 +1,7 @@
 package games.sparking.altara.hologram.updating;
 
 import games.sparking.altara.hologram.HologramBuilder;
+import games.sparking.altara.hologram.clickhandler.HologramClickHandler;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -20,6 +21,8 @@ public class UpdatingHologramBuilder extends HologramBuilder {
         this.at(builder.getLocation());
         this.withSpacing(builder.getLineSpacing());
         this.clickHandler(builder.getClickHandler());
+        if (!builder.getViewers().isEmpty())
+            this.visibleTo(builder.getViewers());
     }
 
     public UpdatingHologramBuilder interval(long time, TimeUnit unit) {
@@ -35,6 +38,12 @@ public class UpdatingHologramBuilder extends HologramBuilder {
     /** Supply a lambda that returns the current lines on each update tick. */
     public UpdatingHologramBuilder lines(Supplier<List<String>> supplier) {
         this.linesSupplier = supplier;
+        return this;
+    }
+
+    @Override
+    public UpdatingHologramBuilder clickHandler(HologramClickHandler clickHandler) {
+        super.clickHandler(clickHandler);
         return this;
     }
 

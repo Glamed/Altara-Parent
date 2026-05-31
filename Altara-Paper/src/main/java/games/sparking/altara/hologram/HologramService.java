@@ -5,6 +5,7 @@ import games.sparking.altara.hologram.config.HologramConfig;
 import games.sparking.altara.hologram.config.HologramConfigEntry;
 import games.sparking.altara.hologram.statics.StaticHologram;
 import lombok.RequiredArgsConstructor;
+import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.plugin.Plugin;
 
@@ -52,6 +53,12 @@ public class HologramService {
     public void load() {
         config = configurationService.loadConfiguration(HologramConfig.class,
                 new File(plugin.getDataFolder(), "holograms.json"));
+
+        // WorldLoadEvent fires before the plugin enables, so any worlds that are
+        // already loaded by the time load() is called must be handled explicitly here.
+        for (World world : Bukkit.getWorlds()) {
+            loadWorld(world);
+        }
     }
 
     public void loadWorld(World world) {
@@ -98,8 +105,7 @@ public class HologramService {
     }
 
     public void remove(StaticHologram hologram) {
-        hologram.destroy();
-        unregisterHologram(hologram.getId());
+        hologram.unregister(); // destroys entities + removes from CURRENT_HOLOGRAMS
         serializedHolograms.remove(hologram.getId());
         if (hologram.getName() != null)
             nameMapping.remove(hologram.getName().toLowerCase());

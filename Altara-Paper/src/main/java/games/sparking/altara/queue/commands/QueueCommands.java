@@ -21,7 +21,6 @@ import java.util.List;
 @RequiredArgsConstructor
 public class QueueCommands {
 
-
     @Command(names = {"joinqueue", "play", "realm", "jq"},
              description = "Join a Queue",
              playerOnly = true,
