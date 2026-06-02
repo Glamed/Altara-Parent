@@ -28,6 +28,11 @@ public class AltaraGamesPlugin extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        // Gracefully end all active game sessions before the server shuts down
+        AltaraGames altaraGames = (AltaraGames) games.sparking.altara.AltaraPaper.getPaperInstance();
+        if (altaraGames != null && altaraGames.getGameManager() != null) {
+            altaraGames.getGameManager().shutdown();
+        }
         PacketEvents.getAPI().terminate();
     }
 }
