@@ -6,6 +6,7 @@ import games.sparking.altara.hologram.leaderboard.LeaderboardHologram;
 import games.sparking.altara.hologram.listener.HologramListener;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -68,7 +69,14 @@ public class StaffHologramManager implements Listener {
                     FakeLeaderboardData.get(cat)));
         }
         Location lbLoc = new Location(player.getWorld(), LB_X, LB_Y, LB_Z);
-        LeaderboardHologram lbHologram = new LeaderboardHologram(player, lbLoc, lbCategories, 5);
+        LeaderboardHologram lbHologram = new LeaderboardHologram.Builder(player, lbLoc, lbCategories, 5)
+                .clickSound(Sound.UI_BUTTON_CLICK)
+                .clickSoundPitch(1.2f)
+                .autoRotateBoth(200L)
+                .autoRotateSound(Sound.BLOCK_NOTE_BLOCK_PLING)
+                .autoRotateSoundPitch(1.5f)
+                .manualInteractionHold(600L)
+                .build();
         lbHologram.spawn();
         lbHologram.start();
         holograms.add(lbHologram);
@@ -81,7 +89,14 @@ public class StaffHologramManager implements Listener {
                     FakePlayerRiskData.get(cat)));
         }
         Location riskLoc = new Location(player.getWorld(), RISK_X, RISK_Y, RISK_Z);
-        LeaderboardHologram riskHologram = new LeaderboardHologram(player, riskLoc, riskCategories, 5);
+        LeaderboardHologram riskHologram = new LeaderboardHologram.Builder(player, riskLoc, riskCategories, 5)
+                .clickSound(Sound.UI_BUTTON_CLICK)
+                .clickSoundPitch(1.2f)
+                .autoRotateBoth(200L)
+                .autoRotateSound(Sound.BLOCK_NOTE_BLOCK_PLING)
+                .autoRotateSoundPitch(1.5f)
+                .manualInteractionHold(600L)
+                .build();
         riskHologram.spawn();
         riskHologram.start();
         holograms.add(riskHologram);

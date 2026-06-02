@@ -62,12 +62,12 @@ public final class FakePlayerRiskData {
     private static final Map<String, List<LeaderboardEntry>> DATA = new LinkedHashMap<>();
 
     static {
-        DATA.put("reported",    buildShuffled(PLAYERS, 420,  "reports"));
-        DATA.put("punishments", buildShuffled(PLAYERS, 85,   "punishments"));
-        DATA.put("chatflags",   buildShuffled(PLAYERS, 1_500, "flags"));
-        DATA.put("alts",        buildShuffled(PLAYERS, 24,   "alts"));
-        DATA.put("riskscore",   buildShuffled(PLAYERS, 9_800, "pts"));
-        DATA.put("appeals",     buildShuffled(PLAYERS, 38,   "appeals"));
+        DATA.put("reported",    buildShuffled(420,  "reports"));
+        DATA.put("punishments", buildShuffled(85,   "punishments"));
+        DATA.put("chatflags",   buildShuffled(1_500, "flags"));
+        DATA.put("alts",        buildShuffled(24,   "alts"));
+        DATA.put("riskscore",   buildShuffled(9_800, "pts"));
+        DATA.put("appeals",     buildShuffled(38,   "appeals"));
     }
 
     private FakePlayerRiskData() { }
@@ -89,17 +89,12 @@ public final class FakePlayerRiskData {
         return (idx >= 0) ? TITLES.get(idx) : capitalize(category);
     }
 
-    /** Returns the unit label for a category key (e.g. {@code "reports"}). */
-    public static String unitFor(String category) {
-        return UNITS.getOrDefault(category.toLowerCase(), "");
-    }
-
     // -----------------------------------------------------------------------
     // Internal helpers
     // -----------------------------------------------------------------------
 
-    private static List<LeaderboardEntry> buildShuffled(String[] names, long baseMax, String unit) {
-        List<String> pool = new ArrayList<>(Arrays.asList(names));
+    private static List<LeaderboardEntry> buildShuffled(long baseMax, String unit) {
+        List<String> pool = new ArrayList<>(Arrays.asList(PLAYERS));
         Collections.shuffle(pool, new Random());
 
         List<LeaderboardEntry> list = new ArrayList<>();

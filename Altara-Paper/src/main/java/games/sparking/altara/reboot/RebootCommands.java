@@ -30,6 +30,16 @@ public class RebootCommands {
         return true;
     }
 
+    @Command(names = {"reboot now"},
+            permission = "command.reboot",
+            description = "Cancel the reboot timer")
+    public boolean now(CommandSender sender) {
+        Bukkit.getServer().restart();
+
+        return true;
+    }
+
+
     @Command(names = {"reboot cancel"},
              permission = "command.reboot",
              description = "Cancel the reboot timer")

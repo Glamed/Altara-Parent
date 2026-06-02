@@ -1,5 +1,6 @@
 package games.sparking.altara.hologram.command;
 
+import games.sparking.altara.AltaraPaper;
 import games.sparking.altara.command.annotation.Command;
 import games.sparking.altara.command.annotation.Header;
 import games.sparking.altara.command.annotation.Param;
@@ -11,8 +12,12 @@ import games.sparking.altara.hologram.updating.UpdatingHologram;
 import games.sparking.altara.utils.CC;
 import games.sparking.altara.utils.ChatMessage;
 import lombok.RequiredArgsConstructor;
+import games.sparking.altara.hologram.leaderboard.LeaderboardCategory;
+import games.sparking.altara.hologram.leaderboard.LeaderboardEntry;
+import games.sparking.altara.hologram.leaderboard.LeaderboardHologram;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.Sound;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
@@ -20,7 +25,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-@RequiredArgsConstructor
 @Header(
         primaryColor = "&5",
         secondaryColor = "&8",
@@ -29,8 +33,7 @@ import java.util.List;
 )
 public class HologramCommands {
 
-    private final HologramService hologramService;
-
+    private final HologramService hologramService = AltaraPaper.getPaperInstance().getHologramService();
 
     @Command(names = {"hologram test", "holo test"},
              permission = "altara.holograms",
@@ -43,8 +46,8 @@ public class HologramCommands {
                 .updating()
                 .intervalTicks(20L)
                 .lines(() -> Arrays.asList(
-                        "§e§lPlayers Online",
-                        "§f" + Bukkit.getOnlinePlayers().size()
+                        "<yellow><bold>Players Online",
+                        "<white>" + Bukkit.getOnlinePlayers().size()
                 ))
                 .clickHandler((player, holo, line, clickType) -> {
                     if (line == 0) {
@@ -75,7 +78,7 @@ public class HologramCommands {
         StaticHologram hologram = new HologramBuilder()
                 .at(sender.getLocation())
                 .staticHologram()
-                .addLines(CC.translate(text))
+                .addLines(text)
                 .build();
 
         hologram.setName(name);
@@ -136,7 +139,7 @@ public class HologramCommands {
     public boolean addLine(CommandSender sender,
                            @Param(name = "id") StaticHologram hologram,
                            @Param(name = "text", wildcard = true) String text) {
-        text = text.equalsIgnoreCase("{empty}") ? "" : CC.translate(text);
+        text = text.equalsIgnoreCase("{empty}") ? "" : text;
         hologram.addLines(text);
         hologramService.save();
         sender.sendMessage(CC.format("&9Added line to hologram &e#%d&9.", hologram.getId()));
@@ -178,7 +181,7 @@ public class HologramCommands {
             return false;
         }
 
-        text = text.equalsIgnoreCase("{empty}") ? "" : CC.translate(text);
+        text = text.equalsIgnoreCase("{empty}") ? "" : text;
         hologram.setLine(index, text);
         hologramService.save();
         sender.sendMessage(CC.format("&9Set line &e%d &9on hologram &e#%d&9.", index + 1, hologram.getId()));
@@ -198,7 +201,7 @@ public class HologramCommands {
             return false;
         }
 
-        text = text.equalsIgnoreCase("{empty}") ? "" : CC.translate(text);
+        text = text.equalsIgnoreCase("{empty}") ? "" : text;
         lines.add(index, new HologramLine(text));
         List<String> strings = new ArrayList<>();
         for (HologramLine l : lines) strings.add(l.getText());
@@ -222,7 +225,7 @@ public class HologramCommands {
             return false;
         }
 
-        text = text.equalsIgnoreCase("{empty}") ? "" : CC.translate(text);
+        text = text.equalsIgnoreCase("{empty}") ? "" : text;
         lines.add(index + 1, new HologramLine(text));
         List<String> strings = new ArrayList<>();
         for (HologramLine l : lines) strings.add(l.getText());
@@ -251,6 +254,66 @@ public class HologramCommands {
     public boolean tpto(Player sender, @Param(name = "id") StaticHologram hologram) {
         sender.teleport(hologram.getLocation());
         sender.sendMessage(CC.format("&9Teleported to hologram &e#%d&9.", hologram.getId()));
+        return true;
+    }
+
+    @Command(names = {"hologram setspacing", "holo setspacing"},
+             permission = "altara.holograms",
+             description = "Set the line spacing of a hologram")
+    public boolean setSpacing(CommandSender sender,
+                              @Param(name = "id") StaticHologram hologram,
+                              @Param(name = "spacing") double spacing) {
+        if (spacing <= 0) {
+            sender.sendMessage(CC.RED + "Spacing must be greater than 0.");
+            return false;
+        }
+        hologram.setLineSpacing(spacing);
+        hologramService.save();
+        sender.sendMessage(CC.format("&9Set spacing of hologram &e#%d &9to &e%.2f&9.", hologram.getId(), spacing));
+        return true;
+    }
+
+    @Command(names = {"hologram leaderboard", "holo lb"},
+             permission = "altara.holograms",
+             description = "Spawn a demo leaderboard hologram with all features",
+             playerOnly = true)
+    public boolean leaderboard(Player sender) {
+        List<LeaderboardCategory> categories = Arrays.asList(
+                new LeaderboardCategory("Kills", Arrays.asList(
+                        new LeaderboardEntry(1, "Notch",      42_000, "kills"),
+                        new LeaderboardEntry(2, "Jeb_",       38_500, "kills"),
+                        new LeaderboardEntry(3, "Dinnerbone", 31_200, "kills"),
+                        new LeaderboardEntry(4, "Grumm",      28_000, "kills"),
+                        new LeaderboardEntry(5, "Marc",       24_100, "kills"),
+                        new LeaderboardEntry(6, "Searge",     19_800, "kills")
+                )),
+                new LeaderboardCategory("Wins", Arrays.asList(
+                        new LeaderboardEntry(1, "Jeb_",   980, "wins"),
+                        new LeaderboardEntry(2, "Notch",  870, "wins"),
+                        new LeaderboardEntry(3, "Marc",   760, "wins")
+                )),
+                new LeaderboardCategory("Playtime", Arrays.asList(
+                        new LeaderboardEntry(1, "Searge",     1_200, "hrs"),
+                        new LeaderboardEntry(2, "Dinnerbone", 1_050, "hrs"),
+                        new LeaderboardEntry(3, "Grumm",        940, "hrs"),
+                        new LeaderboardEntry(4, "Notch",        880, "hrs")
+                ))
+        );
+
+        LeaderboardHologram lb = new LeaderboardHologram.Builder(sender, sender.getLocation(), categories, 3)
+                // Click sound — heard up to 3 blocks (default), slight pitch-up
+                .clickSound(Sound.UI_BUTTON_CLICK)
+                .clickSoundPitch(1.2f)
+                // Auto-rotate: step through every page then advance category every 5 s (100 ticks)
+                .autoRotateBoth(100L)
+                // Pling when rotating — default 3-block range
+                .autoRotateSound(Sound.BLOCK_NOTE_BLOCK_PLING)
+                .autoRotateSoundPitch(1.5f)
+                .build();
+
+        lb.spawn();
+        lb.start();
+        sender.sendMessage(CC.GREEN + "Leaderboard hologram spawned — only you can see it.");
         return true;
     }
 

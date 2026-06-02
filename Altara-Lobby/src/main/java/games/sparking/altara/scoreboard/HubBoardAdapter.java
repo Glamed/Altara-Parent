@@ -1,6 +1,5 @@
 package games.sparking.altara.scoreboard;
 
-import games.sparking.altara.Altara;
 import games.sparking.altara.AltaraLobby;
 import games.sparking.altara.AltaraPaper;
 import games.sparking.altara.profile.Profile;
@@ -105,35 +104,34 @@ public class HubBoardAdapter implements ScoreboardAdapter {
                     .replaceAll("%store_address%", AltaraLobby.getLobbyInstance().getLobbyConfig().getServerConfig().getStore())
                     .replaceAll("%web_address%", AltaraLobby.getLobbyInstance().getLobbyConfig().getServerConfig().getWebsite());
 
-            if (s.equals("%rotate%")) {
-                boolean hasQueue = primaryQueue != null && !AltaraLobby.getLobbyInstance().getLobbyConfig().getScoreBoardQueueLines().isEmpty();
-                boolean hasReboot = RebootService.getRebootTask() != null && !AltaraLobby.getLobbyInstance().getLobbyConfig().getScoreBoardRebootLines().isEmpty();
+            switch (s) {
+                case "%rotate%": {
+                    boolean hasQueue = primaryQueue != null && !AltaraLobby.getLobbyInstance().getLobbyConfig().getScoreBoardQueueLines().isEmpty();
+                    boolean hasReboot = RebootService.getRebootTask() != null && !AltaraLobby.getLobbyInstance().getLobbyConfig().getScoreBoardRebootLines().isEmpty();
 
-                if (hasQueue && hasReboot) {
-                    if (rotateTick % 2 == 0) {
+                    if (hasQueue && hasReboot) {
+                        if (rotateTick % 2 == 0) {
+                            lines.addAll(getQueueLines(player, queueService, primaryQueue));
+                        } else {
+                            lines.addAll(getRebootLines());
+                        }
+                    } else if (hasQueue) {
                         lines.addAll(getQueueLines(player, queueService, primaryQueue));
-                    } else {
+                    } else if (hasReboot) {
                         lines.addAll(getRebootLines());
                     }
-                } else if (hasQueue) {
-                    lines.addAll(getQueueLines(player, queueService, primaryQueue));
-                } else if (hasReboot) {
-                    lines.addAll(getRebootLines());
+                    break;
                 }
-                continue;
+                case "%queue%":
+                    lines.addAll(getQueueLines(player, queueService, primaryQueue));
+                    break;
+                case "%reboot%":
+                    lines.addAll(getRebootLines());
+                    break;
+                default:
+                    lines.add(s);
+                    break;
             }
-
-            if (s.equals("%queue%")) {
-                lines.addAll(getQueueLines(player, queueService, primaryQueue));
-                continue;
-            }
-
-            if (s.equals("%reboot%")) {
-                lines.addAll(getRebootLines());
-                continue;
-            }
-
-            lines.add(s);
         }
 
         return lines;

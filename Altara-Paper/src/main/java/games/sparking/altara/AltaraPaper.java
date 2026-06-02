@@ -1,6 +1,7 @@
 package games.sparking.altara;
 
 import com.google.gson.GsonBuilder;
+import com.github.retrooper.packetevents.PacketEvents;
 import games.sparking.altara.chat.ChatListener;
 import games.sparking.altara.command.BuildVersionCommand;
 import games.sparking.altara.command.CommandService;
@@ -13,11 +14,24 @@ import games.sparking.altara.gamemode.GamemodeCommand;
 import games.sparking.altara.hologram.HologramService;
 import games.sparking.altara.hologram.command.HologramCommands;
 import games.sparking.altara.hologram.command.parameter.HologramParameter;
+import games.sparking.altara.hologram.listener.HologramClickListener;
 import games.sparking.altara.hologram.listener.HologramListener;
 import games.sparking.altara.hologram.statics.StaticHologram;
+import games.sparking.altara.npc.NPC;
+import games.sparking.altara.npc.NPCService;
+import games.sparking.altara.npc.command.NPCCommands;
+import games.sparking.altara.npc.command.parameter.EquipmentSlotParameter;
+import games.sparking.altara.npc.command.parameter.NPCParameter;
+import games.sparking.altara.npc.equipment.EquipmentSlot;
+import games.sparking.altara.npc.listener.NPCClickListener;
+import games.sparking.altara.npc.listener.NPCListener;
 import games.sparking.altara.logging.PaperLogger;
 import games.sparking.altara.menu.listener.MenuListener;
 import games.sparking.altara.permission.PermissionService;
+import games.sparking.altara.playersetting.AltaraSettings;
+import games.sparking.altara.playersetting.PlayerSettingService;
+import games.sparking.altara.playersetting.command.SettingsCommands;
+import games.sparking.altara.playersetting.listener.PlayerSettingListener;
 import games.sparking.altara.profile.BukkitProfileService;
 import games.sparking.altara.profile.Profile;
 import games.sparking.altara.profile.UnloadedProfile;
@@ -49,6 +63,7 @@ import games.sparking.altara.utils.json.adapter.UUIDAdapter;
 import lombok.Getter;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
@@ -75,6 +90,10 @@ public class AltaraPaper extends Altara {
     @Getter private QueueService queueService;
 
     @Getter private HologramService hologramService;
+    @Getter private HologramClickListener hologramClickListener;
+
+    @Getter private NPCService npcService;
+    @Getter private NPCClickListener npcClickListener;
 
     public AltaraPaper(JavaPlugin plugin, ConfigurationService configurationService, LocalConfig localConfig) {
         super(SystemType.PAPER, configurationService, localConfig, new BukkitTaskImplementor(plugin));
@@ -90,18 +109,13 @@ public class AltaraPaper extends Altara {
 
     @Override
     public void init() {
-        // Load local config files first so that localPermissionConfig is available
-        // before the async rank-loading task calls getLocalPermissions().
         loadFiles();
 
-        // Register Paper-specific Gson adapters before any config files are loaded.
-        // Bukkit ItemStack cannot be serialised/deserialised with raw Gson reflection;
-        // use Paper's serializeAsBytes / deserializeBytes (Base64) instead.
         JsonConfigurationService.setGson(new GsonBuilder()
                 .setPrettyPrinting()
                 .disableHtmlEscaping()
-                .registerTypeHierarchyAdapter(java.util.UUID.class, new UUIDAdapter())
-                .registerTypeHierarchyAdapter(org.bukkit.inventory.ItemStack.class, new ItemStackAdapter())
+                .registerTypeHierarchyAdapter(UUID.class, new UUIDAdapter())
+                .registerTypeHierarchyAdapter(ItemStack.class, new ItemStackAdapter())
                 .create());
 
         UpdateTask.start();
@@ -109,9 +123,13 @@ public class AltaraPaper extends Altara {
         this.queue = new Queue();
         this.queueService = new QueueService();
         queueService.startTask();
+        PlayerSettingService.registerProvider(new AltaraSettings());
 
         this.hologramService = new HologramService(plugin, getConfigurationService());
         hologramService.load();
+
+        this.npcService = new NPCService(plugin, getConfigurationService());
+        npcService.load();
 
     }
 
@@ -122,13 +140,17 @@ public class AltaraPaper extends Altara {
         CommandService.registerParameter(Rank.class, new RankParameter());
         CommandService.registerParameter(ServerInfo.class, new AllServersParameter());
         CommandService.registerParameter(StaticHologram.class, new HologramParameter(hologramService));
+        CommandService.registerParameter(NPC.class, new NPCParameter());
+        CommandService.registerParameter(EquipmentSlot.class, new EquipmentSlotParameter());
 
         CommandService.register(AltaraPaper.getPlugin(),
                 new GamemodeCommand(),
                 new BuildVersionCommand(),
                 new PunishCommand(),
                 new ProfilerCommand(),
-                new HologramCommands(hologramService),
+                new SettingsCommands(),
+                new HologramCommands(),
+                new NPCCommands(),
                 new RebootCommands(),
                 new ServerMonitorCommands(),
                 new QueueCommands()
@@ -144,8 +166,19 @@ public class AltaraPaper extends Altara {
                 new PunishmentChatListener(),
                 new ProfilerListener(),
                 new ScoreboardListener(),
-                new HologramListener(hologramService)
+                new HologramListener(),
+                new NPCListener(npcService),
+                new PlayerSettingListener()
         ).forEach(listener -> getPlugin().getServer().getPluginManager().registerEvents(listener, getPlugin()));
+
+        // Hologram click detection requires a PacketEvents listener (holograms are fake entities).
+        hologramClickListener = new HologramClickListener();
+        PacketEvents.getAPI().getEventManager().registerListeners(hologramClickListener);
+
+        // NPC click detection via PacketEvents (NPCs are fake entities too).
+        npcClickListener = new NPCClickListener();
+        PacketEvents.getAPI().getEventManager().registerListeners(npcClickListener);
+
         new FileUpdater();
     }
 
@@ -185,7 +218,7 @@ public class AltaraPaper extends Altara {
             double mspt = Bukkit.getServer().getAverageTickTime(); // 1 min avg
 
             serverInfo.setLastHeartbeat(System.currentTimeMillis());
-            serverInfo.setGroup("Lobby");
+            serverInfo.setGroup(getServerGroup());
             serverInfo.setState(Bukkit.getServer().isWhitelistEnforced() ? ServerState.WHITELISTED : ServerState.ONLINE);
             serverInfo.setOnlinePlayers(Bukkit.getOnlinePlayers().size());
             serverInfo.setMaxPlayers(Bukkit.getMaxPlayers());
@@ -193,6 +226,9 @@ public class AltaraPaper extends Altara {
             serverInfo.setFullTick(mspt);
             serverInfo.setUsedMemory((Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / 2L / 1048576L);
             serverInfo.setAllocatedMemory(Runtime.getRuntime().totalMemory() / 1048576L);
+            serverInfo.setQueueEnabled(localConfig.isQueueEnabled());
+            serverInfo.setQueuePaused(localConfig.isQueuePaused());
+            serverInfo.setQueueRate(localConfig.getQueueRate());
             new UpdateServerPacket(serverInfo).publish();
         }, 20L, 1L);
     }

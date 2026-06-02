@@ -26,10 +26,6 @@ public class PlayerListener implements Listener {
         if (spawnLocation != null)
             player.teleport(spawnLocation);
 
-        if (LobbySettings.FLY_MODE.canUpdate(player) && LobbySettings.FLY_MODE.get(player)) {
-            player.setAllowFlight(true);
-            player.setFlying(true);
-        }
 
 //        AltaraLobby.giveItems(player);
     }

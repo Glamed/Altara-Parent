@@ -52,12 +52,12 @@ public final class FakeLeaderboardData {
     static {
         // Each category uses the same staff pool but shuffled independently
         // so rankings differ between categories.
-        DATA.put("bans",      buildShuffled(STAFF, 500,   "bans"));
-        DATA.put("mutes",     buildShuffled(STAFF, 1_200, "mutes"));
-        DATA.put("kicks",     buildShuffled(STAFF, 800,   "kicks"));
-        DATA.put("warns",     buildShuffled(STAFF, 2_000, "warns"));
-        DATA.put("reports",   buildShuffled(STAFF, 350,   "resolved"));
-        DATA.put("watchtime", buildShuffled(STAFF, 900,   "hrs"));
+        DATA.put("bans",      buildShuffled(500,   "bans"));
+        DATA.put("mutes",     buildShuffled(1_200, "mutes"));
+        DATA.put("kicks",     buildShuffled(800,   "kicks"));
+        DATA.put("warns",     buildShuffled(2_000, "warns"));
+        DATA.put("reports",   buildShuffled(350,   "resolved"));
+        DATA.put("watchtime", buildShuffled(900,   "hrs"));
     }
 
     private FakeLeaderboardData() { }
@@ -76,11 +76,6 @@ public final class FakeLeaderboardData {
         return (idx >= 0) ? TITLES.get(idx) : capitalize(category);
     }
 
-    /** Returns the unit label for a category key (e.g. "bans"), or empty string. */
-    public static String unitFor(String category) {
-        return UNITS.getOrDefault(category.toLowerCase(), "");
-    }
-
     // -----------------------------------------------------------------------
     // Internal helpers
     // -----------------------------------------------------------------------
@@ -89,12 +84,9 @@ public final class FakeLeaderboardData {
      * Builds a ranked list from a shuffled copy of the name pool.
      * Scores decrease from {@code baseMax} with a small random variance per step.
      */
-    private static List<LeaderboardEntry> buildShuffled(String[] names, long baseMax) {
-        return buildShuffled(names, baseMax, "");
-    }
 
-    private static List<LeaderboardEntry> buildShuffled(String[] names, long baseMax, String unit) {
-        List<String> pool = new ArrayList<>(Arrays.asList(names));
+    private static List<LeaderboardEntry> buildShuffled(long baseMax, String unit) {
+        List<String> pool = new ArrayList<>(Arrays.asList(STAFF));
         Collections.shuffle(pool, new Random());
 
         List<LeaderboardEntry> list = new ArrayList<>();

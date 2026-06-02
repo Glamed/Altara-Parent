@@ -19,8 +19,8 @@ public class AltaraGames extends AltaraPaper {
     @Override
     public void registerCommands() {
         super.registerCommands();
-        CommandService.register(AltaraPaper.getPlugin(), null
-        );
+//        CommandService.register(AltaraPaper.getPlugin(), null
+//        );
     }
 
     @Override

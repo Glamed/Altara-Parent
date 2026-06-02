@@ -1,5 +1,7 @@
 package games.sparking.altara.hologram;
 
+import games.sparking.altara.server.ServerInfo;
+
 /**
  * Resolves hologram text placeholders for a specific viewer.
  *
@@ -31,8 +33,10 @@ public final class PlaceholderResolver {
     public static String resolve(String text, org.bukkit.entity.Player player) {
         if (text == null || !hasPlaceholders(text)) return text;
         return text
-                .replace("%player%",      player.getName())
-                .replace("%displayname%", player.getDisplayName());
+                .replaceAll("%player%",      player.getName())
+                .replaceAll("%displayname%", player.getDisplayName())
+                .replaceAll("%global_online%", String.valueOf(ServerInfo.getGlobalPlayerCount()))
+                .replaceAll("%global_max%", String.valueOf(ServerInfo.getGlobalPlayerCount() + 1));
     }
 }
 

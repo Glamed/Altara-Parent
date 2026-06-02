@@ -16,6 +16,7 @@ public class UpdatingHologramBuilder extends HologramBuilder {
 
     private long interval = -1;
     private Supplier<List<String>> linesSupplier;
+    private HologramProvider provider;
 
     public UpdatingHologramBuilder(HologramBuilder builder) {
         this.at(builder.getLocation());
@@ -38,6 +39,15 @@ public class UpdatingHologramBuilder extends HologramBuilder {
     /** Supply a lambda that returns the current lines on each update tick. */
     public UpdatingHologramBuilder lines(Supplier<List<String>> supplier) {
         this.linesSupplier = supplier;
+        return this;
+    }
+
+    /**
+     * Supply a {@link HologramProvider} that returns per-player lines on each
+     * update tick.  Takes priority over {@link #lines(Supplier)} when both are set.
+     */
+    public UpdatingHologramBuilder provider(HologramProvider provider) {
+        this.provider = provider;
         return this;
     }
 

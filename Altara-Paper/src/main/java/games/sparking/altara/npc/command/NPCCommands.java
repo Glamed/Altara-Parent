@@ -1,0 +1,203 @@
+package games.sparking.altara.npc.command;
+
+import games.sparking.altara.AltaraPaper;
+import games.sparking.altara.command.annotation.Command;
+import games.sparking.altara.command.annotation.Flag;
+import games.sparking.altara.command.annotation.Header;
+import games.sparking.altara.command.annotation.Param;
+import games.sparking.altara.npc.NPC;
+import games.sparking.altara.npc.NPCBuilder;
+import games.sparking.altara.npc.NPCService;
+import games.sparking.altara.npc.equipment.EquipmentSlot;
+import games.sparking.altara.utils.CC;
+import games.sparking.altara.utils.ChatMessage;
+import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
+import org.bukkit.Material;
+import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
+
+import java.util.ArrayList;
+import java.util.List;
+
+@Header(
+        primaryColor = "&9",
+        secondaryColor = "&8",
+        tertiaryColor = "&b",
+        header = "NPC"
+)
+public class NPCCommands {
+
+    private NPCService npcService() {
+        return AltaraPaper.getPaperInstance().getNpcService();
+    }
+
+    @Command(names = {"npc create"},
+             permission = "altara.npcs",
+             description = "Create a new NPC at your location",
+             playerOnly = true)
+    public boolean create(Player sender, @Param(name = "name") String name) {
+        try {
+            Integer.parseInt(name);
+            sender.sendMessage(CC.RED + "NPC names cannot be pure integers.");
+            return false;
+        } catch (NumberFormatException ignored) { }
+
+        NPC npc = new NPCBuilder()
+                .at(sender.getLocation())
+                .buildAndSpawn();
+
+        npc.setName(name);
+        npc.spawn();
+        npcService().register(npc);
+        npcService().save();
+        sender.sendMessage(CC.format("&9NPC &e#%d &9(&e%s&9) created.", npc.getId(), name));
+        return true;
+    }
+
+    @Command(names = {"npc delete", "npc remove"},
+             permission = "altara.npcs",
+             description = "Delete a NPC")
+    public boolean delete(CommandSender sender, @Param(name = "npc") NPC npc) {
+        npcService().remove(npc);
+        npcService().save();
+        sender.sendMessage(CC.format("&9Deleted NPC &e#%d&9.", npc.getId()));
+        return true;
+    }
+
+    @Command(names = {"npc list"},
+             permission = "altara.npcs",
+             description = "List all NPCs")
+    public boolean list(CommandSender sender) {
+        List<NPC> npcs = npcService().getSerializedNpcs();
+        if (npcs.isEmpty()) {
+            sender.sendMessage(CC.RED + "No NPCs exist.");
+            return true;
+        }
+
+        for (NPC npc : npcs) {
+            String location = String.format("[%.1f, %.1f, %.1f]",
+                    npc.getLocation().getX(),
+                    npc.getLocation().getY(),
+                    npc.getLocation().getZ());
+
+            List<String> hover = new ArrayList<>();
+            hover.add(CC.GREEN + "Location: " + location);
+            hover.add(CC.YELLOW + "Click to teleport");
+
+            if (npc.getCommand() != null) {
+                hover.add(" ");
+                hover.add(CC.BLUE + "Command: " + CC.YELLOW + npc.getCommand());
+                if (npc.isConsoleCommand())
+                    hover.add(CC.GRAY + "(Console Command)");
+            }
+
+            new ChatMessage(npc.getName() + " - #" + npc.getId())
+                    .color(ChatColor.RED.asBungee())
+                    .hoverText(String.join("\n", hover))
+                    .runCommand("/npc tpto " + npc.getId())
+                    .send(sender);
+        }
+        return true;
+    }
+
+    @Command(names = {"npc setname", "npc name"},
+             permission = "altara.npcs",
+             description = "Set the display name of a NPC")
+    public boolean setName(CommandSender sender,
+                           @Param(name = "npc") NPC npc,
+                           @Param(name = "displayName", wildcard = true) String displayName) {
+        displayName = CC.translate(displayName);
+        npc.setDisplayName(displayName); // triggers re-spawn
+        npcService().save();
+        sender.sendMessage(CC.format("&9Set display name of NPC &e#%d &9to '&r%s&9'.",
+                npc.getId(), displayName));
+        return true;
+    }
+
+    @Command(names = {"npc command"},
+             permission = "altara.npcs",
+             description = "Set the command run when a NPC is clicked")
+    public boolean command(CommandSender sender,
+                           @Param(name = "npc") NPC npc,
+                           @Param(name = "command", wildcard = true) String command,
+                           @Flag(names = {"-console"}, description = "Execute from the console") boolean consoleCommand) {
+        npc.setCommand(command);
+        npc.setConsoleCommand(consoleCommand);
+        npcService().save();
+        sender.sendMessage(CC.format("&9Set the command of NPC &e#%d &9to &e%s&9.%s",
+                npc.getId(), command,
+                consoleCommand ? CC.GRAY + " (Console Command)" : ""));
+        return true;
+    }
+
+    @Command(names = {"npc removecommand"},
+             permission = "altara.npcs",
+             description = "Remove the command from a NPC")
+    public boolean removeCommand(CommandSender sender, @Param(name = "npc") NPC npc) {
+        npc.setCommand(null);
+        npc.setConsoleCommand(false);
+        npcService().save();
+        sender.sendMessage(CC.format("&9Removed the command from NPC &e#%d&9.", npc.getId()));
+        return true;
+    }
+
+    @Command(names = {"npc skin"},
+             permission = "altara.npcs",
+             description = "Set the skin of a NPC by player name",
+             async = true)
+    public boolean skin(CommandSender sender,
+                        @Param(name = "npc") NPC npc,
+                        @Param(name = "playerName") String playerName) {
+        String[] skin = NPC.fetchSkin(playerName);
+        npc.setSkin(skin); // triggers re-spawn on main thread (setSkin calls destroy+spawn)
+        npcService().save();
+
+        if (skin == null) {
+            sender.sendMessage(CC.format("&cCould not fetch skin for &e%s&c. NPC reset to default.", playerName));
+        } else {
+            sender.sendMessage(CC.format("&9NPC &e#%d &9now has the skin of &e%s&9.", npc.getId(), playerName));
+        }
+        return true;
+    }
+
+    @Command(names = {"npc tphere", "npc movehere"},
+             permission = "altara.npcs",
+             description = "Teleport a NPC to your location",
+             playerOnly = true)
+    public boolean tphere(Player sender, @Param(name = "npc") NPC npc) {
+        npc.setLocation(sender.getLocation()); // triggers re-spawn
+        npcService().save();
+        sender.sendMessage(CC.format("&9Teleported NPC &e#%d &9to your location.", npc.getId()));
+        return true;
+    }
+
+    @Command(names = {"npc tpto"},
+             permission = "altara.npcs",
+             description = "Teleport to a NPC",
+             playerOnly = true)
+    public boolean tpto(Player sender, @Param(name = "npc") NPC npc) {
+        sender.teleport(npc.getLocation());
+        sender.sendMessage(CC.format("&9Teleported to NPC &e#%d&9.", npc.getId()));
+        return true;
+    }
+
+    @Command(names = {"npc equipment", "npc equip"},
+             permission = "altara.npcs",
+             description = "Set equipment on a NPC from your held item",
+             playerOnly = true)
+    public boolean equipment(Player sender,
+                             @Param(name = "npc") NPC npc,
+                             @Param(name = "slot") EquipmentSlot slot) {
+        var held = sender.getInventory().getItemInMainHand();
+        var item = held.getType() == Material.AIR ? null : held.clone();
+        npc.setEquipment(slot, item);
+        npcService().save();
+        sender.sendMessage(CC.format(
+                "&9Set &e%s &9slot of NPC &e#%d &9to &e%s&9.",
+                slot.name(),
+                npc.getId(),
+                item == null ? "empty" : item.getType().name()));
+        return true;
+    }
+}

@@ -1,6 +1,6 @@
 name: Lobby
 version: 1.1
-api-version: 1.20
+api-version: '1.21'
 main: games.sparking.altara.AltaraLobbyPlugin
 load: STARTUP
 depend: [packetevents]
