@@ -1,6 +1,7 @@
 package games.sparking.altara.framework;
 
 import org.bukkit.Bukkit;
+import org.bukkit.event.Cancellable;
 import org.bukkit.event.Event;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -65,7 +66,7 @@ public final class EventBus {
                     priority,
                     (l, event) -> {
                         if (!type.isInstance(event)) return;
-                        if (ignoreCancelled && event instanceof org.bukkit.event.Cancellable c && c.isCancelled()) return;
+                        if (ignoreCancelled && event instanceof Cancellable c && c.isCancelled()) return;
                         for (GameHandler h : list) {
                             h.handle(event);
                         }

@@ -6,7 +6,6 @@ import games.sparking.altara.rank.Rank;
 import games.sparking.altara.rank.commands.RankCommands;
 import games.sparking.altara.rank.menu.RankEditingMenu;
 import games.sparking.altara.utils.CC;
-import games.sparking.altara.utils.ChatMessage;
 import org.bukkit.entity.Player;
 
 import java.util.UUID;

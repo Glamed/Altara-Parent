@@ -10,8 +10,6 @@ import games.sparking.altara.npc.NPCBuilder;
 import games.sparking.altara.npc.NPCService;
 import games.sparking.altara.npc.equipment.EquipmentSlot;
 import games.sparking.altara.utils.CC;
-import games.sparking.altara.utils.ChatMessage;
-import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.command.CommandSender;

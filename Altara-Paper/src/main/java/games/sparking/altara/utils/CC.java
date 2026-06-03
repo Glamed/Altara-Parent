@@ -1,264 +1,260 @@
 package games.sparking.altara.utils;
 
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.TextComponent;
+import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.format.TextDecoration;
-import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
-import net.md_5.bungee.api.ChatColor;
+import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class CC {
 
+    private static final MiniMessage MM = MiniMessage.miniMessage();
+
+    // -------------------------------------------------------------------------
     // Color Constants
-    public static final String BLUE = ChatColor.BLUE.toString();
-    public static final String AQUA = ChatColor.AQUA.toString();
-    public static final String YELLOW = ChatColor.YELLOW.toString();
-    public static final String RED = ChatColor.RED.toString();
-    public static final String GRAY = ChatColor.GRAY.toString();
-    public static final String GOLD = ChatColor.GOLD.toString();
-    public static final String GREEN = ChatColor.GREEN.toString();
-    public static final String WHITE = ChatColor.WHITE.toString();
-    public static final String BLACK = ChatColor.BLACK.toString();
-    public static final String BOLD = ChatColor.BOLD.toString();
-    public static final String ITALIC = ChatColor.ITALIC.toString();
-    public static final String UNDER_LINE = ChatColor.UNDERLINE.toString();
-    public static final String STRIKE_THROUGH = ChatColor.STRIKETHROUGH.toString();
-    public static final String RESET = ChatColor.RESET.toString();
-    public static final String MAGIC = ChatColor.MAGIC.toString();
-    public static final String DBLUE = ChatColor.DARK_BLUE.toString();
-    public static final String DAQUA = ChatColor.DARK_AQUA.toString();
-    public static final String DGRAY = ChatColor.DARK_GRAY.toString();
-    public static final String DGREEN = ChatColor.DARK_GREEN.toString();
-    public static final String DPURPLE = ChatColor.DARK_PURPLE.toString();
-    public static final String DRED = ChatColor.DARK_RED.toString();
-    public static final String PURPLE = ChatColor.DARK_PURPLE.toString();
-    public static final String PINK = ChatColor.LIGHT_PURPLE.toString();
+    // -------------------------------------------------------------------------
+    public static final TextColor BLUE        = NamedTextColor.BLUE;
+    public static final TextColor AQUA        = NamedTextColor.AQUA;
+    public static final TextColor YELLOW      = NamedTextColor.YELLOW;
+    public static final TextColor RED         = NamedTextColor.RED;
+    public static final TextColor GRAY        = NamedTextColor.GRAY;
+    public static final TextColor GOLD        = NamedTextColor.GOLD;
+    public static final TextColor GREEN       = NamedTextColor.GREEN;
+    public static final TextColor WHITE       = NamedTextColor.WHITE;
+    public static final TextColor BLACK       = NamedTextColor.BLACK;
+    public static final TextColor DBLUE       = NamedTextColor.DARK_BLUE;
+    public static final TextColor DAQUA       = NamedTextColor.DARK_AQUA;
+    public static final TextColor DGRAY       = NamedTextColor.DARK_GRAY;
+    public static final TextColor DGREEN      = NamedTextColor.DARK_GREEN;
+    public static final TextColor DPURPLE     = NamedTextColor.DARK_PURPLE;
+    public static final TextColor DRED        = NamedTextColor.DARK_RED;
+    public static final TextColor PURPLE      = NamedTextColor.DARK_PURPLE;
+    public static final TextColor PINK        = NamedTextColor.LIGHT_PURPLE;
 
+    // -------------------------------------------------------------------------
     // Predefined Bars and Symbols
-    public static final String MENU_BAR = GRAY + STRIKE_THROUGH + "------------------------";
-    public static final String CHAT_BAR = GRAY + STRIKE_THROUGH + "------------------------------------------------";
-    public static final String SMALL_CHAT_BAR = GRAY + STRIKE_THROUGH + "-----------------";
-    public static final String SB_BAR = GRAY + STRIKE_THROUGH + "----------------------";
-    public static final String VERTICAL_BAR = ChatColor.GRAY + "\u2503";
-    public static final String HEART = DRED + "\u2764";
-    public static final String LEFT_ARROW = ChatColor.GRAY + "\u00ab";
-    public static final String RIGHT_ARROW = ChatColor.GRAY + "\u00bb";
+    // -------------------------------------------------------------------------
+    public static final Component MENU_BAR       = Component.text("------------------------", GRAY, TextDecoration.STRIKETHROUGH);
+    public static final Component CHAT_BAR       = Component.text("------------------------------------------------", GRAY, TextDecoration.STRIKETHROUGH);
+    public static final Component SMALL_CHAT_BAR = Component.text("-----------------", GRAY, TextDecoration.STRIKETHROUGH);
+    public static final Component SB_BAR         = Component.text("----------------------", GRAY, TextDecoration.STRIKETHROUGH);
+    public static final Component VERTICAL_BAR   = Component.text("\u2503", GRAY);
+    public static final Component HEART          = Component.text("\u2764", DRED);
+    public static final Component LEFT_ARROW     = Component.text("\u00ab", GRAY);
+    public static final Component RIGHT_ARROW    = Component.text("\u00bb", GRAY);
 
-    // Text Translators
-    public static String translate(String in) {
-        return ChatColor.translateAlternateColorCodes('&', in);
+    // -------------------------------------------------------------------------
+    // MiniMessage Translation
+    // -------------------------------------------------------------------------
+
+    public static Component translate(String miniMessage) {
+        return MM.deserialize(miniMessage);
     }
 
-    public static List<String> translate(List<String> lines) {
-        List<String> translated = new ArrayList<>();
+    public static List<Component> translate(List<String> lines) {
+        List<Component> result = new ArrayList<>();
+        for (String line : lines) result.add(translate(line));
+        return result;
+    }
+
+    public static List<Component> translate(String[] lines) {
+        List<Component> result = new ArrayList<>();
         for (String line : lines) {
-            translated.add(ChatColor.translateAlternateColorCodes('&', line));
+            if (line != null) result.add(translate(line));
         }
-        return translated;
+        return result;
     }
 
-    public static List<String> translate(String[] lines) {
-        List<String> translated = new ArrayList<>();
+    // -------------------------------------------------------------------------
+    // Format (MiniMessage + TagResolver placeholders)
+    // -------------------------------------------------------------------------
+
+    // Adventure Resolvers
+
+    public static Component format(String line, TagResolver... resolvers) {
+        return MM.deserialize(line, resolvers);
+    }
+
+    public static List<Component> format(List<String> lines, TagResolver... resolvers) {
+        List<Component> result = new ArrayList<>();
+        for (String line : lines) result.add(MM.deserialize(line, resolvers));
+        return result;
+    }
+
+    // String Resolvers
+
+    public static Component format(String line, Object... resolvers) {
+        return MM.deserialize(String.format(line, resolvers));
+    }
+
+    public static List<Component> format(List<String> lines, Object... resolvers) {
+        List<Component> result = new ArrayList<>();
         for (String line : lines) {
-            if (line != null) {
-                translated.add(ChatColor.translateAlternateColorCodes('&', line));
-            }
+            result.add(MM.deserialize(String.format(line, resolvers)));
         }
-        return translated;
+        return result;
     }
 
-    public static String strip(String in) {
-        return ChatColor.stripColor(in);
+    // -------------------------------------------------------------------------
+    // Strip
+    // -------------------------------------------------------------------------
+
+    public static String strip(Component component) {
+        return MM.stripTags(MM.serialize(component));
     }
 
-    // Formatting Helpers
-    public static String format(String in, Object... args) {
-        return String.format(translate(in), args);
-    }
-
-    public static List<String> format(List<String> lines, Object... args) {
-        List<String> formatted = new ArrayList<>();
-        for (String line : lines) {
-            formatted.add(String.format(translate(line), args));
-        }
-        return formatted;
-    }
-
+    // -------------------------------------------------------------------------
     // Boolean Helpers
-    public static String colorBoolean(boolean value) {
+    // -------------------------------------------------------------------------
+
+    public static Component colorBoolean(boolean value) {
         return colorBoolean(value, false);
     }
 
-    public static String colorBoolean(boolean value, boolean capitalize) {
+    public static Component colorBoolean(boolean value, boolean capitalize) {
         return colorBoolean(value,
                 capitalize ? "Enabled" : "enabled",
                 capitalize ? "Disabled" : "disabled");
     }
 
-    public static String colorBoolean(boolean value, String enabled, String disabled) {
-        return value ? GREEN + enabled : RED + disabled;
+    public static Component colorBoolean(boolean value, String enabled, String disabled) {
+        return value
+                ? Component.text(enabled, GREEN)
+                : Component.text(disabled, RED);
     }
 
+    // -------------------------------------------------------------------------
     // Line Generation
-    public static String genLine(String primaryColor, String secondaryColor) {
-        return genLine(primaryColor, secondaryColor, null, "", null, "");
+    // -------------------------------------------------------------------------
+
+    public static Component genLine(TextColor primary, TextColor secondary) {
+        return genLine(primary, secondary, null, Component.empty(), null, Component.empty());
     }
 
-    public static String genLine(String primaryColor, String secondaryColor, String headerColor, String header) {
-        return genLine(primaryColor, secondaryColor, headerColor, header, null, "");
+    public static Component genLine(TextColor primary, TextColor secondary, TextColor headerColor, Component header) {
+        return genLine(primary, secondary, headerColor, header, null, Component.empty());
     }
 
-    public static String genLine(String primaryColor, String secondaryColor, String headerColor, String header, String subHeaderColor, String subHeader) {
+    public static Component genLine(TextColor primary, TextColor secondary,
+                                    TextColor headerColor, Component header,
+                                    TextColor subHeaderColor, Component subHeader) {
+        String headerPlain    = toPlainText(header);
+        String subHeaderPlain = toPlainText(subHeader);
+
         int length = 52;
-
-        if (!header.isEmpty()) {
-            length -= header.length() + subHeader.length() + 2;
-            if (!subHeader.isEmpty()) {
-                subHeader = " &7> " + subHeaderColor + subHeader;
-                length -= 2;
-            }
-            header = "&8[" + headerColor + "&l" + header + subHeader + "&8]";
+        if (!headerPlain.isEmpty()) {
+            length -= headerPlain.length() + subHeaderPlain.length() + 2;
         }
+        int dashes = Math.max(0, length / 2 - 1);
 
-        StringBuilder main = new StringBuilder();
+        TextComponent.Builder dashBuilder = Component.text();
         boolean isPrimary = true;
-
-        for (int i = 0; i < length / 2 - 1; i++) {
-            main.append(isPrimary ? primaryColor : secondaryColor).append("-");
+        for (int i = 0; i < dashes; i++) {
+            dashBuilder.append(Component.text("-", isPrimary ? primary : secondary));
             isPrimary = !isPrimary;
         }
+        Component dashSegment = dashBuilder.build();
 
-        return ChatColor.translateAlternateColorCodes('&', main + header + main);
-    }
-
-    public static String bar(float total, float highlighted, ChatColor primaryColor, ChatColor secondaryColor) {
-        return bar(total, highlighted, primaryColor, secondaryColor, true);
-    }
-
-    public static String bar(float total, float highlighted, ChatColor primaryColor, ChatColor secondaryColor, boolean brackets) {
-        StringBuilder primary = new StringBuilder();
-        StringBuilder secondary = new StringBuilder();
-
-        for (int i = 0; i < highlighted; i++) {
-            primary.append(primaryColor).append("■");
-        }
-        for (int i = 0; i < total - highlighted; i++) {
-            secondary.append(secondaryColor).append("■");
+        if (headerPlain.isEmpty()) {
+            return Component.text().append(dashSegment).append(dashSegment).build();
         }
 
-        if (brackets) {
-            return ChatColor.DARK_GRAY + "[" + primary + secondary + ChatColor.DARK_GRAY + "]";
+        TextComponent.Builder center = Component.text();
+        center.append(Component.text("[", DGRAY));
+        center.append(Component.text().color(headerColor).decorate(TextDecoration.BOLD).append(header).build());
+        if (!subHeaderPlain.isEmpty()) {
+            center.append(Component.text(" > ", GRAY));
+            center.append(Component.text().color(subHeaderColor).append(subHeader).build());
         }
-        return primary + secondary.toString();
+        center.append(Component.text("]", DGRAY));
+
+        return Component.text()
+                .append(dashSegment)
+                .append(center)
+                .append(dashSegment)
+                .build();
     }
 
-    public static ChatColor toType(String color) {
-        color = color.replace("&", "");
-        switch (color.toUpperCase()) {
-            case "A":
-                return ChatColor.GREEN;
-            case "B":
-                return ChatColor.AQUA;
-            case "C":
-                return ChatColor.RED;
-            case "D":
-                return ChatColor.LIGHT_PURPLE;
-            case "E":
-                return ChatColor.YELLOW;
-            case "F":
-                return ChatColor.WHITE;
-            case "1":
-                return ChatColor.DARK_BLUE;
-            case "2":
-                return ChatColor.DARK_GREEN;
-            case "3":
-                return ChatColor.DARK_AQUA;
-            case "4":
-                return ChatColor.DARK_RED;
-            case "5":
-                return ChatColor.DARK_PURPLE;
-            case "6":
-                return ChatColor.GOLD;
-            case "7":
-                return ChatColor.GRAY;
-            case "8":
-                return ChatColor.DARK_GRAY;
-            case "9":
-                return ChatColor.BLUE;
-            case "0":
-                return ChatColor.BLACK;
-            default:
-                return ChatColor.WHITE;
-        }
+    // -------------------------------------------------------------------------
+    // Bar
+    // -------------------------------------------------------------------------
+
+    public static Component bar(int total, int highlighted, TextColor primary, TextColor secondary) {
+        return bar(total, highlighted, primary, secondary, true);
     }
 
+    public static Component bar(int total, int highlighted, TextColor primary, TextColor secondary, boolean brackets) {
+        TextComponent.Builder builder = Component.text();
+        if (brackets) builder.append(Component.text("[", NamedTextColor.DARK_GRAY));
+        for (int i = 0; i < highlighted; i++)         builder.append(Component.text("■", primary));
+        for (int i = 0; i < total - highlighted; i++) builder.append(Component.text("■", secondary));
+        if (brackets) builder.append(Component.text("]", NamedTextColor.DARK_GRAY));
+        return builder.build();
+    }
+
+    // -------------------------------------------------------------------------
     // Messaging Utilities
-    public static String list(String reason) {
-        return ChatColor.translateAlternateColorCodes('&', "&3&l❱ &b" + reason + ":");
+    // -------------------------------------------------------------------------
+
+    public static Component list(String reason) {
+        return Component.text()
+                .append(Component.text("❱ ", DAQUA, TextDecoration.BOLD))
+                .append(Component.text(reason + ":", AQUA))
+                .build();
     }
 
-    public static String list(String reason, String main) {
-        return ChatColor.translateAlternateColorCodes('&', "&3&l❱ &b" + reason + ": &7(" + main + "&7)");
+    public static Component list(String reason, String main) {
+        return Component.text()
+                .append(Component.text("❱ ", DAQUA, TextDecoration.BOLD))
+                .append(Component.text(reason + ": ", AQUA))
+                .append(Component.text("(" + main + ")", GRAY))
+                .build();
     }
 
-    public static String errorMsg(Messages messages) {
+    public static Component errorMsg(Messages messages) {
         return errorMsg(messages.getReason(), messages.getMain());
     }
 
-    public static String errorMsg(String messages) {
-        return errorMsg(messages, null);
+    public static Component errorMsg(String reason) {
+        return errorMsg(reason, null);
     }
 
-    public static String errorMsg(String reason, String main) {
-        if (main == "" || main == null) {
-            return ChatColor.translateAlternateColorCodes('&', "&4\u2715 &c" + reason.replaceAll("\\*(.+?)\\*", "&f$1&7"));
-        } else if (reason == "" || reason == null) {
-            return ChatColor.translateAlternateColorCodes('&', "&4\u2715 &7" + main.replaceAll("\\*(.+?)\\*", "&f$1&7"));
-        } else {
-            return ChatColor.translateAlternateColorCodes('&', "&4\u2715 &c" + reason.replaceAll("\\*(.+?)\\*", "&f$1&7") + " &7" + main.replaceAll("\\*(.+?)\\*", "&f$1&7"));
-        }
+    public static Component errorMsg(String reason, String main) {
+        return buildStatusMsg("\u2715", DRED, RED, GRAY, reason, main);
     }
 
-    public static String noticeMsg(String messages) {
-        return noticeMsg(messages, null);
-    }
-
-    public static String noticeMsg(Messages messages) {
+    public static Component noticeMsg(Messages messages) {
         return noticeMsg(messages.getReason(), messages.getMain());
     }
 
-    public static String noticeMsg(String reason, String main) {
-        if (main == "" || main == null) {
-            return ChatColor.translateAlternateColorCodes('&', "&3&l\u2503 &b" + reason.replaceAll("\\*(.+?)\\*", "&f$1&7"));
-        } else if (reason == "" || reason == null) {
-            return ChatColor.translateAlternateColorCodes('&', "&3&l\u2503 &7" + main.replaceAll("\\*(.+?)\\*", "&f$1&7"));
-        } else {
-            return ChatColor.translateAlternateColorCodes('&', "&3&l\u2503 &b" + reason.replaceAll("\\*(.+?)\\*", "&f$1&7") + " &7" + main.replaceAll("\\*(.+?)\\*", "&f$1&7"));
-        }
+    public static Component noticeMsg(String reason) {
+        return noticeMsg(reason, null);
     }
 
-    public static String successMsg(Messages messages) {
+    public static Component noticeMsg(String reason, String main) {
+        return buildStatusMsg("\u2503", DAQUA, AQUA, GRAY, reason, main);
+    }
+
+    public static Component successMsg(Messages messages) {
         return successMsg(messages.getReason(), messages.getMain());
     }
 
-    public static String successMsg(String reason, String main) {
-        if (main == "" || main == null) {
-            return ChatColor.translateAlternateColorCodes('&', "&2\u2714 &a" + reason.replaceAll("\\*(.+?)\\*", "&f$1&7"));
-        } else if (reason == "" || reason == null) {
-            return ChatColor.translateAlternateColorCodes('&', "&2\u2714 &7" + main.replaceAll("\\*(.+?)\\*", "&f$1&7"));
-        } else {
-            return ChatColor.translateAlternateColorCodes('&', "&2\u2714 &a" + reason.replaceAll("\\*(.+?)\\*", "&f$1&7") + " &7" + main.replaceAll("\\*(.+?)\\*", "&f$1&7"));
-        }
-
+    public static Component successMsg(String reason) {
+        return successMsg(reason, null);
     }
 
-    // Adventure Component Helpers
-
-    public static Component translateToComponent(String text) {
-        return LegacyComponentSerializer.legacyAmpersand().deserialize(text);
+    public static Component successMsg(String reason, String main) {
+        return buildStatusMsg("\u2714", DGREEN, GREEN, GRAY, reason, main);
     }
+
+    // -------------------------------------------------------------------------
+    // Component Helpers
+    // -------------------------------------------------------------------------
 
     public static Component text(String text, TextColor color) {
         return Component.text(text, color);
@@ -266,5 +262,48 @@ public class CC {
 
     public static Component text(String text, TextColor color, TextDecoration decoration) {
         return Component.text(text, color, decoration);
+    }
+
+    // -------------------------------------------------------------------------
+    // Private Helpers
+    // -------------------------------------------------------------------------
+
+    private static Component buildStatusMsg(String icon,
+                                            TextColor iconColor,
+                                            TextColor reasonColor,
+                                            TextColor mainColor,
+                                            String reason,
+                                            String main) {
+        TextComponent.Builder builder = Component.text();
+        builder.append(Component.text(icon + " ", iconColor, TextDecoration.BOLD));
+
+        boolean hasReason = reason != null && !reason.isEmpty();
+        boolean hasMain   = main   != null && !main.isEmpty();
+
+        if (hasReason) builder.append(buildInlineFormatted(reason, reasonColor, WHITE));
+        if (hasMain) {
+            if (hasReason) builder.append(Component.text(" ", mainColor));
+            builder.append(buildInlineFormatted(main, mainColor, WHITE));
+        }
+
+        return builder.build();
+    }
+
+    private static Component buildInlineFormatted(String text, TextColor baseColor, TextColor highlightColor) {
+        TextComponent.Builder builder = Component.text();
+        String[] parts = text.split("\\*", -1);
+        for (int i = 0; i < parts.length; i++) {
+            if (parts[i].isEmpty()) continue;
+            builder.append(Component.text(parts[i], i % 2 == 1 ? highlightColor : baseColor));
+        }
+        return builder.build();
+    }
+
+    private static String toPlainText(Component component) {
+        if (component == null) return "";
+        StringBuilder sb = new StringBuilder();
+        if (component instanceof TextComponent tc) sb.append(tc.content());
+        for (Component child : component.children()) sb.append(toPlainText(child));
+        return sb.toString();
     }
 }

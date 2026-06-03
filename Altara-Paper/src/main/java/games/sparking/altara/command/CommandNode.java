@@ -7,7 +7,6 @@ import games.sparking.altara.command.data.FlagData;
 import games.sparking.altara.command.data.ParameterData;
 import games.sparking.altara.command.permission.PermissionAdapter;
 import games.sparking.altara.utils.CC;
-import games.sparking.altara.utils.ChatMessage;
 import games.sparking.altara.utils.Time;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

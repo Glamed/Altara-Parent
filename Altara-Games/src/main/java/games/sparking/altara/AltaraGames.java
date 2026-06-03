@@ -1,15 +1,12 @@
 package games.sparking.altara;
 
-import games.sparking.altara.command.CommandService;
 import games.sparking.altara.configuration.ConfigurationService;
 import games.sparking.altara.configuration.LocalConfig;
 import games.sparking.altara.framework.GameManager;
-import games.sparking.altara.framework.GameScanner;
-import games.sparking.altara.games.duels.DuelGame;
-import games.sparking.altara.games.duels.command.DuelCommand;
-import games.sparking.altara.games.duels.module.DuelCombatModule;
-import games.sparking.altara.games.duels.module.DuelLifecycleModule;
-import games.sparking.altara.games.duels.module.DuelScoreboardModule;
+import games.sparking.altara.games.skywars.SkyWarsDuosGame;
+import games.sparking.altara.games.skywars.SkyWarsSolosGame;
+import games.sparking.altara.games.survivalgames.SurvivalGamesDuosGame;
+import games.sparking.altara.games.survivalgames.SurvivalGamesSolosGame;
 import lombok.Getter;
 import net.kyori.adventure.text.Component;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -31,9 +28,6 @@ public class AltaraGames extends AltaraPaper {
     @Override
     public void registerCommands() {
         super.registerCommands();
-        CommandService.register(AltaraPaper.getPlugin(),
-                new DuelCommand()
-        );
     }
 
     @Override
@@ -44,30 +38,26 @@ public class AltaraGames extends AltaraPaper {
     /**
      * Bootstraps the game framework:
      * <ol>
-     *   <li>Creates the {@link GameManager} singleton</li>
-     *   <li>Instantiates and registers each {@link games.sparking.altara.framework.Game}</li>
-     *   <li>Scans each module with {@link GameScanner} — compiles @GameEvent methods
-     *       into MethodHandle-backed lambdas and wires them to the {@link games.sparking.altara.framework.EventBus}</li>
+     *   <li>Creates the {@link GameManager} singleton (receives the plugin reference
+     *       so it can register Bukkit listeners internally).</li>
+     *   <li>Registers each game — the manager automatically calls
+     *       {@link games.sparking.altara.framework.Game#modules()}, sets up every module,
+     *       compiles all {@code @GameEvent} methods into MethodHandle lambdas, and
+     *       wires them to the {@link games.sparking.altara.framework.EventBus}.</li>
      * </ol>
      *
-     * <p>After this method returns, the entire event pipeline runs without any
-     * reflection — pure Java loops and MethodHandle invokes.
+     * <p>Adding a new game = one line: {@code gameManager.register(new MyGame())}.
+     * No module scanning, no annotation discovery, no changes to this class.
      */
     private void bootGames() {
-        gameManager = new GameManager();
+        gameManager = new GameManager(AltaraPaper.getPlugin());
 
-        // ── Register games ────────────────────────────────────────────────────
-        DuelGame duelGame = new DuelGame();
-        gameManager.register(duelGame);
+        // SkyWars
+        gameManager.register(new SkyWarsSolosGame());
+        gameManager.register(new SkyWarsDuosGame());
 
-        // ── Scan modules (one-time reflection → compiled MethodHandles) ───────
-        JavaPlugin plugin = AltaraPaper.getPlugin();
-
-        GameScanner.scan(new DuelCombatModule(),    gameManager, plugin);
-        GameScanner.scan(new DuelLifecycleModule(), gameManager, plugin);
-        GameScanner.scan(new DuelScoreboardModule(), gameManager, plugin);
-
-        plugin.getLogger().info("[GameFramework] Booted "
-                + gameManager.getGames().size() + " game(s).");
+        // Survival Games
+        gameManager.register(new SurvivalGamesSolosGame());
+        gameManager.register(new SurvivalGamesDuosGame());
     }
 }

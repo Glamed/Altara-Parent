@@ -14,7 +14,6 @@ import games.sparking.altara.rank.menu.RankEditingMenu;
 import games.sparking.altara.rank.packets.RankCreatePacket;
 import games.sparking.altara.rank.packets.RankDeletePacket;
 import games.sparking.altara.utils.CC;
-import games.sparking.altara.utils.ChatMessage;
 import games.sparking.altara.utils.PasteUtils;
 import lombok.RequiredArgsConstructor;
 import org.bukkit.command.CommandSender;

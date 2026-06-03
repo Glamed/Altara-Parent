@@ -10,8 +10,6 @@ import games.sparking.altara.hologram.HologramService;
 import games.sparking.altara.hologram.statics.StaticHologram;
 import games.sparking.altara.hologram.updating.UpdatingHologram;
 import games.sparking.altara.utils.CC;
-import games.sparking.altara.utils.ChatMessage;
-import lombok.RequiredArgsConstructor;
 import games.sparking.altara.hologram.leaderboard.LeaderboardCategory;
 import games.sparking.altara.hologram.leaderboard.LeaderboardEntry;
 import games.sparking.altara.hologram.leaderboard.LeaderboardHologram;
