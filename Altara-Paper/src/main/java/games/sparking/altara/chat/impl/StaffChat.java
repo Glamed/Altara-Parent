@@ -12,7 +12,7 @@ import org.bukkit.entity.Player;
 
 import java.util.Collections;
 
-public class StaffChat  extends ChatChannel {
+public class StaffChat extends ChatChannel {
 
     @Getter
     private static final StaffChat instance = new StaffChat();
@@ -28,12 +28,14 @@ public class StaffChat  extends ChatChannel {
 
     @Override
     public String getFormat(Player player, CommandSender commandSender) {
+        // Delivery is handled entirely in chat(); this path is never reached.
         return null;
     }
 
     @Override
     public boolean onChat(Player player, String s) {
-        return false;
+        // Gating logic lives in chat(); returning true keeps the contract clear.
+        return true;
     }
 
     @Override

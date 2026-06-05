@@ -22,12 +22,9 @@ public class ChatListener implements Listener {
 
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
-        if (ChatService.fromPlayer(event.getPlayer()) == null)
-            ChatService.setChatChannel(
-                    event.getPlayer(),
-                    ChatService.getDefaultChannelProvider().getDefaultChannel(event.getPlayer()),
-                    true
-            );
+        // fromPlayer() already resolves and caches the channel (setting a default if
+        // none was stored in Redis), so simply calling it here is enough.
+        ChatService.fromPlayer(event.getPlayer());
     }
 
     @EventHandler

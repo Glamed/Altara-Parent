@@ -7,11 +7,11 @@ import lombok.Getter;
 @AllArgsConstructor
 public enum ServerState {
 
-    ONLINE("Online"),
-    OFFLINE("Offline", "Offline (Plugin Disabled)"),
-    WHITELISTED("Whitelisted"),
-    HEARTBEAT_TIMEOUT("Offline", "Offline (Heartbeat Timeout)"),
-    UNKNOWN("Offline", "Offline (Unknown)");
+    ONLINE("<green>Online"),
+    OFFLINE("<red>Offline", "<red>Offline <gray>(Plugin Disabled)"),
+    WHITELISTED("<yellow>Whitelisted"),
+    HEARTBEAT_TIMEOUT("<red>Offline", "<red>Offline <gray>(Heartbeat Timeout)"),
+    UNKNOWN("<red>Offline", "<red>Offline <gray>(Unknown)");
 
     private final String displayName;
     private final String internalName;

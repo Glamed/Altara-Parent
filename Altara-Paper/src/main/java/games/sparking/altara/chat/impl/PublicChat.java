@@ -22,12 +22,6 @@ public class PublicChat extends FilteredChatChannel {
                 0);
     }
 
-    @Override
-    public boolean onChat(Player player, String message) {
-        // Messages always send globally — do not block based on GLOBAL_CHAT setting.
-        // GLOBAL_CHAT only controls what the player *sees*, not what they *send*.
-        return super.onChat(player, message);
-    }
 
     /**
      * Override the default local-only broadcast with a cross-server Redis publish.

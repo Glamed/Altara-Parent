@@ -1,12 +1,10 @@
 package games.sparking.altara.chat;
 
-import java.util.List;
-
-public abstract class LocalChatChannel extends ChatChannel {
-
-    public LocalChatChannel(String name, String displayName, String permission, List<String> aliases,
-                            char prefix, int priority) {
-        super(name, displayName, permission, aliases, prefix, priority);
-    }
-
+/**
+ * Marker interface for chat channels that are scoped to the local server only.
+ * {@link ChatService} uses {@code instanceof LocalChatChannel} to determine which
+ * Redis key ({@code ChatChannel:<serverName>} vs. the global {@code ChatChannel})
+ * to read from and write to when persisting a player's active channel.
+ */
+public interface LocalChatChannel {
 }

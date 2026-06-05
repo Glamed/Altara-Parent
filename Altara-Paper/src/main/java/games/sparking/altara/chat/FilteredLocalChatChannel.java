@@ -1,34 +1,24 @@
 package games.sparking.altara.chat;
-import org.bukkit.entity.Player;
 
 import java.util.List;
 
-public abstract class FilteredLocalChatChannel extends LocalChatChannel {
+/**
+ * A {@link FilteredChatChannel} that is also tagged as server-local via the
+ * {@link LocalChatChannel} marker interface.  All filtering behaviour is
+ * inherited from {@link FilteredChatChannel}; the marker interface tells
+ * {@link ChatService} to persist the player's selection to the per-server
+ * Redis key rather than the global one.
+ */
+public abstract class FilteredLocalChatChannel extends FilteredChatChannel implements LocalChatChannel {
 
-    private final boolean ignoreChatRestrictions;
-
-    public FilteredLocalChatChannel(String name,
-                                    String displayName,
-                                    String permission,
-                                    List<String> aliases,
-                                    char prefix,
-                                    int priority) {
-        this(name, displayName, permission, aliases, prefix, priority, false);
-    }
-
-    public FilteredLocalChatChannel(String name,
-                                    String displayName,
-                                    String permission,
-                                    List<String> aliases,
-                                    char prefix,
-                                    int priority,
-                                    boolean ignoreChatRestrictions) {
+    public FilteredLocalChatChannel(String name, String displayName, String permission,
+                                    List<String> aliases, char prefix, int priority) {
         super(name, displayName, permission, aliases, prefix, priority);
-        this.ignoreChatRestrictions = ignoreChatRestrictions;
     }
 
-    @Override
-    public boolean onChat(Player player, String message) {
-        return FilteredChatChannel.canChat(player, message, this, ignoreChatRestrictions);
+    public FilteredLocalChatChannel(String name, String displayName, String permission,
+                                    List<String> aliases, char prefix, int priority,
+                                    boolean ignoreChatRestrictions) {
+        super(name, displayName, permission, aliases, prefix, priority, ignoreChatRestrictions);
     }
 }
