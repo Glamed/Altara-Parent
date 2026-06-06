@@ -1,9 +1,12 @@
 package games.sparking.altara.framework.module.team;
 
 import lombok.Getter;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextColor;
 import net.md_5.bungee.api.ChatColor;
 import org.bukkit.DyeColor;
 import org.bukkit.Material;
+import org.w3c.dom.Text;
 
 /**
  * Colour identifiers for colour-based {@link GameTeam}s.
@@ -19,23 +22,23 @@ import org.bukkit.Material;
 @Getter
 public enum TeamColor {
 
-    RED    ("Red",    ChatColor.RED,          DyeColor.RED,    Material.RED_WOOL),
-    BLUE   ("Blue",   ChatColor.BLUE,         DyeColor.BLUE,   Material.BLUE_WOOL),
-    GREEN  ("Green",  ChatColor.GREEN,        DyeColor.LIME,   Material.LIME_WOOL),
-    YELLOW ("Yellow", ChatColor.YELLOW,       DyeColor.YELLOW, Material.YELLOW_WOOL),
-    AQUA   ("Aqua",   ChatColor.AQUA,         DyeColor.CYAN,   Material.CYAN_WOOL),
-    WHITE  ("White",  ChatColor.WHITE,        DyeColor.WHITE,  Material.WHITE_WOOL),
-    PINK   ("Pink",   ChatColor.LIGHT_PURPLE, DyeColor.PINK,   Material.PINK_WOOL),
-    GRAY   ("Gray",   ChatColor.GRAY,         DyeColor.GRAY,   Material.GRAY_WOOL),
-    ORANGE ("Orange", ChatColor.GOLD,         DyeColor.ORANGE, Material.ORANGE_WOOL),
-    PURPLE ("Purple", ChatColor.DARK_PURPLE,  DyeColor.PURPLE, Material.PURPLE_WOOL);
+    RED    ("Red",    NamedTextColor.RED,          DyeColor.RED,    Material.RED_WOOL),
+    BLUE   ("Blue",   NamedTextColor.BLUE,         DyeColor.BLUE,   Material.BLUE_WOOL),
+    GREEN  ("Green",  NamedTextColor.GREEN,        DyeColor.LIME,   Material.LIME_WOOL),
+    YELLOW ("Yellow", NamedTextColor.YELLOW,       DyeColor.YELLOW, Material.YELLOW_WOOL),
+    AQUA   ("Aqua",   NamedTextColor.AQUA,         DyeColor.CYAN,   Material.CYAN_WOOL),
+    WHITE  ("White",  NamedTextColor.WHITE,        DyeColor.WHITE,  Material.WHITE_WOOL),
+    PINK   ("Pink",   NamedTextColor.LIGHT_PURPLE, DyeColor.PINK,   Material.PINK_WOOL),
+    GRAY   ("Gray",   NamedTextColor.GRAY,         DyeColor.GRAY,   Material.GRAY_WOOL),
+    ORANGE ("Orange", NamedTextColor.GOLD,         DyeColor.ORANGE, Material.ORANGE_WOOL),
+    PURPLE ("Purple", NamedTextColor.DARK_PURPLE,  DyeColor.PURPLE, Material.PURPLE_WOOL);
 
     private final String displayName;
-    private final ChatColor chatColor;
+    private final TextColor chatColor;
     private final DyeColor dyeColor;
     private final Material woolMaterial;
 
-    TeamColor(String displayName, ChatColor chatColor, DyeColor dyeColor, Material woolMaterial) {
+    TeamColor(String displayName, TextColor chatColor, DyeColor dyeColor, Material woolMaterial) {
         this.displayName  = displayName;
         this.chatColor    = chatColor;
         this.dyeColor     = dyeColor;

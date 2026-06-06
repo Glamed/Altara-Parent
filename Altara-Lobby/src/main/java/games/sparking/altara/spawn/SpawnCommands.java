@@ -11,7 +11,7 @@ public class SpawnCommands {
     @Command(names = "spawn", playerOnly = true)
     public boolean spawnCommand(Player player) {
         if (AltaraLobby.getLobbyInstance().getLobbyConfig().getSpawnLocation() == null) {
-            player.sendMessage(ChatColor.RED + "The spawn location is not set, " +
+            player.sendMessage("<red>The spawn location is not set, " +
                     "please contact a server administrator.");
             return true;
         }

@@ -96,7 +96,7 @@ public class HubBoardAdapter implements ScoreboardAdapter {
         TagResolver globalPlaceholders = TagResolver.builder()
                 .resolver(Placeholder.parsed("rank",
                         profile.getCurrentGrant().asRank().getDisplayName() + (profile.isDisguised()
-                                ? " &7(" + profile.getRealCurrentGrant().asRank().getDisplayName() + "&7)" : "")))
+                                ? " <gray(" + profile.getRealCurrentGrant().asRank().getDisplayName() + "<gray>)" : "")))
                 .resolver(Placeholder.unparsed("onlinecount",
                         String.valueOf(ServerInfo.getGlobalPlayerCount())))
                 .resolver(Placeholder.unparsed("maxcount",

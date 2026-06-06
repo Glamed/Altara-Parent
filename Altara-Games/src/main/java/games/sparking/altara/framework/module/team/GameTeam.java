@@ -1,6 +1,7 @@
 package games.sparking.altara.framework.module.team;
 
 import lombok.Getter;
+import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
@@ -78,7 +79,7 @@ public class GameTeam {
      * Sends {@code message} to every online member of this team.
      *
      * @param message raw/colour-coded string (no translation needed — use
-     *                {@link games.sparking.altara.utils.CC#translate} beforehand if required)
+     *                {@link games.sparking.altara.utils.CC#format(String, TagResolver...)} beforehand if required)
      */
     public void broadcast(String message) {
         for (UUID id : members) {

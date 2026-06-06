@@ -65,7 +65,7 @@ public class ServerSelectorMenu extends Menu {
             if (server == null || !server.isOnline()) {
                 // Offline server: redstone block with "(Offline)"
                 itemStack = new ItemBuilder(Material.REDSTONE_BLOCK)
-                        .setDisplayName(ChatColor.RED + entry.getServerName() + " (Offline)")
+                        .setDisplayName("<red>" + entry.getServerName() + " (Offline)")
                         .build();
             } else {
                 // Online server: use entry's normal item
@@ -81,7 +81,7 @@ public class ServerSelectorMenu extends Menu {
             if (server != null && server.isOnline()) {
                 Bukkit.dispatchCommand(player, "joinqueue " + entry.getServerName());
             } else {
-                player.sendMessage(ChatColor.RED + "That server is currently unavailable.");
+                player.sendMessage("<red>That server is currently unavailable.");
             }
         }
     }

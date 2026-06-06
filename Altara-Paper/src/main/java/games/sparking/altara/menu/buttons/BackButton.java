@@ -25,7 +25,7 @@ public class BackButton extends Button {
         } else {
             lore.add(CC.GRAY + "To: " + menu.getTitle(player));
         }*/
-        return new ItemBuilder(Material.RED_BED).setDisplayName(ChatColor.RED + ChatColor.BOLD.toString() + "Go Back").build();
+        return new ItemBuilder(Material.RED_BED).setDisplayName("<red><b>Go Back").build();
     }
 
     @Override
