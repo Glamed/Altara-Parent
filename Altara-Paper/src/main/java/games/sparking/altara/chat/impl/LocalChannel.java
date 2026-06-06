@@ -4,6 +4,7 @@ import games.sparking.altara.chat.ChannelAudience;
 import games.sparking.altara.chat.ChatChannel;
 import games.sparking.altara.playersetting.AltaraSettings;
 import games.sparking.altara.profile.Profile;
+import games.sparking.altara.utils.CC;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.entity.Player;
@@ -27,10 +28,10 @@ public final class LocalChannel extends ChatChannel {
     public Component format(Profile sender, String message) {
         return Component.empty()
                 .append(Component.text("[LOCAL] ", NamedTextColor.GRAY))
-                .append(legacy(sender.getCurrentGrant().asRank().getPrefix()))
-                .append(legacy(sender.getCurrentName()))
-                .append(Component.text(": "))
-                .append(legacy(sender.getCurrentGrant().asRank().getChatColor() + message));
+                .append(CC.format(sender.getCurrentGrant().asRank().getPrefix()))
+                .append(CC.format(sender.getCurrentName()))
+                .append(CC.format(" &8» "))
+                .append(CC.format(sender.getCurrentGrant().asRank().getChatColor() + message));
     }
 
     @Override

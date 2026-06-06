@@ -2,6 +2,8 @@ package games.sparking.altara.chat.impl;
 
 import games.sparking.altara.Altara;
 import games.sparking.altara.profile.Profile;
+import lombok.Getter;
+import lombok.Setter;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
@@ -18,6 +20,8 @@ import java.util.List;
  *
  * <p>Logging can be toggled at runtime via {@link #setLog(boolean)}.
  */
+@Setter
+@Getter
 public final class DirectMessageChannel {
 
     private static final DirectMessageChannel INSTANCE = new DirectMessageChannel();
@@ -27,9 +31,6 @@ public final class DirectMessageChannel {
     private boolean log = true;
 
     private DirectMessageChannel() {}
-
-    public boolean isLog() { return log; }
-    public void setLog(boolean log) { this.log = log; }
 
     // ── Dispatch ───────────────────────────────────────────────────────────────
 
