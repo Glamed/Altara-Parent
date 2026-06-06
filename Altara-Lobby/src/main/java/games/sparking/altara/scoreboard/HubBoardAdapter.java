@@ -1,5 +1,6 @@
 package games.sparking.altara.scoreboard;
 
+import games.sparking.altara.Altara;
 import games.sparking.altara.AltaraLobby;
 import games.sparking.altara.AltaraPaper;
 import games.sparking.altara.profile.Profile;
@@ -87,8 +88,7 @@ public class HubBoardAdapter implements ScoreboardAdapter {
 
     @Override
     public List<Component> getLines(Player player) {
-//        Profile profile = Altara.getSharedInstance().getProfileService().getProfile(player);
-        Profile profile = new Profile(player.getUniqueId(), "GLamify");
+        Profile profile = Altara.getSharedInstance().getProfileService().getProfile(player);
 
         QueueService queueService = AltaraPaper.getPaperInstance().getQueueService();
         String primaryQueue = queueService.getPrimaryQueue(player.getUniqueId());
