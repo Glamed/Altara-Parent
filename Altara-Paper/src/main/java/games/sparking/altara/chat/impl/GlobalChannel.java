@@ -29,7 +29,7 @@ public final class GlobalChannel extends ChatChannel {
         return Component.empty()
                 .append(CC.format(sender.getCurrentGrant().asRank().getPrefix()))
                 .append(CC.format(sender.getCurrentName()))
-                .append(CC.format(" &8» "))
+                .append(CC.format(" <dark_gray>» "))
                 .append(CC.format(sender.getCurrentGrant().asRank().getChatColor() + message));
     }
 
