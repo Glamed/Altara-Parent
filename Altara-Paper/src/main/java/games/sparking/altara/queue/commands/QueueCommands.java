@@ -126,7 +126,7 @@ public class QueueCommands {
         }
 
         new QueueRatePacket(server.getName(), rate).publish();
-        sender.sendMessage(CC.format("&aRate of &e%s &awas set to &e%d&a.", server.getName(), rate));
+        sender.sendMessage(CC.format("<green>Rate of <yellow>%s <green>was set to <yellow>%d<green>.", server.getName(), rate));
         return true;
     }
 
@@ -158,15 +158,15 @@ public class QueueCommands {
              playerOnly = true)
     public boolean queueDebugMe(Player sender) {
         List<String> queues = AltaraPaper.getPaperInstance().getQueueService().getQueues(sender.getUniqueId());
-        sender.sendMessage(CC.format("&9Currently queueing for &e%d &9servers.", queues.size()));
+        sender.sendMessage(CC.format("<blue>Currently queueing for <yellow>%d <blue>servers.", queues.size()));
         queues.forEach(queue ->
                 sender.sendMessage(CC.format(
-                        "&9%s: &e%d&9/&e%d",
+                        "<blue>%s: <yellow>%d<blue>/<yellow>%d",
                         queue,
                         AltaraPaper.getPaperInstance().getQueueService().getPosition(sender.getUniqueId(), queue) + 1,
                         AltaraPaper.getPaperInstance().getQueueService().getQueueing(queue).size()
                 )));
-        sender.sendMessage(CC.format("&9Primary: &e%s",
+        sender.sendMessage(CC.format("<blue>Primary: <yellow>%s",
                 AltaraPaper.getPaperInstance().getQueueService().getPrimaryQueue(sender.getUniqueId())));
         return true;
     }
@@ -178,7 +178,7 @@ public class QueueCommands {
     public boolean queueDebug(CommandSender sender, @Param(name = "server") ServerInfo server) {
         AltaraPaper.getPaperInstance().getQueueService().getQueueing(server.getName()).forEach(uuid ->
                 sender.sendMessage(CC.format(
-                        "&9%s: &e%d",
+                        "<blue>%s: <yellow>%d",
                         UUIDCache.getName(uuid),
                         AltaraPaper.getPaperInstance().getQueueService().getPosition(uuid, server.getName()) + 1)));
         return true;

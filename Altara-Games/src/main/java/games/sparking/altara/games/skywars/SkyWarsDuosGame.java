@@ -171,9 +171,10 @@ public class SkyWarsDuosGame extends TeamGame {
                     .reduce((a, b) -> a + " & " + b)
                     .orElse("Unknown");
 
-            Bukkit.broadcastMessage(
-                    "§6§lSkyWars Duos §r§7» §e" + memberNames
-                    + " §7(" + team.getDisplayName() + "§7) have won the game!");
+            Bukkit.broadcast(
+                    net.kyori.adventure.text.minimessage.MiniMessage.miniMessage().deserialize(
+                            "<gold><bold>SkyWars Duos <reset><gray>» <yellow>" + memberNames
+                            + " <gray>(" + team.getDisplayName() + "<gray>) have won the game!"));
         });
     }
 }

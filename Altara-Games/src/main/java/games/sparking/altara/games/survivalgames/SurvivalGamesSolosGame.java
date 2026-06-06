@@ -158,8 +158,9 @@ public class SurvivalGamesSolosGame extends SoloGame {
         getWinner().ifPresent(winnerId -> {
             Player winner = Bukkit.getPlayer(winnerId);
             String name = winner != null ? winner.getName() : winnerId.toString();
-            Bukkit.broadcastMessage(
-                    "§2§lSurvival Games §r§7» §a" + name + " §7has survived and won the game!");
+            org.bukkit.Bukkit.broadcast(
+                    net.kyori.adventure.text.minimessage.MiniMessage.miniMessage().deserialize(
+                            "<dark_green><bold>Survival Games <reset><gray>» <green>" + name + " <gray>has survived and won the game!"));
         });
     }
 }

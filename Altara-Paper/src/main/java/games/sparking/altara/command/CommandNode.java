@@ -281,9 +281,9 @@ public class CommandNode {
         if (sender instanceof Player
                 && hasCooldown((Player) sender)) {
             if (commandCooldown.global())
-                sender.sendMessage(CC.format("&cThis command is on a global cooldown for another &e%s&c.",
+                sender.sendMessage(CC.format("<red>This command is on a global cooldown for another <yellow>%s<red>.",
                         formatRemainingCooldown((Player) sender)));
-            else sender.sendMessage(CC.format("&cYou cannot use this command for another &e%s&c.",
+            else sender.sendMessage(CC.format("<red>You cannot use this command for another <yellow>%s<red>.",
                     formatRemainingCooldown((Player) sender)));
             return true;
         }

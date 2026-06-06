@@ -52,7 +52,7 @@ public class GrantCommands {
         sender.sendMessage(CC.YELLOW + "Loading grants of " + target.getName() + "...");
         RequestResponse response = RequestHandler.get("api/profile/%s/grants", target.getUuid().toString());
         if (!response.wasSuccessful()) {
-            sender.sendMessage(CC.format("&cCould not load grants: %s (%d)",
+            sender.sendMessage(CC.format("<red>Could not load grants: %s (%d)",
                     response.getErrorMessage(), response.getCode()));
             return true;
         }
@@ -105,24 +105,24 @@ public class GrantCommands {
         //Packet packet = new GrantAddPacket(target.getUuid(), rank.getUuid(), duration.getDuration());
         RequestResponse response = AltaraPaper.getPaperInstance().getBukkitProfileService().addGrant(target, grant);
         if (response.couldNotConnect()) {
-            sender.sendMessage(CC.format("&cCould not connect to API to create grant. " +
+            sender.sendMessage(CC.format("<red>Could not connect to API to create grant. " +
                             "Adding grant to the queue. Error: %s (%d)",
                     response.getErrorMessage(), response.getCode()));
         } else if (!response.wasSuccessful()) {
-            sender.sendMessage(CC.format("&cCould not create grant: %s (%d)",
+            sender.sendMessage(CC.format("<red>Could not create grant: %s (%d)",
                     response.getErrorMessage(), response.getCode()));
             return false;
         }
 
         if (grant.getDuration() == -1)
             sender.sendMessage(CC.format(
-                    "&aYou've &epermanently &agranted %s&a the %s&a rank.",
+                    "<green>You've <yellow>permanently <green>granted %s<green> the %s<green> rank.",
                     target.getName(),
                     rank.getName()
             ));
         else
             sender.sendMessage(CC.format(
-                    "&aYou've granted %s&a the %s&a rank for &e%s&a.",
+                    "<green>You've granted %s<green> the %s<green> rank for <yellow>%s<green>.",
                     target.getName(),
                     rank.getName(),
                     Time.formatDetailed(grant.getDuration())
@@ -145,7 +145,7 @@ public class GrantCommands {
                 body.build(), target.getUuid().toString());
 
         if (response.couldNotConnect()) {
-            sender.sendMessage(CC.format("&cCould not connect to API to clear grants. " +
+            sender.sendMessage(CC.format("<red>Could not connect to API to clear grants. " +
                             "Adding request to the queue. Error: %s (%d)",
                     response.getErrorMessage(), response.getCode()));
             RequestHandler.addToBackLog(new GrantClearBackLogEntry(
@@ -155,12 +155,12 @@ public class GrantCommands {
             ));
             return true;
         } else if (!response.wasSuccessful()) {
-            sender.sendMessage(CC.format("&cCould not clear grants: %s (%d)",
+            sender.sendMessage(CC.format("<red>Could not clear grants: %s (%d)",
                     response.getErrorMessage(), response.getCode()));
             return false;
         }
 
-        sender.sendMessage(CC.format("&aRemoved &e%d &agrants of %s&a.",
+        sender.sendMessage(CC.format("<green>Removed <yellow>%d <green>grants of %s<green>.",
                 response.asObject().get("removed").getAsInt(), target.getName()));
 
        new ProfileUpdatePacket(target.getUuid()).publish();

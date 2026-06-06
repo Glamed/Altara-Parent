@@ -51,7 +51,7 @@ public class NPCCommands {
         npc.spawn();
         npcService().register(npc);
         npcService().save();
-        sender.sendMessage(CC.format("&9NPC &e#%d &9(&e%s&9) created.", npc.getId(), name));
+        sender.sendMessage(CC.format("<blue>NPC <yellow>#%d <blue>(<yellow>%s<blue>) created.", npc.getId(), name));
         return true;
     }
 
@@ -61,7 +61,7 @@ public class NPCCommands {
     public boolean delete(CommandSender sender, @Param(name = "npc") NPC npc) {
         npcService().remove(npc);
         npcService().save();
-        sender.sendMessage(CC.format("&9Deleted NPC &e#%d&9.", npc.getId()));
+        sender.sendMessage(CC.format("<blue>Deleted NPC <yellow>#%d<blue>.", npc.getId()));
         return true;
     }
 
@@ -108,7 +108,7 @@ public class NPCCommands {
                            @Param(name = "displayName", wildcard = true) String displayName) {
         npc.setDisplayName(displayName); // triggers re-spawn
         npcService().save();
-        sender.sendMessage(CC.format("&9Set display name of NPC &e#%d &9to '&r%s&9'.",
+        sender.sendMessage(CC.format("<blue>Set display name of NPC <yellow>#%d <blue>to '<reset>%s<blue>'.",
                 npc.getId(), displayName));
         return true;
     }
@@ -123,9 +123,9 @@ public class NPCCommands {
         npc.setCommand(command);
         npc.setConsoleCommand(consoleCommand);
         npcService().save();
-        sender.sendMessage(CC.format("&9Set the command of NPC &e#%d &9to &e%s&9.%s",
+        sender.sendMessage(CC.format("<blue>Set the command of NPC <yellow>#%d <blue>to <yellow>%s<blue>.%s",
                 npc.getId(), command,
-                consoleCommand ? CC.GRAY + " (Console Command)" : ""));
+                consoleCommand ? " <gray>(Console Command)" : ""));
         return true;
     }
 
@@ -136,7 +136,7 @@ public class NPCCommands {
         npc.setCommand(null);
         npc.setConsoleCommand(false);
         npcService().save();
-        sender.sendMessage(CC.format("&9Removed the command from NPC &e#%d&9.", npc.getId()));
+        sender.sendMessage(CC.format("<blue>Removed the command from NPC <yellow>#%d<blue>.", npc.getId()));
         return true;
     }
 
@@ -152,9 +152,9 @@ public class NPCCommands {
         npcService().save();
 
         if (skin == null) {
-            sender.sendMessage(CC.format("&cCould not fetch skin for &e%s&c. NPC reset to default.", playerName));
+            sender.sendMessage(CC.format("<red>Could not fetch skin for <yellow>%s<red>. NPC reset to default.", playerName));
         } else {
-            sender.sendMessage(CC.format("&9NPC &e#%d &9now has the skin of &e%s&9.", npc.getId(), playerName));
+            sender.sendMessage(CC.format("<blue>NPC <yellow>#%d <blue>now has the skin of <yellow>%s<blue>.", npc.getId(), playerName));
         }
         return true;
     }
@@ -166,7 +166,7 @@ public class NPCCommands {
     public boolean tphere(Player sender, @Param(name = "npc") NPC npc) {
         npc.setLocation(sender.getLocation()); // triggers re-spawn
         npcService().save();
-        sender.sendMessage(CC.format("&9Teleported NPC &e#%d &9to your location.", npc.getId()));
+        sender.sendMessage(CC.format("<blue>Teleported NPC <yellow>#%d <blue>to your location.", npc.getId()));
         return true;
     }
 
@@ -176,7 +176,7 @@ public class NPCCommands {
              playerOnly = true)
     public boolean tpto(Player sender, @Param(name = "npc") NPC npc) {
         sender.teleport(npc.getLocation());
-        sender.sendMessage(CC.format("&9Teleported to NPC &e#%d&9.", npc.getId()));
+        sender.sendMessage(CC.format("<blue>Teleported to NPC <yellow>#%d<blue>.", npc.getId()));
         return true;
     }
 
@@ -192,7 +192,7 @@ public class NPCCommands {
         npc.setEquipment(slot, item);
         npcService().save();
         sender.sendMessage(CC.format(
-                "&9Set &e%s &9slot of NPC &e#%d &9to &e%s&9.",
+                "<blue>Set <yellow>%s <blue>slot of NPC <yellow>#%d <blue>to <yellow>%s<blue>.",
                 slot.name(),
                 npc.getId(),
                 item == null ? "empty" : item.getType().name()));

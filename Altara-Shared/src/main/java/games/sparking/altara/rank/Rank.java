@@ -30,10 +30,10 @@ public class Rank extends JsonObjClass {
 
     private final UUID uuid;
     private String name;
-    private String prefix = "&f";
-    private String suffix = "&f";
-    private String color = "&f";
-    private String chatColor = "&f";
+    private String prefix = "<white>";
+    private String suffix = "<white>";
+    private String color = "<white>";
+    private String chatColor = "<white>";
 
     private String description = "";
     private boolean team = false;

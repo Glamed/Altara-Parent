@@ -18,11 +18,11 @@ public class EquipmentSlotParameter implements ParameterType<EquipmentSlot> {
             return EquipmentSlot.valueOf(source.toUpperCase());
         } catch (IllegalArgumentException ignored) {
             sender.sendMessage(CC.format(
-                    "&cSlot &e%s &cnot found. Available: &e%s",
+                    "<red>Slot <yellow>%s <red>not found. Available: <yellow>%s",
                     source,
                     Arrays.stream(EquipmentSlot.values())
                           .map(Enum::name)
-                          .collect(Collectors.joining(CC.RED + ", " + CC.YELLOW))));
+                          .collect(Collectors.joining("<red>, <yellow>"))));
             return null;
         }
     }

@@ -154,8 +154,9 @@ public class SkyWarsSolosGame extends SoloGame {
         getWinner().ifPresent(winnerId -> {
             Player winner = org.bukkit.Bukkit.getPlayer(winnerId);
             String name = winner != null ? winner.getName() : winnerId.toString();
-            org.bukkit.Bukkit.broadcastMessage(
-                    "§6§lSkyWars Solos §r§7» §e" + name + " §7has won the game!");
+            org.bukkit.Bukkit.broadcast(
+                    net.kyori.adventure.text.minimessage.MiniMessage.miniMessage().deserialize(
+                            "<gold><bold>SkyWars Solos <reset><gray>» <yellow>" + name + " <gray>has won the game!"));
         });
     }
 }

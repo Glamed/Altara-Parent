@@ -18,7 +18,6 @@ import net.kyori.adventure.text.event.HoverEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
@@ -56,8 +55,8 @@ public class ProfilerCommand {
             return;
         }
 
-        sender.sendMessage(ChatColor.translateAlternateColorCodes('&',
-                "&6&l[PROFILER] &eCurrently flagged online players &7(" + records.size() + ")&e:"));
+        sender.sendMessage(CC.translate(
+                "<gold><bold>[PROFILER] <yellow>Currently flagged online players <gray>(" + records.size() + ")<yellow>:"));
 
         for (ProfilerRecord record : records) {
             boolean online = Bukkit.getPlayer(record.getUuid()) != null;
@@ -126,8 +125,8 @@ public class ProfilerCommand {
                     // Kick the player
                     Bukkit.getScheduler().runTask(
                             games.sparking.altara.AltaraPaper.getPlugin(),
-                            () -> target.kickPlayer(ChatColor.translateAlternateColorCodes('&',
-                                    "&5Your account has been suspended\n&7Compromised Account [Change Password & Appeal]"
+                            () -> target.kick(CC.translate(
+                                    "<dark_purple>Your account has been suspended\n<gray>Compromised Account [Change Password & Appeal]"
                             ))
                     );
 

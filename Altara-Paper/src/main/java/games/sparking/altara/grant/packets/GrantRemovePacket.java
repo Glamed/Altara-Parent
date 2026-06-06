@@ -32,7 +32,7 @@ public class GrantRemovePacket extends Packet {
         AltaraPaper.getPaperInstance().getPermissionService().updatePermissions(player);
 
         player.sendMessage(CC.format(
-                "&aYour %s&a grant has been removed.",
+                "<green>Your %s<green> grant has been removed.",
                 rank.getName()
         ));
     }

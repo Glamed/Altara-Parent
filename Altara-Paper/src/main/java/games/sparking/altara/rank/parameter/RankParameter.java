@@ -19,7 +19,7 @@ public class RankParameter implements ParameterType<Rank> {
         }
         Rank rank = Altara.getSharedInstance().getRankService().getRank(source);
         if (rank == null) {
-            sender.sendMessage(CC.format("&cRank &e%s &cnot found.", source));
+            sender.sendMessage(CC.format("<red>Rank <yellow>%s <red>not found.", source));
             return null;
         }
         return rank;

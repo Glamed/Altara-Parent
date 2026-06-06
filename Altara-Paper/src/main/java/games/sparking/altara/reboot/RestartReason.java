@@ -11,19 +11,19 @@ import java.util.List;
 public enum RestartReason {
 
     SINGLE_COMMAND(List.of(
-            "&8[&4&l!&8] &cThe network will be rebooting in 5 minutes.",
-            "&8[&4&l!&8] &7We'll be back within 10 minutes after the reboot begins."
+            "<dark_gray>[<dark_red><bold>!<reset><dark_gray>] <red>The network will be rebooting in 5 minutes.",
+            "<dark_gray>[<dark_red><bold>!<reset><dark_gray>] <gray>We'll be back within 10 minutes after the reboot begins."
     )),
 
     GROUP_COMMAND(List.of(
-            "&8[&4&l!&8] &cThe network will be rebooting in 5 minutes.",
-            "&8[&4&l!&8] &7We'll be back within 10 minutes after the reboot begins."
+            "<dark_gray>[<dark_red><bold>!<reset><dark_gray>] <red>The network will be rebooting in 5 minutes.",
+            "<dark_gray>[<dark_red><bold>!<reset><dark_gray>] <gray>We'll be back within 10 minutes after the reboot begins."
     )),
 
     JAR_UPDATE(List.of(
-            "&8[&4&l!&8] &cThe network will be rebooting in %s minutes.",
-            "&8[&4&l!&8] &fThis is reboot will bring new features.",
-            "&8[&4&l!&8] &7We'll be back within 10 minutes after the reboot begins."
+            "<dark_gray>[<dark_red><bold>!<reset><dark_gray>] <red>The network will be rebooting in %s minutes.",
+            "<dark_gray>[<dark_red><bold>!<reset><dark_gray>] <white>This reboot will bring new features.",
+            "<dark_gray>[<dark_red><bold>!<reset><dark_gray>] <gray>We'll be back within 10 minutes after the reboot begins."
     ));
 
     private final List<String> description;

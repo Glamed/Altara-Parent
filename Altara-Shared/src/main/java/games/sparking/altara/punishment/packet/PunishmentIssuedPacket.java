@@ -9,8 +9,9 @@ import games.sparking.altara.redis.packet.Packet;
 import games.sparking.altara.utils.Time;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 
 import java.util.UUID;
@@ -27,6 +28,8 @@ import java.util.UUID;
 @AllArgsConstructor
 @NoArgsConstructor
 public class PunishmentIssuedPacket extends Packet {
+
+    private static final MiniMessage MM = MiniMessage.miniMessage();
 
     private Punishment punishment;
 
@@ -58,34 +61,34 @@ public class PunishmentIssuedPacket extends Packet {
                 : punishment.getInfractionType();
         boolean permanent = suspension.getDuration() == -1L;
 
-        String banMessage = "&cYour account has been suspended"
-                + "\n&7\"" + reasonText + "&7\""
-                + "\n\n&7This suspension " + (permanent
+        String banMessage = "<red>Your account has been suspended"
+                + "\n<gray>\"" + reasonText + "<gray>\""
+                + "\n\n<gray>This suspension " + (permanent
                     ? "will never expire"
-                    : "will expire in &c" + Time.formatDetailed(suspension.getDuration()) + "&7")
-                + ". Visit &c&n" + Altara.getSharedInstance().getMainConfig().getServerConfig().getWebsite() + "/appeal&r&7 to submit an appeal";
+                    : "will expire in <red>" + Time.formatDetailed(suspension.getDuration()) + "<gray>")
+                + ". Visit <red><underlined>" + Altara.getSharedInstance().getMainConfig().getServerConfig().getWebsite() + "/appeal<reset><gray> to submit an appeal";
 
-        player.kickPlayer(ChatColor.translateAlternateColorCodes('&', banMessage));
+        player.kick(MM.deserialize(banMessage));
     }
 
     private void handleNoticeActions(Player player) {
         sendHeader(player);
-        player.sendMessage(f(" &7Your recent activity violated our Terms of Service"));
+        player.sendMessage(f(" <gray>Your recent activity violated our Terms of Service"));
 
         String msg = punishment.getMessage();
         if (msg != null && !msg.isBlank()) {
-            player.sendMessage("");
-            player.sendMessage(f("  &8&l→ &8[&7Member&8]&7 " + player.getName() + " &8»&f " + msg));
+            player.sendMessage(Component.empty());
+            player.sendMessage(f("  <dark_gray><bold>→ <dark_gray>[<gray>Member<dark_gray>]<gray> " + player.getName() + " <dark_gray>»<white> " + msg));
         }
 
-        player.sendMessage("");
-        player.sendMessage(f(" &7We took these actions&8:"));
+        player.sendMessage(Component.empty());
+        player.sendMessage(f(" <gray>We took these actions<dark_gray>:"));
 
         for (RestrictionAction action : punishment.getActions()) {
-            player.sendMessage(f("  &4x&c " + action.getType().getActionLine(action.getDuration())));
+            player.sendMessage(f("  <dark_red>x<red> " + action.getType().getActionLine(action.getDuration())));
         }
         if (msg != null && !msg.isBlank()) {
-            player.sendMessage(f("  &4x&c This content has been removed so no one can see it."));
+            player.sendMessage(f("  <dark_red>x<red> This content has been removed so no one can see it."));
         }
 
         sendReasonSection(player);
@@ -93,34 +96,32 @@ public class PunishmentIssuedPacket extends Packet {
     }
 
     private void sendHeader(Player player) {
-        player.sendMessage(ChatColor.translateAlternateColorCodes('&',
-                "&5&m" + "─".repeat(48)));
+        player.sendMessage(MM.deserialize("<dark_purple><strikethrough>" + "─".repeat(48)));
     }
 
     private void sendReasonSection(Player player) {
-        player.sendMessage("");
+        player.sendMessage(Component.empty());
         var infraction = punishment.getInfractionTypeEnum();
         if (infraction == games.sparking.altara.punishment.InfractionType.TEMP_AUTOMATED) {
-            player.sendMessage(f(" &7Why this action was taken&8:"));
-            player.sendMessage(f("  &7This temporary action was triggered by our"));
-            player.sendMessage(f("  &7automated moderation systems and is pending"));
-            player.sendMessage(f("  &7manual review by our Trust & Safety team."));
-            player.sendMessage("");
-            player.sendMessage(f(" &7You cannot appeal this action at this time."));
+            player.sendMessage(f(" <gray>Why this action was taken<dark_gray>:"));
+            player.sendMessage(f("  <gray>This temporary action was triggered by our"));
+            player.sendMessage(f("  <gray>automated moderation systems and is pending"));
+            player.sendMessage(f("  <gray>manual review by our Trust & Safety team."));
+            player.sendMessage(Component.empty());
+            player.sendMessage(f(" <gray>You cannot appeal this action at this time."));
         } else {
             String name = infraction != null ? infraction.getDisplayName() : punishment.getInfractionType();
-            player.sendMessage(f(" &7Why we took these actions&8:"));
-            player.sendMessage(f("  &7Our trust and safety team uses automation and manual"));
-            player.sendMessage(f("  &7review to enforce our rules. We believe that you have"));
-            player.sendMessage(f("  &7violated our community guidelines on &d" + name + "&7."));
-            player.sendMessage("");
-            player.sendMessage(f(" &7Please review our &b&nCommunity Guidelines&7."));
-            player.sendMessage(f(" &7Did we make a mistake? &b&nLet us know&7!"));
+            player.sendMessage(f(" <gray>Why we took these actions<dark_gray>:"));
+            player.sendMessage(f("  <gray>Our trust and safety team uses automation and manual"));
+            player.sendMessage(f("  <gray>review to enforce our rules. We believe that you have"));
+            player.sendMessage(f("  <gray>violated our community guidelines on <light_purple>" + name + "<gray>."));
+            player.sendMessage(Component.empty());
+            player.sendMessage(f(" <gray>Please review our <aqua><underlined>Community Guidelines<gray>."));
+            player.sendMessage(f(" <gray>Did we make a mistake? <aqua><underlined>Let us know<gray>!"));
         }
     }
 
-    private static String f(String s) {
-        return ChatColor.translateAlternateColorCodes('&', s);
+    private static Component f(String s) {
+        return MM.deserialize(s);
     }
 }
-

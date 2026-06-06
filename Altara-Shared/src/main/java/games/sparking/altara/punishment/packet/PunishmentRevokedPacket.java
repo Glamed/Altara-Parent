@@ -5,8 +5,8 @@ import games.sparking.altara.SystemType;
 import games.sparking.altara.redis.packet.Packet;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
+import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 
 import java.util.UUID;
@@ -39,8 +39,7 @@ public class PunishmentRevokedPacket extends Packet {
         Player player = Bukkit.getPlayer(UUID.fromString(playerUuid));
         if (player == null) return;
 
-        player.sendMessage(ChatColor.translateAlternateColorCodes('&',
-                "&aA moderation action against your account has been lifted."));
+        player.sendMessage(MiniMessage.miniMessage().deserialize(
+                "<green>A moderation action against your account has been lifted."));
     }
 }
-

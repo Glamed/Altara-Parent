@@ -44,7 +44,7 @@ public class PrefixPrompt extends ChatInput<String> {
         if (rank == null)
             return;
 
-        String suggested = "&7[" + rank.getName() + "&7] ";
+        String suggested = "<gray>[" + rank.getName() + "<gray>] ";
         player.sendMessage(CC.translate("<yellow>(Click to get the suggested prefix example)")
                 .clickEvent(ClickEvent.suggestCommand(suggested)));
     }

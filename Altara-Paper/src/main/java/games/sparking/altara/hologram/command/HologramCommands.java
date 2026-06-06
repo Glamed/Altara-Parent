@@ -58,7 +58,7 @@ public class HologramCommands {
 
         hologram.spawn();
         hologram.start();
-        sender.sendMessage(CC.GREEN + "Test hologram spawned — only you can see it.");
+        sender.sendMessage(CC.format("<blue>Test hologram spawned — only you can see it."));
         return true;
     }
 
@@ -85,7 +85,7 @@ public class HologramCommands {
         hologram.spawn();
         hologramService.register(hologram);
         hologramService.save();
-        sender.sendMessage(CC.format("&9Hologram &e#%d &9created.", hologram.getId()));
+        sender.sendMessage(CC.format("<blue>Hologram <yellow>#%d <blue>created.", hologram.getId()));
         return true;
     }
 
@@ -95,7 +95,7 @@ public class HologramCommands {
     public boolean delete(CommandSender sender, @Param(name = "id") StaticHologram hologram) {
         hologramService.remove(hologram);
         hologramService.save();
-        sender.sendMessage(CC.format("&9Deleted hologram &e#%d&9.", hologram.getId()));
+        sender.sendMessage(CC.format("<blue>Deleted hologram <yellow>#%d<blue>.", hologram.getId()));
         return true;
     }
 
@@ -141,7 +141,7 @@ public class HologramCommands {
         text = text.equalsIgnoreCase("{empty}") ? "" : text;
         hologram.addLines(text);
         hologramService.save();
-        sender.sendMessage(CC.format("&9Added line to hologram &e#%d&9.", hologram.getId()));
+        sender.sendMessage(CC.format("<blue>Added line to hologram <yellow>#%d<blue>.", hologram.getId()));
         return true;
     }
 
@@ -153,7 +153,7 @@ public class HologramCommands {
                               @Param(name = "index") int index) {
         List<HologramLine> lines = new ArrayList<>(hologram.getCurrentLines());
         if (--index < 0 || index >= lines.size()) {
-            sender.sendMessage(CC.format("&cInvalid index. (&e1&c-&e%d&c)", lines.size()));
+            sender.sendMessage(CC.format("<red>Invalid index. (<yellow>1<red>-<yellow>%d<red>)", lines.size()));
             return false;
         }
 
@@ -162,7 +162,7 @@ public class HologramCommands {
         for (HologramLine l : lines) strings.add(l.getText());
         hologram.setLines(strings);
         hologramService.save();
-        sender.sendMessage(CC.format("&9Removed '&r%s&9' from hologram &e#%d&9.",
+        sender.sendMessage(CC.format("<blue>Removed '<reset>%s<blue>' from hologram <yellow>#%d<blue>.",
                 removed.getText(), hologram.getId()));
         return true;
     }
@@ -175,7 +175,7 @@ public class HologramCommands {
                            @Param(name = "index") int index,
                            @Param(name = "text", wildcard = true) String text) {
         if (--index < 0 || index >= hologram.getCurrentLines().size()) {
-            sender.sendMessage(CC.format("&cInvalid index. (&e1&c-&e%d&c)",
+            sender.sendMessage(CC.format("<red>Invalid index. (<yellow>1<red>-<yellow>%d<red>)",
                     hologram.getCurrentLines().size()));
             return false;
         }
@@ -183,7 +183,7 @@ public class HologramCommands {
         text = text.equalsIgnoreCase("{empty}") ? "" : text;
         hologram.setLine(index, text);
         hologramService.save();
-        sender.sendMessage(CC.format("&9Set line &e%d &9on hologram &e#%d&9.", index + 1, hologram.getId()));
+        sender.sendMessage(CC.format("<blue>Set line <yellow>%d <blue>on hologram <yellow>#%d<blue>.", index + 1, hologram.getId()));
         return true;
     }
 
@@ -196,7 +196,7 @@ public class HologramCommands {
                                 @Param(name = "text", wildcard = true) String text) {
         List<HologramLine> lines = new ArrayList<>(hologram.getCurrentLines());
         if (--index < 0 || index >= lines.size()) {
-            sender.sendMessage(CC.format("&cInvalid index. (&e1&c-&e%d&c)", lines.size()));
+            sender.sendMessage(CC.format("<red>Invalid index. (<yellow>1<red>-<yellow>%d<red>)", lines.size()));
             return false;
         }
 
@@ -206,7 +206,7 @@ public class HologramCommands {
         for (HologramLine l : lines) strings.add(l.getText());
         hologram.setLines(strings);
         hologramService.save();
-        sender.sendMessage(CC.format("&9Inserted line at position &e%d &9on hologram &e#%d&9.",
+        sender.sendMessage(CC.format("<blue>Inserted line at position <yellow>%d <blue>on hologram <yellow>#%d<blue>.",
                 index + 1, hologram.getId()));
         return true;
     }
@@ -220,7 +220,7 @@ public class HologramCommands {
                                @Param(name = "text", wildcard = true) String text) {
         List<HologramLine> lines = new ArrayList<>(hologram.getCurrentLines());
         if (--index < 0 || index >= lines.size()) {
-            sender.sendMessage(CC.format("&cInvalid index. (&e1&c-&e%d&c)", lines.size()));
+            sender.sendMessage(CC.format("<red>Invalid index. (<yellow>1<red>-<yellow>%d<red>)", lines.size()));
             return false;
         }
 
@@ -230,7 +230,7 @@ public class HologramCommands {
         for (HologramLine l : lines) strings.add(l.getText());
         hologram.setLines(strings);
         hologramService.save();
-        sender.sendMessage(CC.format("&9Inserted line at position &e%d &9on hologram &e#%d&9.",
+        sender.sendMessage(CC.format("<blue>Inserted line at position <yellow>%d <blue>on hologram <yellow>#%d<blue>.",
                 index + 2, hologram.getId()));
         return true;
     }
@@ -242,7 +242,7 @@ public class HologramCommands {
     public boolean tphere(Player sender, @Param(name = "id") StaticHologram hologram) {
         hologram.setLocation(sender.getLocation());
         hologramService.save();
-        sender.sendMessage(CC.format("&9Moved hologram &e#%d &9to your location.", hologram.getId()));
+        sender.sendMessage(CC.format("<blue>Moved hologram <yellow>#%d <blue>to your location.", hologram.getId()));
         return true;
     }
 
@@ -252,7 +252,7 @@ public class HologramCommands {
              playerOnly = true)
     public boolean tpto(Player sender, @Param(name = "id") StaticHologram hologram) {
         sender.teleport(hologram.getLocation());
-        sender.sendMessage(CC.format("&9Teleported to hologram &e#%d&9.", hologram.getId()));
+        sender.sendMessage(CC.format("<blue>Teleported to hologram <yellow>#%d<blue>.", hologram.getId()));
         return true;
     }
 
@@ -268,7 +268,7 @@ public class HologramCommands {
         }
         hologram.setLineSpacing(spacing);
         hologramService.save();
-        sender.sendMessage(CC.format("&9Set spacing of hologram &e#%d &9to &e%.2f&9.", hologram.getId(), spacing));
+        sender.sendMessage(CC.format("<blue>Set spacing of hologram <yellow>#%d <blue>to <yellow>%.2f<blue>.", hologram.getId(), spacing));
         return true;
     }
 

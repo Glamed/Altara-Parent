@@ -19,13 +19,13 @@ public class NPCParameter implements ParameterType<NPC> {
 
         Integer id = CommandService.getParameter(Integer.class).parse(sender, source);
         if (id == null) {
-            sender.sendMessage(CC.format("&cNPC with name or id &e%s &cnot found.", source));
+            sender.sendMessage(CC.format("<red>NPC with name or id <yellow>%s <red>not found.", source));
             return null;
         }
 
         npc = AltaraPaper.getPaperInstance().getNpcService().getNpc(id);
         if (npc == null)
-            sender.sendMessage(CC.format("&cNPC with name or id &e%s &cnot found.", source));
+            sender.sendMessage(CC.format("<red>NPC with name or id <yellow>%s <red>not found.", source));
 
         return npc;
     }

@@ -37,12 +37,12 @@ public class GrantAddPacket extends Packet {
 
         if (duration == -1)
             player.sendMessage(CC.format(
-                    "&aYou've been &epermanently &agranted the %s&a rank.",
+                    "<green>You've been <yellow>permanently <green>granted the %s<green> rank.",
                     rank.getName()
             ));
         else
             player.sendMessage(CC.format(
-                    "&aYou've been granted the %s&a rank for &e%s&a.",
+                    "<green>You've been granted the %s<green> rank for <yellow>%s<green>.",
                     rank.getName(),
                     Time.formatDetailed(duration)
             ));

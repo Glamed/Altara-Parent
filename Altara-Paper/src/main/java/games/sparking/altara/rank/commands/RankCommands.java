@@ -40,7 +40,7 @@ public class RankCommands {
     public static Rank createRank(CommandSender sender, String rankName) {
         Rank rank = Altara.getSharedInstance().getRankService().getRank(rankName);
         if (rank != null) {
-            sender.sendMessage(CC.format("&cRank &e%s &calready exists", rank.getName()));
+            sender.sendMessage(CC.format("<red>Rank <yellow>%s <red>already exists", rank.getName()));
             return null;
         }
 
@@ -48,13 +48,13 @@ public class RankCommands {
 
         RequestResponse response = RequestHandler.post("api/rank", rank.toJson());
         if (!response.wasSuccessful()) {
-            sender.sendMessage(CC.format("&cCould not create rank &e%s&c: %s (%d)",
+            sender.sendMessage(CC.format("<red>Could not create rank <yellow>%s<red>: %s (%d)",
                     rankName, response.getErrorMessage(), response.getCode()));
             return null;
         }
 
         new RankCreatePacket(rank.getUuid()).publish();
-        sender.sendMessage(CC.format("&eYou created the rank %s&e.", rank.getName()));
+        sender.sendMessage(CC.format("<yellow>You created the rank %s<yellow>.", rank.getName()));
         return rank;
     }
 
@@ -152,7 +152,7 @@ public class RankCommands {
             permission = "rank.command.argument.delete",
             description = "Delete an existing rank")
     public boolean rankDelete(CommandSender sender, @Param(name = "rank") Rank rank) {
-        sender.sendMessage(CC.format("&eYou deleted the rank %s&e.", rank.getName()));
+        sender.sendMessage(CC.format("<yellow>You deleted the rank %s<yellow>.", rank.getName()));
         new RankDeletePacket(rank.getUuid()).publish();
         return true;
     }
@@ -163,7 +163,7 @@ public class RankCommands {
     public boolean rankRename(CommandSender sender,
                               @Param(name = "rank") Rank rank,
                               @Param(name = "newName") String string) {
-        sender.sendMessage(CC.format("&eYou renamed %s &eto %s&c.",
+        sender.sendMessage(CC.format("<yellow>You renamed %s <yellow>to %s<red>.",
                 rank.getName(), rank.getColor() + string));
         rank.setName(string);
         rank.save(sender, () -> {
@@ -187,7 +187,7 @@ public class RankCommands {
         rank.save(sender, () -> {
         });
 
-        sender.sendMessage(CC.format("&eYou set the rank %s &eas default rank.", rank.getName()));
+        sender.sendMessage(CC.format("<yellow>You set the rank %s <yellow>as default rank.", rank.getName()));
         return true;
     }
 
@@ -201,7 +201,7 @@ public class RankCommands {
         rank.getLocalPermissions().removeIf(permission -> prefix.equals("@none") || !permission.startsWith(prefix));
         rank.save(sender, () -> {
         });
-        sender.sendMessage(CC.format("&eCleared all permissions of %s&e.", rank.getName()));
+        sender.sendMessage(CC.format("<yellow>Cleared all permissions of %s<yellow>.", rank.getName()));
         return true;
     }
 
@@ -212,7 +212,7 @@ public class RankCommands {
     public boolean rankExportPerms(CommandSender sender,
                                    @Param(name = "rank") Rank rank,
                                    @Param(name = "prefix", defaultValue = "@none") String prefix) {
-        sender.sendMessage(CC.format("&eUploading permissions of %s&e.", rank.getName()));
+        sender.sendMessage(CC.format("<yellow>Uploading permissions of %s<yellow>.", rank.getName()));
 
         StringBuilder builder = new StringBuilder();
         builder.append("Permissions of ").append(rank.getName()).append(":").append("\n\n");
@@ -232,11 +232,11 @@ public class RankCommands {
 
         String url = PasteUtils.paste(builder.toString(), false);
         if (url == null) {
-            sender.sendMessage(CC.format("&cFailed to upload permissions of &e%s&c.", rank.getName()));
+            sender.sendMessage(CC.format("<red>Failed to upload permissions of <yellow>%s<red>.", rank.getName()));
             return false;
         }
 
-        sender.sendMessage(CC.format("&ePermissions: &c%s", url));
+        sender.sendMessage(CC.format("<yellow>Permissions: <red>%s", url));
         return true;
     }
 
@@ -247,7 +247,7 @@ public class RankCommands {
                                @Param(name = "rank") Rank rank,
                                @Param(name = "permission") String permission) {
         if (rank.getPermissions().contains(permission.toLowerCase())) {
-            sender.sendMessage(CC.format("&cRank &e%s &calready has permission &e%s&c.",
+            sender.sendMessage(CC.format("<red>Rank <yellow>%s <red>already has permission <yellow>%s<red>.",
                     rank.getName(), permission));
             return false;
         }
@@ -255,7 +255,7 @@ public class RankCommands {
         rank.getPermissions().add(permission.toLowerCase());
         rank.save(sender, () -> {
         });
-        sender.sendMessage(CC.format("&eYou added permission &c%s &eto rank %s&e.",
+        sender.sendMessage(CC.format("<yellow>You added permission <red>%s <yellow>to rank %s<yellow>.",
                 permission, rank.getName()));
         return true;
     }
@@ -267,7 +267,7 @@ public class RankCommands {
                                @Param(name = "rank") Rank rank,
                                @Param(name = "permission") String permission) {
         if (!rank.getPermissions().contains(permission.toLowerCase())) {
-            sender.sendMessage(CC.format("&cRank &e%s &cdoesn't have permission &e%s&c.",
+            sender.sendMessage(CC.format("<red>Rank <yellow>%s <red>doesn't have permission <yellow>%s<red>.",
                     rank.getName(), permission));
             return false;
         }
@@ -275,7 +275,7 @@ public class RankCommands {
         rank.getPermissions().remove(permission.toLowerCase());
         rank.save(sender, () -> {
         });
-        sender.sendMessage(CC.format("&eYou removed permission &c%s &efrom rank %s&e.",
+        sender.sendMessage(CC.format("<yellow>You removed permission <red>%s <yellow>from rank %s<yellow>.",
                 permission, rank.getName()));
         return true;
     }
@@ -287,7 +287,7 @@ public class RankCommands {
                                     @Param(name = "rank") Rank rank,
                                     @Param(name = "permission") String permission) {
         if (rank.getLocalPermissions().contains(permission.toLowerCase())) {
-            sender.sendMessage(CC.format("&cRank &e%s &calready has permission &e%s&c.",
+            sender.sendMessage(CC.format("<red>Rank <yellow>%s <red>already has permission <yellow>%s<red>.",
                     rank.getName(), permission));
             return false;
         }
@@ -295,7 +295,7 @@ public class RankCommands {
         rank.getLocalPermissions().add(permission.toLowerCase());
         rank.save(sender, () -> {
         });
-        sender.sendMessage(CC.format("&eYou added permission &c%s &eto rank %s&e.",
+        sender.sendMessage(CC.format("<yellow>You added permission <red>%s <yellow>to rank %s<yellow>.",
                 permission, rank.getName()));
         return true;
     }
@@ -308,7 +308,7 @@ public class RankCommands {
                                     @Param(name = "rank") Rank rank,
                                     @Param(name = "permission") String permission) {
         if (!rank.getLocalPermissions().contains(permission.toLowerCase())) {
-            sender.sendMessage(CC.format("&cRank &e%s &cdoesn't have permission &e%s&c.",
+            sender.sendMessage(CC.format("<red>Rank <yellow>%s <red>doesn't have permission <yellow>%s<red>.",
                     rank.getName(), permission));
             return false;
         }
@@ -316,7 +316,7 @@ public class RankCommands {
         rank.getLocalPermissions().remove(permission.toLowerCase());
         rank.save(sender, () -> {
         });
-        sender.sendMessage(CC.format("&eYou removed permission &c%s &efrom rank %s&e.",
+        sender.sendMessage(CC.format("<yellow>You removed permission <red>%s <yellow>from rank %s<yellow>.",
                 permission, rank.getName()));
         return true;
     }
@@ -329,11 +329,11 @@ public class RankCommands {
                                @Param(name = "child") Rank child) {
         if (parent.getInherits().contains(child)) {
             parent.getInherits().remove(child);
-            sender.sendMessage(CC.format("&eYou made %s &eno longer inherit %s&e.",
+            sender.sendMessage(CC.format("<yellow>You made %s <yellow>no longer inherit %s<yellow>.",
                     parent.getName(), child.getName()));
         } else {
             parent.getInherits().add(child);
-            sender.sendMessage(CC.format("&eYou made %s &einherit %s&e.",
+            sender.sendMessage(CC.format("<yellow>You made %s <yellow>inherit %s<yellow>.",
                     parent.getName(), child.getName()));
         }
         parent.save(sender, () -> {
@@ -350,7 +350,7 @@ public class RankCommands {
         rank.setWeight(weight);
         rank.save(sender, () -> {
         });
-        sender.sendMessage(CC.format("&eYou set the weight of %s &eto &c%d&e.",
+        sender.sendMessage(CC.format("<yellow>You set the weight of %s <yellow>to <red>%d<yellow>.",
                 rank.getName(), rank.getWeight()));
         return true;
     }
@@ -364,7 +364,7 @@ public class RankCommands {
         rank.setQueuePriority(queuePriority);
         rank.save(sender, () -> {
         });
-        sender.sendMessage(CC.format("&eYou set the queue priority of %s &eto &c%d&e.",
+        sender.sendMessage(CC.format("<yellow>You set the queue priority of %s <yellow>to <red>%d<yellow>.",
                 rank.getName(), rank.getQueuePriority()));
         return true;
     }
@@ -378,7 +378,7 @@ public class RankCommands {
         rank.setDisguisable(disguisable);
         rank.save(sender, () -> {
         });
-        sender.sendMessage(CC.format("&eYou set the disguisable status of %s &eto %s&e.",
+        sender.sendMessage(CC.format("<yellow>You set the disguisable status of %s <yellow>to %s<yellow>.",
                 rank.getName(), CC.colorBoolean(rank.isDisguisable())));
         return true;
     }
@@ -392,7 +392,7 @@ public class RankCommands {
         rank.setChatColor(color);
         rank.save(sender, () -> {
         });
-        sender.sendMessage(CC.format("&eYou set the chat color of %s &eto %sExample&e.",
+        sender.sendMessage(CC.format("<yellow>You set the chat color of %s <yellow>to %sExample<yellow>.",
                 rank.getName(), rank.getChatColor()));
         return true;
     }
@@ -406,7 +406,7 @@ public class RankCommands {
         rank.setColor(color);
         rank.save(sender, () -> {
         });
-        sender.sendMessage(CC.format("&eYou set the color of %s &eto %sExample&e.",
+        sender.sendMessage(CC.format("<yellow>You set the color of %s <yellow>to %sExample<yellow>.",
                 rank.getName(), rank.getColor()));
         return true;
     }
@@ -420,7 +420,7 @@ public class RankCommands {
         rank.setPrefix(prefix);
         rank.save(sender, () -> {
         });
-        sender.sendMessage(CC.format("&eYou set the prefix of %s &eto %sExample&e.",
+        sender.sendMessage(CC.format("<yellow>You set the prefix of %s <yellow>to %sExample<yellow>.",
                 rank.getName(), rank.getPrefix()));
         return true;
     }
@@ -434,7 +434,7 @@ public class RankCommands {
         rank.setSuffix(suffix);
         rank.save(sender, () -> {
         });
-        sender.sendMessage(CC.format("&eYou set the suffix of %s &eto %sExample&e.",
+        sender.sendMessage(CC.format("<yellow>You set the suffix of %s <yellow>to %sExample<yellow>.",
                 rank.getName(), rank.getSuffix()));
         return true;
     }
@@ -452,7 +452,7 @@ public class RankCommands {
 
         rank.save(sender, () -> {
         });
-        sender.sendMessage(CC.format("&eYou set the discord id of %s &eto &c%s&e.",
+        sender.sendMessage(CC.format("<yellow>You set the discord id of %s <yellow>to <red>%s<yellow>.",
                 rank.getName(), rank.getDiscordId()));
         return true;
     }
@@ -471,7 +471,7 @@ public class RankCommands {
             changed++;
         }
 
-        sender.sendMessage(CC.format("&aDone. (&e%d&a)", changed));
+        sender.sendMessage(CC.format("<green>Done. (<yellow>%d<green>)", changed));
         return true;
     }*/
 

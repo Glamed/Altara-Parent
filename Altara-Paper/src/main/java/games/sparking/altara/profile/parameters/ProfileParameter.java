@@ -49,7 +49,7 @@ public class ProfileParameter implements ParameterType<Profile> {
 
         RequestResponse response = RequestHandler.get("api/profile/%s", uuid.toString());
         if (!response.wasSuccessful()) {
-            sender.sendMessage(CC.format("&cCould not load profile of &e%s&c: %s (%d)",
+            sender.sendMessage(CC.format("<red>Could not load profile of <yellow>%s<red>: %s (%d)",
                     source, response.getErrorMessage(), response.getCode()));
             return null;
         }

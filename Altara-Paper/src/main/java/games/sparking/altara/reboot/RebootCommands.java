@@ -26,7 +26,7 @@ public class RebootCommands {
         }
 
         RebootService.reboot(duration.getDuration());
-        sender.sendMessage(CC.format("&9Rebooting in &e%s&9.", Time.formatDetailed(duration.getDuration())));
+        sender.sendMessage(CC.format("<blue>Rebooting in <yellow>%s<blue>.", Time.formatDetailed(duration.getDuration())));
         return true;
     }
 

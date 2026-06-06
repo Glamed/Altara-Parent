@@ -6,7 +6,6 @@ import games.sparking.altara.punishment.InfractionType;
 import games.sparking.altara.utils.CC;
 import games.sparking.altara.utils.ItemBuilder;
 import lombok.RequiredArgsConstructor;
-import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
@@ -84,7 +83,7 @@ public class PunishMenu extends Menu {
         public ItemStack getItem(Player player) {
             return new ItemBuilder(Material.PLAYER_HEAD)
                     .setSkullOwner(p.getName())
-                    .setDisplayName("&7Punish &d" + p.getName())
+                    .setDisplayName("<gray>Punish <light_purple>" + p.getName())
                     .build();
         }
     }
@@ -104,20 +103,20 @@ public class PunishMenu extends Menu {
             StringBuilder line = new StringBuilder();
             for (String word : infractionType.getDescription().split(" ")) {
                 if (line.length() + word.length() + 1 > 40) {
-                    lore.add("&7&o" + line);
+                    lore.add("<gray><italic>" + line);
                     line = new StringBuilder(word);
                 } else {
                     if (!line.isEmpty()) line.append(" ");
                     line.append(word);
                 }
             }
-            if (!line.isEmpty()) lore.add("&7&o" + line);
+            if (!line.isEmpty()) lore.add("<gray><italic>" + line);
 
             Material mat = infractionType.getMaterial();
 
             return new ItemBuilder(mat)
                     .addFlag(ItemFlag.HIDE_ADDITIONAL_TOOLTIP)
-                    .setDisplayName("&5&l" + infractionType.getDisplayName())
+                    .setDisplayName("<dark_purple><bold>" + infractionType.getDisplayName())
                     .setLore(CC.translate(lore))
                     .build();
         }
@@ -126,7 +125,7 @@ public class PunishMenu extends Menu {
         public void click(Player whoClicked, int slot, ClickType clickType, int hotbarButton) {
             Player onlineTarget = target.getPlayer();
             if (onlineTarget == null) {
-                whoClicked.sendMessage(ChatColor.RED + "That player is no longer online.");
+                whoClicked.sendMessage(CC.translate("<red>That player is no longer online."));
                 return;
             }
             new PunishActionMenu()

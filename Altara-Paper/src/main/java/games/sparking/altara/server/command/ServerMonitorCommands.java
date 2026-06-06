@@ -56,7 +56,7 @@ public class ServerMonitorCommands {
                                  @Param(name = "command", wildcard = true) String command) {
        new ExecuteCommandPacket(sender.getName(), null, scope, command).publish();
         sender.sendMessage(CC.format(
-                "&aExecuting &e%s &aon all &e%s &aservers.",
+                "<green>Executing <yellow>%s <green>on all <yellow>%s <green>servers.",
                 command,
                 scope
         ));
@@ -69,7 +69,7 @@ public class ServerMonitorCommands {
                                   @Param(name = "command", wildcard = true) String command) {
         new ExecuteCommandPacket(sender.getName(), server, null, command).publish();
         sender.sendMessage(CC.format(
-                "&aExecuting &e%s &aon &e%s&a.",
+                "<green>Executing <yellow>%s <green>on <yellow>%s<green>.",
                 command,
                 server
         ));
@@ -80,7 +80,7 @@ public class ServerMonitorCommands {
     public boolean smSendToAll(CommandSender sender, @Param(name = "command", wildcard = true) String command) {
         new ExecuteCommandPacket(sender.getName(), null, null, command).publish();
         sender.sendMessage(CC.format(
-                "&aExecuting &e%s &aon &aall servers.",
+                "<green>Executing <yellow>%s <green>on <green>all servers.",
                 command
         ));
         return true;

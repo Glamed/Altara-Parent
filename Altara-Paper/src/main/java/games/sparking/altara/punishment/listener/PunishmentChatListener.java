@@ -1,7 +1,7 @@
 package games.sparking.altara.punishment.listener;
 
 import games.sparking.altara.Altara;
-import org.bukkit.ChatColor;
+import games.sparking.altara.utils.CC;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -22,9 +22,7 @@ public class PunishmentChatListener implements Listener {
 
         if (muted) {
             event.setCancelled(true);
-            event.getPlayer().sendMessage(ChatColor.translateAlternateColorCodes('&',
-                    "&cYou are currently chat-restricted and cannot send messages."));
+            event.getPlayer().sendMessage(CC.translate("<red>You are currently chat-restricted and cannot send messages."));
         }
     }
 }
-

@@ -11,7 +11,6 @@ import games.sparking.altara.punishment.RestrictionAction;
 import games.sparking.altara.utils.CC;
 import games.sparking.altara.utils.ItemBuilder;
 import games.sparking.altara.utils.Time;
-import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.ClickType;
@@ -114,14 +113,14 @@ public class PunishActionMenu extends Menu {
         @Override
         public ItemStack getItem(Player player) {
             return new ItemBuilder(Material.BOOK)
-                    .setDisplayName("&5&lPunishment Builder")
+                    .setDisplayName("<dark_purple><bold>Punishment Builder")
                     .setLore(
-                            "&7Violation&8: &d" + infractionType.getDisplayName(),
-                            "&7Target&8: &d" + target.getName(),
-                            "&7Selected restrictions&8: &d" + selectedActions.size(),
+                            "<gray>Violation<dark_gray>: <light_purple>" + infractionType.getDisplayName(),
+                            "<gray>Target<dark_gray>: <light_purple>" + target.getName(),
+                            "<gray>Selected restrictions<dark_gray>: <light_purple>" + selectedActions.size(),
                             "",
-                            "&dRecommended actions are preloaded.",
-                            "&dAdjust durations or add more before confirming."
+                            "<light_purple>Recommended actions are preloaded.",
+                            "<light_purple>Adjust durations or add more before confirming."
                     )
                     .build();
         }
@@ -140,13 +139,13 @@ public class PunishActionMenu extends Menu {
         @Override
         public ItemStack getItem(Player player) {
             return new ItemBuilder(getMaterial(action.getType()))
-                    .setDisplayName("&5" + action.getType().getDisplayName())
+                    .setDisplayName("<dark_purple>" + action.getType().getDisplayName())
                     .setLore(
-                            "&7Type&8: &d"   + action.getType().getDisplayName(),
-                            "&7Length&8: &d" + formatDuration(action.getDuration()),
+                            "<gray>Type<dark_gray>: <light_purple>"   + action.getType().getDisplayName(),
+                            "<gray>Length<dark_gray>: <light_purple>" + formatDuration(action.getDuration()),
                             "",
-                            "&eLeft click to change duration",
-                            "&eRight click to remove"
+                            "<yellow>Left click to change duration",
+                            "<yellow>Right click to remove"
                     )
                     .build();
         }
@@ -167,8 +166,8 @@ public class PunishActionMenu extends Menu {
         @Override
         public ItemStack getItem(Player player) {
             return new ItemBuilder(Material.ANVIL)
-                    .setDisplayName("&aAdd Restriction")
-                    .setLore("&7Open a submenu to add a new", "&7restriction and pick its length.")
+                    .setDisplayName("<green>Add Restriction")
+                    .setLore("<gray>Open a submenu to add a new", "<gray>restriction and pick its length.")
                     .build();
         }
 
@@ -182,7 +181,7 @@ public class PunishActionMenu extends Menu {
         @Override
         public ItemStack getItem(Player player) {
             return new ItemBuilder(Material.BARRIER)
-                    .setDisplayName("&cClear Actions")
+                    .setDisplayName("<red>Clear Actions")
                     .build();
         }
 
@@ -197,14 +196,14 @@ public class PunishActionMenu extends Menu {
         @Override
         public ItemStack getItem(Player player) {
             List<String> lore = new ArrayList<>();
-            lore.add("&7Issue all selected restrictions");
-            lore.add("&7as one violation action.");
+            lore.add("<gray>Issue all selected restrictions");
+            lore.add("<gray>as one violation action.");
             if (selectedActions.isEmpty()) {
                 lore.add("");
-                lore.add("&cAdd at least one restriction first.");
+                lore.add("<red>Add at least one restriction first.");
             }
             return new ItemBuilder(Material.LIME_CONCRETE)
-                    .setDisplayName("&aConfirm Punishment")
+                    .setDisplayName("<green>Confirm Punishment")
                     .setLore(CC.translate(lore))
                     .build();
         }
@@ -212,7 +211,7 @@ public class PunishActionMenu extends Menu {
         @Override
         public void click(Player player, int slot, ClickType clickType, int hotbarButton) {
             if (selectedActions.isEmpty()) {
-                player.sendMessage(ChatColor.RED + "You need at least one restriction.");
+                player.sendMessage(CC.translate("<red>You need at least one restriction."));
                 return;
             }
             new ConfirmationMenu(
@@ -221,8 +220,7 @@ public class PunishActionMenu extends Menu {
                         if (!confirmed) return;
                         new PunishmentManager(player, target, getSelectedActions(), infractionType, message).issue();
                         player.closeInventory();
-                        player.sendMessage(ChatColor.translateAlternateColorCodes('&',
-                                "&aPunishment issued for &d" + target.getName() + "&a. It will be applied cross-server."));
+                        player.sendMessage(CC.translate("<green>Punishment issued for <light_purple>" + target.getName() + "<green>. It will be applied cross-server."));
                     }
             ).openMenu(player);
         }
@@ -290,7 +288,7 @@ public class PunishActionMenu extends Menu {
             @Override
             public ItemStack getItem(Player player) {
                 return new ItemBuilder(getMaterial(type))
-                        .setDisplayName("&5" + type.getDisplayName())
+                        .setDisplayName("<dark_purple>" + type.getDisplayName())
                         .build();
             }
 
@@ -361,7 +359,7 @@ public class PunishActionMenu extends Menu {
             @Override
             public ItemStack getItem(Player player) {
                 return new ItemBuilder(Material.CLOCK)
-                        .setDisplayName("&d" + label)
+                        .setDisplayName("<light_purple>" + label)
                         .build();
             }
 

@@ -25,13 +25,13 @@ public class HologramParameter implements ParameterType<StaticHologram> {
         // Then try integer ID
         Integer id = CommandService.getParameter(Integer.class).parse(sender, source);
         if (id == null) {
-            sender.sendMessage(CC.format("&cHologram '&e%s&c' not found.", source));
+            sender.sendMessage(CC.format("<red>Hologram '<yellow>%s<red>' not found.", source));
             return null;
         }
 
         hologram = hologramService.getHologram(id);
         if (hologram == null)
-            sender.sendMessage(CC.format("&cHologram with id &e%d &cnot found.", id));
+            sender.sendMessage(CC.format("<red>Hologram with id <yellow>%d <red>not found.", id));
         return hologram;
     }
 

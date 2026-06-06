@@ -302,10 +302,10 @@ public class AltaraWorld {
 
     /**
      * Returns a player-facing description line, e.g.:
-     * {@code "§aMap: §fSky Bridge §7by §fandredev"}
+     * {@code "<green>Map: <white>Sky Bridge <gray>by <white>andredev"}
      */
     public String getFormattedName() {
-        return "§aMap: §f" + mapName + " §7by §f" + mapAuthor;
+        return "<green>Map: <white>" + mapName + " <gray>by <white>" + mapAuthor;
     }
 
     @Override

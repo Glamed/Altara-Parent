@@ -4,8 +4,8 @@ import games.sparking.altara.Altara;
 import games.sparking.altara.punishment.Punishment;
 import games.sparking.altara.punishment.PunishmentService;
 import games.sparking.altara.punishment.RestrictionAction;
+import games.sparking.altara.utils.CC;
 import games.sparking.altara.utils.Time;
-import org.bukkit.ChatColor;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -63,22 +63,22 @@ public class PunishmentLoginListener implements Listener {
 
     // ── Helpers ────────────────────────────────────────────────────────────────
 
-    private static String buildBanMessage(Punishment ban) {
+    private static net.kyori.adventure.text.Component buildBanMessage(Punishment ban) {
         RestrictionAction suspension = ban.getSuspensionAction();
         String reasonText = ban.getInfractionTypeEnum() != null
                 ? ban.getInfractionTypeEnum().getDisplayName()
                 : ban.getInfractionType();
         boolean permanent = suspension == null || suspension.getDuration() == -1L;
 
-        String raw = "&5Your account has been suspended"
-                + "\n&7\"" + reasonText + "&7\""
-                + "\n\n&7This suspension " + (permanent
+        String raw = "<dark_purple>Your account has been suspended"
+                + "\n<gray>\"" + reasonText + "<gray>\""
+                + "\n\n<gray>This suspension " + (permanent
                     ? "will never expire"
-                    : "will expire in &d" + (suspension != null
-                        ? Time.formatDetailed(suspension.getDuration()) : "N/A") + "&7")
-                + ". Visit &d&ncrystalwars.net/appeal&r&7 to submit an appeal";
+                    : "will expire in <light_purple>" + (suspension != null
+                        ? Time.formatDetailed(suspension.getDuration()) : "N/A") + "<gray>")
+                + ". Visit <light_purple><underlined>crystallwars.net/appeal<reset><gray> to submit an appeal";
 
-        return ChatColor.translateAlternateColorCodes('&', raw);
+        return CC.translate(raw);
     }
 }
 

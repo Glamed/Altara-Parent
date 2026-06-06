@@ -165,9 +165,10 @@ public class SurvivalGamesDuosGame extends TeamGame {
                     .reduce((a, b) -> a + " & " + b)
                     .orElse("Unknown");
 
-            Bukkit.broadcastMessage(
-                    "§2§lSurvival Games §r§7» §a" + memberNames
-                    + " §7(" + team.getDisplayName() + "§7) have survived and won the game!");
+            Bukkit.broadcast(
+                    net.kyori.adventure.text.minimessage.MiniMessage.miniMessage().deserialize(
+                            "<dark_green><bold>Survival Games <reset><gray>» <green>" + memberNames
+                            + " <gray>(" + team.getDisplayName() + "<gray>) have survived and won the game!"));
         });
     }
 }

@@ -95,7 +95,7 @@ public class HubBoardAdapter implements ScoreboardAdapter {
         for (String s : AltaraLobby.getLobbyInstance().getLobbyConfig().getScoreBoardLines()) {
             s = s.replaceAll("%rank%",
                             profile.getCurrentGrant().asRank().getDisplayName() + (profile.isDisguised()
-                                    ? " &7(" + profile.getRealCurrentGrant().asRank().getDisplayName() + "&7)" : ""))
+                                    ? " <gray>(" + profile.getRealCurrentGrant().asRank().getDisplayName() + "<gray>)" : ""))
                     .replaceAll("%onlinecount%",
                             String.valueOf(ServerInfo.getGlobalPlayerCount()))
                     .replaceAll("%maxcount%",

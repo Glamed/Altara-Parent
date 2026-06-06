@@ -25,27 +25,27 @@ public class ServerSelectorEntry implements StaticConfiguration {
     private int slot = 22;
     private Material material = Material.COMMAND_BLOCK_MINECART;
     private short subId = 0;
-    private String name = "&a&lDev";
+    private String name = "<green><bold>Dev";
     private String serverName = "Dev";
     private List<String> description = Arrays.asList(
-            "&7&m------------------------",
-            "&7Description",
-            "&fStatus: %status%",
-            "&fPlayers: &a%online%&f/&a%max%",
-            "&fLives: &a%lives%",
-            "&fDeathban: &a%deathban_remaining%",
-            "&7&m------------------------"
+            "<gray><strikethrough>------------------------",
+            "<gray>Description",
+            "<white>Status: %status%",
+            "<white>Players: <green>%online%<white>/<green>%max%",
+            "<white>Lives: <green>%lives%",
+            "<white>Deathban: <green>%deathban_remaining%",
+            "<gray><strikethrough>------------------------"
     );
 
     private LocationConfig npcLocation = new LocationConfig("world", 63, 68, 88);
     private String npcSkin = "Notch";
     private List<String> npcLines = Arrays.asList(
-            "&5&lDev",
-            "&7&m------------------------",
-            "&fPlayers: &d%online%&f/&d%max%",
-            "&fIn Queue: &d%in_queue%",
-            "&fYour Rank: %rank_on_scope%",
-            "&7&m------------------------"
+            "<dark_purple><bold>Dev",
+            "<gray><strikethrough>------------------------",
+            "<white>Players: <light_purple>%online%<white>/<light_purple>%max%",
+            "<white>In Queue: <light_purple>%in_queue%",
+            "<white>Your Rank: %rank_on_scope%",
+            "<gray><strikethrough>------------------------"
     );
 
     public ItemStack toItem(Player player) {
