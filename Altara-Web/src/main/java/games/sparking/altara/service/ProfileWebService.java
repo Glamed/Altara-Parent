@@ -120,7 +120,9 @@ public class ProfileWebService {
 
     @Cacheable(value = CacheConfig.PROFILE_GRANTS, key = "#uuid.toString()")
     public JsonArray getGrants(UUID uuid) {
-        return profileRepository.getGrants(uuid.toString());
+        JsonArray grants = profileRepository.getGrants(uuid.toString());
+        normalizeGrantScopes(grants);
+        return grants;
     }
 
     @Caching(evict = {
