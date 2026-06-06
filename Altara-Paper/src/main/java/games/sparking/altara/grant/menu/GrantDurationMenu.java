@@ -12,6 +12,8 @@ import games.sparking.altara.utils.CC;
 import games.sparking.altara.utils.ItemBuilder;
 import games.sparking.altara.utils.Time;
 import lombok.RequiredArgsConstructor;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.ClickType;
@@ -64,7 +66,7 @@ public class GrantDurationMenu extends Menu {
             @Override
             public ItemStack getItem(Player player) {
                 return new ItemBuilder(Material.BOOK)
-                        .setDisplayName(CC.YELLOW + CC.BOLD + "Custom")
+                        .setDisplayName(Component.text("Custom", CC.YELLOW, TextDecoration.BOLD))
                         .build();
             }
 
@@ -82,7 +84,7 @@ public class GrantDurationMenu extends Menu {
     public void onClose(Player player) {
         if (!clicked) {
             profile.setGrantProcedure(null);
-            player.sendMessage(CC.RED + "You cancelled the grant procedure.");
+            player.sendMessage(Component.text("You cancelled the grant procedure.", CC.RED));
         }
     }
 
@@ -95,7 +97,7 @@ public class GrantDurationMenu extends Menu {
         @Override
         public ItemStack getItem(Player player) {
             return new ItemBuilder(material)
-                    .setDisplayName(CC.YELLOW + CC.BOLD + Time.formatDetailed(duration))
+                    .setDisplayName(Component.text(Time.formatDetailed(duration), CC.YELLOW, TextDecoration.BOLD))
                     .build();
         }
 

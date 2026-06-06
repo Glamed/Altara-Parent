@@ -14,6 +14,8 @@ import games.sparking.altara.utils.CC;
 import games.sparking.altara.utils.ItemBuilder;
 import games.sparking.altara.utils.Time;
 import lombok.RequiredArgsConstructor;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.TextDecoration;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.text.WordUtils;
 import org.bukkit.Material;
@@ -25,7 +27,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 
 @RequiredArgsConstructor
 public class GrantScopesMenu extends Menu {
@@ -57,33 +58,34 @@ public class GrantScopesMenu extends Menu {
                 GrantProcedure procedure = profile.getGrantProcedure();
                 if (scopes.isEmpty()) {
                     return new ItemBuilder(Material.WOODEN_SWORD)
-                            .setDisplayName(CC.RED + CC.BOLD + "Confirm and grant")
+                            .setDisplayName(Component.text("Confirm and grant", CC.RED, TextDecoration.BOLD))
                             .setLore(
                                     CC.MENU_BAR,
-                                    CC.RED + "Please select at least one scope.",
+                                    Component.text("Please select at least one scope.", CC.RED),
                                     CC.MENU_BAR
                             ).build();
                 }
                 return new ItemBuilder(Material.DIAMOND_SWORD)
-                        .setDisplayName(CC.GREEN + CC.BOLD + "Confirm and grant")
+                        .setDisplayName(Component.text("Confirm and grant", CC.GREEN, TextDecoration.BOLD))
                         .setLore(
                                 CC.MENU_BAR,
-                                CC.format("&eClick to grant %s &ethe %s &erank",
-                                        procedure.getTarget().getName(),
-                                        procedure.getRank().getName()),
-                                CC.YELLOW + (scopes.contains("GLOBAL") ? "This grant will be " + CC.RED + "Global"
-                                        : "This grant will apply on: " + CC.RED + StringUtils.join(scopes, ", ")),
-                                CC.format("&eReasoning: &c%s", procedure.getReason()),
-                                CC.format("&eDuration: &c%s", Time.formatDetailed(procedure.getDuration())),
+                                CC.format("<yellow>Click to grant %s the %s rank",
+                                        procedure.getTarget().getName(), procedure.getRank().getName()),
+                                Component.text()
+                                        .append(Component.text(scopes.contains("GLOBAL")
+                                                ? "This grant will be " : "This grant will apply on: ", CC.YELLOW))
+                                        .append(Component.text(scopes.contains("GLOBAL") ? "Global"
+                                                : StringUtils.join(scopes, ", "), CC.RED))
+                                        .build(),
+                                CC.format("<yellow>Reasoning: <red>%s", procedure.getReason()),
+                                CC.format("<yellow>Duration: <red>%s", Time.formatDetailed(procedure.getDuration())),
                                 CC.MENU_BAR
                         ).build();
             }
 
             @Override
             public void click(Player player, int slot, ClickType clickType, int hotbarButton) {
-                if (scopes.isEmpty()) {
-                    return;
-                }
+                if (scopes.isEmpty()) return;
 
                 clicked = true;
                 player.closeInventory();
@@ -101,32 +103,26 @@ public class GrantScopesMenu extends Menu {
                             scopes
                     );
 
-                    /*Packet packet = new GrantAddPacket(target.getUuid(), grant.getRank().getUuid(),
-                            grant.getDuration());*/
                     RequestResponse response = AltaraPaper.getPaperInstance().getBukkitProfileService().addGrant(target, grant);
                     if (response.couldNotConnect()) {
-                        player.sendMessage(CC.format("&cCould not connect to API to create grant. " +
-                                        "Adding grant to the queue. Error: %s (%d)",
+                        player.sendMessage(CC.format(
+                                "<red>Could not connect to API. Adding to queue. Error: %s (%d)</red>",
                                 response.getErrorMessage(), response.getCode()));
                     } else if (!response.wasSuccessful()) {
-                        player.sendMessage(CC.format("&cCould not create grant: %s (%d)",
+                        player.sendMessage(CC.format("<red>Could not create grant: %s (%d)</red>",
                                 response.getErrorMessage(), response.getCode()));
                         return;
                     }
 
                     if (grant.getDuration() == -1)
                         player.sendMessage(CC.format(
-                                "&aYou've &epermanently &agranted %s&a the %s&a rank.",
-                                target.getName(),
-                                procedure.getRank().getName()
-                        ));
+                                "<green>You've <yellow>permanently</yellow> granted %s the %s rank.</green>",
+                                target.getName(), procedure.getRank().getName()));
                     else
                         player.sendMessage(CC.format(
-                                "&aYou've granted %s&a the %s&a rank for &e%s&a.",
-                                target.getName(),
-                                procedure.getRank().getName(),
-                                Time.formatDetailed(grant.getDuration())
-                        ));
+                                "<green>You've granted %s the %s rank for <yellow>%s</yellow>.</green>",
+                                target.getName(), procedure.getRank().getName(),
+                                Time.formatDetailed(grant.getDuration())));
                 });
             }
         });
@@ -138,19 +134,12 @@ public class GrantScopesMenu extends Menu {
         if (!clicked) {
             Profile profile = AltaraPaper.getPaperInstance().getProfileService().getProfile(player);
             profile.setGrantProcedure(null);
-            player.sendMessage(CC.RED + "You cancelled the grant procedure.");
+            player.sendMessage(Component.text("You cancelled the grant procedure.", CC.RED));
         }
     }
 
-    @Override
-    public boolean isAutoUpdate() {
-        return false;
-    }
-
-    @Override
-    public boolean isClickUpdate() {
-        return true;
-    }
+    @Override public boolean isAutoUpdate() { return false; }
+    @Override public boolean isClickUpdate() { return true; }
 
     @RequiredArgsConstructor
     public class ScopeButton extends Button {
@@ -159,19 +148,19 @@ public class GrantScopesMenu extends Menu {
 
         @Override
         public ItemStack getItem(Player player) {
-            return new ItemBuilder(scopes.contains(server) ? Material.LIME_WOOL :
-                    Material.GRAY_WOOL)
-                    .setDisplayName((scopes.contains(server) ? CC.GREEN : CC.GRAY) + CC.BOLD + WordUtils.capitalizeFully(server))
+            boolean selected = scopes.contains(server);
+            return new ItemBuilder(selected ? Material.LIME_WOOL : Material.GRAY_WOOL)
+                    .setDisplayName(Component.text(
+                            WordUtils.capitalizeFully(server),
+                            selected ? CC.GREEN : CC.GRAY,
+                            TextDecoration.BOLD))
                     .build();
         }
 
         @Override
         public void click(Player player, int slot, ClickType clickType, int hotbarButton) {
-            if (!scopes.contains(server))
-                scopes.add(server);
-            else
-                scopes.remove(server);
-
+            if (!scopes.contains(server)) scopes.add(server);
+            else scopes.remove(server);
         }
     }
 }

@@ -11,6 +11,7 @@ import games.sparking.altara.rank.Rank;
 import games.sparking.altara.utils.CC;
 import games.sparking.altara.utils.ItemBuilder;
 import lombok.RequiredArgsConstructor;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.ClickType;
@@ -85,9 +86,9 @@ public class RankEditingMenu extends Menu {
         @Override
         public ItemStack getItem(Player player) {
             return new ItemBuilder(local ? Material.OAK_BUTTON : Material.STONE_BUTTON)
-                    .setDisplayName(CC.format("&e&lAdd %sPermission", local ? "local " : ""))
+                    .setDisplayName(CC.format("<yellow><bold>Add %sPermission", local ? "local " : ""))
                     .setLore(CC.format(
-                            "&e%sPermissions: &c%d",
+                            "<yellow>%sPermissions: <red>%d",
                             local ? "Local " : "",
                             local ? rank.getLocalPermissions().size() : rank.getPermissions().size()
                     )).build();
@@ -97,32 +98,27 @@ public class RankEditingMenu extends Menu {
         public void click(Player whoClicked, int slot, ClickType clickType, int hotbarButton) {
             whoClicked.getOpenInventory().close();
             new ChatInput<String>(String.class)
-                    .text(CC.translate("&ePlease enter the permission you would like to add, " +
-                            "or say &ccancel &eto cancel."))
-                    .escapeMessage(CC.RED + "You cancelled the permission adding process.")
+                    .text("<yellow>Please enter the permission you would like to add, or say <red>cancel</red> to cancel.")
+                    .escapeMessage("<red>You cancelled the permission adding process.")
                     .onCancel(RankEditingMenu.this::openMenu)
                     .accept((player, input) -> {
                         if (local) {
                             if (rank.getLocalPermissions().contains(input.toLowerCase())) {
-                                player.sendMessage(CC.format("&cRank &e%s &calready has permission &e%s&c.",
+                                player.sendMessage(CC.format("<red>Rank <yellow>%s <red>already has permission <yellow>%s<red>.",
                                         rank.getName(), input));
                                 return true;
                             }
-
                             rank.getLocalPermissions().add(input.toLowerCase());
                         } else {
                             if (rank.getPermissions().contains(input.toLowerCase())) {
-                                player.sendMessage(CC.format("&cRank &e%s &calready has permission &e%s&c.",
+                                player.sendMessage(CC.format("<red>Rank <yellow>%s <red>already has permission <yellow>%s<red>.",
                                         rank.getName(), input));
                                 return true;
                             }
-
                             rank.getPermissions().add(input.toLowerCase());
                         }
-
-                        rank.save(player::sendMessage, () -> {
-                        });
-                        player.sendMessage(CC.format("&eYou added permission &c%s &eto rank %s&e.",
+                        rank.save(player::sendMessage, () -> {});
+                        player.sendMessage(CC.format("<yellow>You added permission <red>%s <yellow>to rank %s<yellow>.",
                                 input, rank.getName()));
                         openMenu(player);
                         return true;
@@ -138,9 +134,9 @@ public class RankEditingMenu extends Menu {
         @Override
         public ItemStack getItem(Player player) {
             return new ItemBuilder(local ? Material.OAK_BUTTON : Material.STONE_BUTTON)
-                    .setDisplayName(CC.format("&e&lRemove %sPermission", local ? "local " : ""))
+                    .setDisplayName(CC.format("<yellow><bold>Remove %sPermission", local ? "local " : ""))
                     .setLore(CC.format(
-                            "&e%sPermissions: &c%d",
+                            "<yellow>%sPermissions: <red>%d",
                             local ? "Local " : "",
                             local ? rank.getLocalPermissions().size() : rank.getPermissions().size()
                     )).build();
@@ -150,30 +146,27 @@ public class RankEditingMenu extends Menu {
         public void click(Player whoClicked, int slot, ClickType clickType, int hotbarButton) {
             whoClicked.getOpenInventory().close();
             new ChatInput<String>(String.class)
-                    .text(CC.translate("&ePlease enter the permission you would like to remove, " +
-                            "or say &ccancel &eto cancel."))
-                    .escapeMessage(CC.RED + "You cancelled the permission removal process.")
+                    .text("<yellow>Please enter the permission you would like to remove, or say <red>cancel</red> to cancel.")
+                    .escapeMessage("<red>You cancelled the permission removal process.")
                     .onCancel(RankEditingMenu.this::openMenu)
                     .accept((player, input) -> {
                         if (local) {
                             if (!rank.getLocalPermissions().contains(input.toLowerCase())) {
-                                player.sendMessage(CC.format("&cRank &e%s &cdoesn't have permission &e%s&c.",
+                                player.sendMessage(CC.format("<red>Rank <yellow>%s <red>doesn't have permission <yellow>%s<red>.",
                                         rank.getName(), input));
                                 return true;
                             }
                             rank.getLocalPermissions().remove(input.toLowerCase());
                         } else {
                             if (!rank.getPermissions().contains(input.toLowerCase())) {
-                                player.sendMessage(CC.format("&cRank &e%s &cdoesn't have permission &e%s&c.",
+                                player.sendMessage(CC.format("<red>Rank <yellow>%s <red>doesn't have permission <yellow>%s<red>.",
                                         rank.getName(), input));
                                 return true;
                             }
                             rank.getPermissions().remove(input.toLowerCase());
                         }
-
-                        rank.save(player::sendMessage, () -> {
-                        });
-                        player.sendMessage(CC.format("&eYou removed permission &c%s &efrom rank %s&e.",
+                        rank.save(player::sendMessage, () -> {});
+                        player.sendMessage(CC.format("<yellow>You removed permission <red>%s <yellow>from rank %s<yellow>.",
                                 input, rank.getName()));
                         openMenu(player);
                         return true;
@@ -181,15 +174,13 @@ public class RankEditingMenu extends Menu {
         }
     }
 
-
     public class ToggleDisguisableButton extends Button {
 
         @Override
         public ItemStack getItem(Player player) {
-            return new ItemBuilder(rank.isDisguisable()
-                    ? Material.LIME_DYE : Material.GRAY_DYE)
-                    .setDisplayName(CC.YELLOW + CC.BOLD + "Toggle Disguisable")
-                    .setLore(CC.YELLOW + "Disguisable: " + CC.colorBoolean(rank.isDisguisable(), "true", "false"))
+            return new ItemBuilder(rank.isDisguisable() ? Material.LIME_DYE : Material.GRAY_DYE)
+                    .setDisplayName("<yellow><bold>Toggle Disguisable")
+                    .setLore(CC.translate("<yellow>Disguisable: " + (rank.isDisguisable() ? "<green>true" : "<red>false")))
                     .build();
         }
 
@@ -197,8 +188,8 @@ public class RankEditingMenu extends Menu {
         public void click(Player player, int slot, ClickType clickType, int hotbarButton) {
             rank.setDisguisable(!rank.isDisguisable());
             save = true;
-            player.sendMessage(CC.format("&eYou set the disguisable status of %s &eto %s&e.",
-                    rank.getName(), CC.colorBoolean(rank.isDisguisable())));
+            player.sendMessage(CC.translate("<yellow>You set the disguisable status of " + rank.getName() +
+                    " to " + (rank.isDisguisable() ? "<green>true" : "<red>false") + "<yellow>."));
         }
     }
 
@@ -207,8 +198,8 @@ public class RankEditingMenu extends Menu {
         @Override
         public ItemStack getItem(Player player) {
             return new ItemBuilder(Material.OAK_SIGN)
-                    .setDisplayName(CC.YELLOW + CC.BOLD + "Set Prefix")
-                    .setLore(CC.format("&ePrefix: %sExample", rank.getPrefix()))
+                    .setDisplayName("<yellow><bold>Set Prefix")
+                    .setLore(CC.format("<yellow>Prefix: %sExample", rank.getPrefix()))
                     .build();
         }
 
@@ -216,15 +207,13 @@ public class RankEditingMenu extends Menu {
         public void click(Player whoClicked, int slot, ClickType clickType, int hotbarButton) {
             whoClicked.getOpenInventory().close();
             new ChatInput<String>(String.class)
-                    .text(CC.translate("&ePlease enter the new prefix for this rank, " +
-                            "or say &ccancel &eto cancel."))
-                    .escapeMessage(CC.RED + "You cancelled the prefix change.")
+                    .text("<yellow>Please enter the new prefix for this rank, or say <red>cancel</red> to cancel.")
+                    .escapeMessage("<red>You cancelled the prefix change.")
                     .onCancel(RankEditingMenu.this::openMenu)
                     .accept((player, input) -> {
-                        rank.setPrefix(CC.translate(input));
-                        rank.save(player::sendMessage, () -> {
-                        });
-                        player.sendMessage(CC.format("&eYou set the prefix of %s &eto %sExample&e.",
+                        rank.setPrefix(input);
+                        rank.save(player::sendMessage, () -> {});
+                        player.sendMessage(CC.format("<yellow>You set the prefix of %s <yellow>to %sExample<yellow>.",
                                 rank.getName(), rank.getPrefix()));
                         openMenu(player);
                         return true;
@@ -237,8 +226,8 @@ public class RankEditingMenu extends Menu {
         @Override
         public ItemStack getItem(Player player) {
             return new ItemBuilder(Material.OAK_SIGN)
-                    .setDisplayName(CC.YELLOW + CC.BOLD + "Set Suffix")
-                    .setLore(CC.format("&eSuffix: &fExample%s", rank.getSuffix()))
+                    .setDisplayName("<yellow><bold>Set Suffix")
+                    .setLore(CC.format("<yellow>Suffix: <white>Example%s", rank.getSuffix()))
                     .build();
         }
 
@@ -246,15 +235,13 @@ public class RankEditingMenu extends Menu {
         public void click(Player whoClicked, int slot, ClickType clickType, int hotbarButton) {
             whoClicked.getOpenInventory().close();
             new ChatInput<String>(String.class)
-                    .text(CC.translate("&ePlease enter the new suffix for this rank, " +
-                            "or say &ccancel &eto cancel."))
-                    .escapeMessage(CC.RED + "You cancelled the suffix change.")
+                    .text("<yellow>Please enter the new suffix for this rank, or say <red>cancel</red> to cancel.")
+                    .escapeMessage("<red>You cancelled the suffix change.")
                     .onCancel(RankEditingMenu.this::openMenu)
                     .accept((player, input) -> {
-                        rank.setSuffix(CC.translate(input));
-                        rank.save(player::sendMessage, () -> {
-                        });
-                        player.sendMessage(CC.format("&eYou set the suffix of %s &eto %sExample&e.",
+                        rank.setSuffix(input);
+                        rank.save(player::sendMessage, () -> {});
+                        player.sendMessage(CC.format("<yellow>You set the suffix of %s <yellow>to <white>Example%s<yellow>.",
                                 rank.getName(), rank.getSuffix()));
                         openMenu(player);
                         return true;
@@ -267,8 +254,8 @@ public class RankEditingMenu extends Menu {
         @Override
         public ItemStack getItem(Player player) {
             return new ItemBuilder(Material.PAPER)
-                    .setDisplayName(CC.YELLOW + CC.BOLD + "Set Color")
-                    .setLore(CC.format("&eColor: %sExample", rank.getColor()))
+                    .setDisplayName("<yellow><bold>Set Color")
+                    .setLore(CC.format("<yellow>Color: %sExample", rank.getColor()))
                     .build();
         }
 
@@ -276,20 +263,17 @@ public class RankEditingMenu extends Menu {
         public void click(Player whoClicked, int slot, ClickType clickType, int hotbarButton) {
             whoClicked.getOpenInventory().close();
             new ChatInput<String>(String.class)
-                    .text(CC.translate("&ePlease enter the new color for this rank, " +
-                            "or say &ccancel &eto cancel."))
-                    .escapeMessage(CC.RED + "You cancelled the color change.")
+                    .text("<yellow>Please enter the new color for this rank, or say <red>cancel</red> to cancel.")
+                    .escapeMessage("<red>You cancelled the color change.")
                     .onCancel(RankEditingMenu.this::openMenu)
                     .accept((player, input) -> {
                         if (input.contains(" ")) {
-                            player.sendMessage(CC.RED + "The color cannot contain a white space.");
+                            player.sendMessage(CC.translate("<red>The color cannot contain a white space."));
                             return false;
                         }
-
-                        rank.setColor(CC.translate(input));
-                        rank.save(player::sendMessage, () -> {
-                        });
-                        player.sendMessage(CC.format("&eYou set the color of %s &eto %sExample&e.",
+                        rank.setColor(input);
+                        rank.save(player::sendMessage, () -> {});
+                        player.sendMessage(CC.format("<yellow>You set the color of %s <yellow>to %sExample<yellow>.",
                                 rank.getName(), rank.getColor()));
                         openMenu(player);
                         return true;
@@ -302,8 +286,8 @@ public class RankEditingMenu extends Menu {
         @Override
         public ItemStack getItem(Player player) {
             return new ItemBuilder(Material.PAPER)
-                    .setDisplayName(CC.YELLOW + CC.BOLD + "Set Chat Color")
-                    .setLore(CC.format("&eChat Color: %sExample", rank.getChatColor()))
+                    .setDisplayName("<yellow><bold>Set Chat Color")
+                    .setLore(CC.format("<yellow>Chat Color: %sExample", rank.getChatColor()))
                     .build();
         }
 
@@ -311,21 +295,18 @@ public class RankEditingMenu extends Menu {
         public void click(Player whoClicked, int slot, ClickType clickType, int hotbarButton) {
             whoClicked.getOpenInventory().close();
             new ChatInput<String>(String.class)
-                    .text(CC.translate("&ePlease enter the new chat color for this rank, " +
-                            "or say &ccancel &eto cancel."))
-                    .escapeMessage(CC.RED + "You cancelled the chat color change.")
+                    .text("<yellow>Please enter the new chat color for this rank, or say <red>cancel</red> to cancel.")
+                    .escapeMessage("<red>You cancelled the chat color change.")
                     .onCancel(RankEditingMenu.this::openMenu)
                     .accept((player, input) -> {
                         if (input.contains(" ")) {
-                            player.sendMessage(CC.RED + "The chat color cannot contain a white space.");
+                            player.sendMessage(CC.translate("<red>The chat color cannot contain a white space."));
                             return false;
                         }
-
-                        rank.setChatColor(CC.translate(input));
-                        rank.save(player::sendMessage, () -> {
-                        });
-                        player.sendMessage(CC.format("&eYou set the chat color of %s &eto %sExample&e.",
-                                rank.getName(), rank.getColor()));
+                        rank.setChatColor(input);
+                        rank.save(player::sendMessage, () -> {});
+                        player.sendMessage(CC.format("<yellow>You set the chat color of %s <yellow>to %sExample<yellow>.",
+                                rank.getName(), rank.getChatColor()));
                         openMenu(player);
                         return true;
                     }).send(whoClicked);
@@ -336,16 +317,17 @@ public class RankEditingMenu extends Menu {
 
         @Override
         public ItemStack getItem(Player player) {
-            List<String> lore = new ArrayList<>();
+            List<Component> lore = new ArrayList<>();
             if (rank.getInherits().isEmpty()) {
-                lore.add(CC.YELLOW + "Inherits: " + CC.RED + "None");
+                lore.add(CC.translate("<yellow>Inherits: <red>None"));
             } else {
-                lore.add(CC.YELLOW + "Inherits: ");
-                rank.getInherits().forEach(inherit -> lore.add(CC.GRAY + " - " + AltaraPaper.getSharedInstance().getRankService().getRank(inherit.getUuid()).getName()));
+                lore.add(CC.translate("<yellow>Inherits:"));
+                rank.getInherits().forEach(inherit -> lore.add(
+                        CC.translate("<gray> - " + AltaraPaper.getSharedInstance().getRankService().getRank(inherit.getUuid()).getName())));
             }
 
             return new ItemBuilder(Material.BOOK)
-                    .setDisplayName(CC.YELLOW + CC.BOLD + "Toggle Inherit")
+                    .setDisplayName("<yellow><bold>Toggle Inherit")
                     .setLore(lore)
                     .build();
         }
@@ -354,23 +336,20 @@ public class RankEditingMenu extends Menu {
         public void click(Player whoClicked, int slot, ClickType clickType, int hotbarButton) {
             whoClicked.getOpenInventory().close();
             new ChatInput<Rank>(Rank.class)
-                    .text(CC.translate("&ePlease enter the name of the child, " +
-                            "or say &ccancel &eto cancel."))
-                    .escapeMessage(CC.RED + "You cancelled the inherit toggling.")
+                    .text("<yellow>Please enter the name of the child, or say <red>cancel</red> to cancel.")
+                    .escapeMessage("<red>You cancelled the inherit toggling.")
                     .onCancel(RankEditingMenu.this::openMenu)
                     .accept((player, input) -> {
                         if (rank.getInherits().contains(input)) {
                             rank.getInherits().remove(input);
-                            player.sendMessage(CC.format("&eYou made %s &eno longer inherit %s&e.",
+                            player.sendMessage(CC.format("<yellow>You made %s <yellow>no longer inherit %s<yellow>.",
                                     rank.getName(), input.getName()));
                         } else {
                             rank.getInherits().add(input);
-                            player.sendMessage(CC.format("&eYou made %s &einherit %s&e.",
+                            player.sendMessage(CC.format("<yellow>You made %s <yellow>inherit %s<yellow>.",
                                     rank.getName(), input.getName()));
                         }
-
-                        rank.save(player::sendMessage, () -> {
-                        });
+                        rank.save(player::sendMessage, () -> {});
                         openMenu(player);
                         return true;
                     }).send(whoClicked);
@@ -382,8 +361,8 @@ public class RankEditingMenu extends Menu {
         @Override
         public ItemStack getItem(Player player) {
             return new ItemBuilder(Material.LEVER)
-                    .setDisplayName(CC.YELLOW + CC.BOLD + "Set Weight")
-                    .setLore(CC.format("&eWeight: &c%d", rank.getWeight()))
+                    .setDisplayName("<yellow><bold>Set Weight")
+                    .setLore(CC.format("<yellow>Weight: <red>%d", rank.getWeight()))
                     .build();
         }
 
@@ -391,15 +370,13 @@ public class RankEditingMenu extends Menu {
         public void click(Player whoClicked, int slot, ClickType clickType, int hotbarButton) {
             whoClicked.getOpenInventory().close();
             new ChatInput<Integer>(Integer.class)
-                    .text(CC.translate("&ePlease enter the new weight for this rank, " +
-                            "or say &ccancel &eto cancel."))
-                    .escapeMessage(CC.RED + "You cancelled the weight change.")
+                    .text("<yellow>Please enter the new weight for this rank, or say <red>cancel</red> to cancel.")
+                    .escapeMessage("<red>You cancelled the weight change.")
                     .onCancel(RankEditingMenu.this::openMenu)
                     .accept((player, input) -> {
                         rank.setWeight(input);
-                        rank.save(player::sendMessage, () -> {
-                        });
-                        player.sendMessage(CC.format("&eYou set the weight of %s &eto &c%d&e.",
+                        rank.save(player::sendMessage, () -> {});
+                        player.sendMessage(CC.format("<yellow>You set the weight of %s <yellow>to <red>%d<yellow>.",
                                 rank.getName(), rank.getWeight()));
                         openMenu(player);
                         return true;
@@ -412,8 +389,8 @@ public class RankEditingMenu extends Menu {
         @Override
         public ItemStack getItem(Player player) {
             return new ItemBuilder(Material.LEVER)
-                    .setDisplayName(CC.YELLOW + CC.BOLD + "Set Queue Priority")
-                    .setLore(CC.format("&eQueue Priority: &c%d", rank.getQueuePriority()))
+                    .setDisplayName("<yellow><bold>Set Queue Priority")
+                    .setLore(CC.format("<yellow>Queue Priority: <red>%d", rank.getQueuePriority()))
                     .build();
         }
 
@@ -421,15 +398,13 @@ public class RankEditingMenu extends Menu {
         public void click(Player whoClicked, int slot, ClickType clickType, int hotbarButton) {
             whoClicked.getOpenInventory().close();
             new ChatInput<Integer>(Integer.class)
-                    .text(CC.translate("&ePlease enter the new queue priority for this rank, " +
-                            "or say &ccancel &eto cancel."))
-                    .escapeMessage(CC.RED + "You cancelled the queue priority change.")
+                    .text("<yellow>Please enter the new queue priority for this rank, or say <red>cancel</red> to cancel.")
+                    .escapeMessage("<red>You cancelled the queue priority change.")
                     .onCancel(RankEditingMenu.this::openMenu)
                     .accept((player, input) -> {
                         rank.setQueuePriority(input);
-                        rank.save(player::sendMessage, () -> {
-                        });
-                        player.sendMessage(CC.format("&eYou set the queue priority of %s &eto &c%d&e.",
+                        rank.save(player::sendMessage, () -> {});
+                        player.sendMessage(CC.format("<yellow>You set the queue priority of %s <yellow>to <red>%d<yellow>.",
                                 rank.getName(), rank.getQueuePriority()));
                         openMenu(player);
                         return true;

@@ -3,6 +3,7 @@ package games.sparking.altara.punishment.menu;
 import games.sparking.altara.menu.Button;
 import games.sparking.altara.menu.Menu;
 import games.sparking.altara.punishment.InfractionType;
+import games.sparking.altara.utils.CC;
 import games.sparking.altara.utils.ItemBuilder;
 import lombok.RequiredArgsConstructor;
 import org.bukkit.ChatColor;
@@ -117,7 +118,7 @@ public class PunishMenu extends Menu {
             return new ItemBuilder(mat)
                     .addFlag(ItemFlag.HIDE_ADDITIONAL_TOOLTIP)
                     .setDisplayName("&5&l" + infractionType.getDisplayName())
-                    .setLore(lore)
+                    .setLore(CC.translate(lore))
                     .build();
         }
 

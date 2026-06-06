@@ -9,6 +9,8 @@ import games.sparking.altara.rank.Rank;
 import games.sparking.altara.utils.CC;
 import games.sparking.altara.utils.ItemBuilder;
 import lombok.RequiredArgsConstructor;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.ClickType;
 import org.bukkit.inventory.ItemStack;
@@ -17,7 +19,7 @@ import java.util.*;
 
 @RequiredArgsConstructor
 public class GrantRankMenu extends Menu {
-    
+
     private final GrantProcedure procedure;
     private boolean clicked = false;
 
@@ -41,21 +43,19 @@ public class GrantRankMenu extends Menu {
         if (!clicked) {
             Profile profile = Altara.getSharedInstance().getProfileService().getProfile(player);
             profile.setGrantProcedure(null);
-            player.sendMessage(CC.RED + "You cancelled the grant procedure.");
+            player.sendMessage(Component.text("You cancelled the grant procedure.", CC.RED));
         }
     }
 
     public boolean canGrant(Player player, Rank rank) {
         Profile profile = Altara.getSharedInstance().getProfileService().getProfile(player);
-        if (rank.isDefaultRank()) {
-            return false;
-        }
+        if (rank.isDefaultRank()) return false;
         if (profile.getRealCurrentGrant().asRank().getWeight() >= Altara.getSharedInstance().getMainConfig().getOwnerWeight()
                 || player.getUniqueId().equals(UUID.fromString("c7d53cda-a00d-465b-ba55-c2f684ad4ae3"))) {
             return true;
         }
-        return profile.getRealCurrentGrant().asRank().getWeight() > rank.getWeight() && player.hasPermission(
-                "zircon.grant." + rank.getName());
+        return profile.getRealCurrentGrant().asRank().getWeight() > rank.getWeight()
+                && player.hasPermission("zircon.grant." + rank.getName());
     }
 
     @RequiredArgsConstructor
@@ -66,27 +66,32 @@ public class GrantRankMenu extends Menu {
 
         @Override
         public ItemStack getItem(Player player) {
-            List<String> lore = new ArrayList<>();
+            List<Component> lore = new ArrayList<>();
             lore.add(CC.MENU_BAR);
 
             if (canGrant(player, rank))
-                lore.add(CC.YELLOW + "Click to grant " + procedure.getTarget().getName() +
-                        CC.YELLOW + " the " + rank.getName() + CC.YELLOW + " rank.");
+                lore.add(Component.text()
+                        .append(Component.text("Click to grant ", CC.YELLOW))
+                        .append(Component.text(procedure.getTarget().getName(), CC.WHITE))
+                        .append(Component.text(" the ", CC.YELLOW))
+                        .append(Component.text(rank.getName(), CC.WHITE))
+                        .append(Component.text(" rank.", CC.YELLOW))
+                        .build());
             else if (rank.isDefaultRank())
-                lore.add(CC.RED + "You cannot grant the default rank.");
+                lore.add(Component.text("You cannot grant the default rank.", CC.RED));
             else
-                lore.add(CC.RED + "You are not allowed to grant this rank.");
+                lore.add(Component.text("You are not allowed to grant this rank.", CC.RED));
 
             lore.add(CC.MENU_BAR);
             return new ItemBuilder(rank.getMaterial())
-                    .setDisplayName(rank.getName())
+                    .setDisplayName(Component.text(rank.getName()))
                     .setLore(lore).build();
         }
 
         @Override
         public void click(Player player, int slot, ClickType clickType, int hotbarButton) {
             if (!canGrant(player, rank)) {
-                player.sendMessage(CC.RED + "You are not allowed to grant this rank.");
+                player.sendMessage(Component.text("You are not allowed to grant this rank.", CC.RED));
                 return;
             }
             clicked = true;

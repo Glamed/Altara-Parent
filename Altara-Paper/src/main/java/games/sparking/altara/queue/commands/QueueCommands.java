@@ -13,6 +13,8 @@ import games.sparking.altara.server.ServerInfo;
 import games.sparking.altara.utils.CC;
 import games.sparking.altara.uuid.UUIDCache;
 import lombok.RequiredArgsConstructor;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
@@ -139,11 +141,11 @@ public class QueueCommands {
         }
 
         sender.sendMessage(CC.SMALL_CHAT_BAR);
-        sender.sendMessage(CC.RED + CC.BOLD + "Queue Info");
-        sender.sendMessage(CC.format(" &eState: %s",
-                CC.colorBoolean(!server.isQueuePaused(), "Unpaused", "Paused")));
-        sender.sendMessage(CC.format(" &eRate: &c%d per second", server.getQueueRate()));
-        sender.sendMessage(CC.format(" &eQueued: &c%d",
+        sender.sendMessage(CC.format("<red><b>Queue Info"));
+        sender.sendMessage(CC.format("<yellow> State: %s",
+                CC.strip(CC.colorBoolean(!server.isQueuePaused(), "Unpaused", "Paused"))));
+        sender.sendMessage(CC.format("<yellow> Rate: <red>%d per second", server.getQueueRate()));
+        sender.sendMessage(CC.format("<yellow> Queued: <red>%d",
                 AltaraPaper.getPaperInstance().getQueueService().getQueueing(server.getName()).size()));
         sender.sendMessage(CC.SMALL_CHAT_BAR);
         return true;

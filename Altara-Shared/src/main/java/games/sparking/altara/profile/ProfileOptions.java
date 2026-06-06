@@ -17,6 +17,9 @@ public class ProfileOptions extends JsonObjClass {
     private List<String> socialSpy = new ArrayList<>();
     private List<UUID> ignoring = new ArrayList<>();
 
+    /** Persistent player preferences (e.g. active chat channel). */
+    private ProfilePreferences preferences = new ProfilePreferences();
+
     public ProfileOptions(JsonObject object) {
         if (object.has("socialSpy")) {
             JsonArray array = object.get("socialSpy").getAsJsonArray();
@@ -33,7 +36,13 @@ public class ProfileOptions extends JsonObjClass {
             optionsObject.entrySet().forEach(entry ->
                     customOptions.put(entry.getKey(), entry.getValue().getAsString()));
         }
+
+        if (object.has("preferences")) {
+            this.preferences = new ProfilePreferences(object.get("preferences").getAsJsonObject());
+        }
     }
+
+    // ── Custom option helpers ──────────────────────────────────────────────────
 
     public String getOption(String key) {
         return customOptions.get(key);
@@ -47,4 +56,26 @@ public class ProfileOptions extends JsonObjClass {
         customOptions.put(key, value);
     }
 
+    // ── Serialisation (override broken reflection-based default) ───────────────
+
+    @Override
+    public JsonObject toJson() {
+        JsonObject obj = new JsonObject();
+
+        JsonArray socialSpyArray = new JsonArray();
+        socialSpy.forEach(socialSpyArray::add);
+        obj.add("socialSpy", socialSpyArray);
+
+        JsonArray ignoringArray = new JsonArray();
+        ignoring.forEach(uuid -> ignoringArray.add(uuid.toString()));
+        obj.add("ignoring", ignoringArray);
+
+        JsonObject customOptionsObj = new JsonObject();
+        customOptions.forEach(customOptionsObj::addProperty);
+        obj.add("customOptions", customOptionsObj);
+
+        obj.add("preferences", preferences.toJson());
+
+        return obj;
+    }
 }

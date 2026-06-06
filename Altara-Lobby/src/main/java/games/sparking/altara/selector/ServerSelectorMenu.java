@@ -91,7 +91,7 @@ public class ServerSelectorMenu extends Menu {
         @Override
         public ItemStack getItem(Player player) {
             return new ItemBuilder(Material.COMMAND_BLOCK)
-                    .setDisplayName(ChatColor.YELLOW + CC.BOLD + "View all servers")
+                    .setDisplayName("<yellow><bold>View all servers")
                     .build();
         }
 

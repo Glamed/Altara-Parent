@@ -56,6 +56,11 @@ public class CC {
         return MM.deserialize(miniMessage);
     }
 
+    /** Alias for {@link #translate(String)} — used by legacy call sites. */
+    public static Component translateToComponent(String miniMessage) {
+        return MM.deserialize(miniMessage);
+    }
+
     public static List<Component> translate(List<String> lines) {
         List<Component> result = new ArrayList<>();
         for (String line : lines) result.add(translate(line));

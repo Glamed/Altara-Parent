@@ -10,6 +10,7 @@ import games.sparking.altara.rank.setup.*;
 import games.sparking.altara.utils.CC;
 import games.sparking.altara.utils.ItemBuilder;
 import lombok.RequiredArgsConstructor;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.ClickType;
@@ -53,30 +54,29 @@ public class RankEditOverviewMenu extends Menu {
 
         @Override
         public ItemStack getItem(Player player) {
-            List<String> lore = new ArrayList<>();
+            List<Component> lore = new ArrayList<>();
             lore.add(CC.MENU_BAR);
-            lore.add(CC.format("&eColor: %sExample", rank.getColor()));
-            lore.add(CC.format("&eChat Color: %sExample", rank.getChatColor()));
-            lore.add(" ");
-            lore.add(CC.format("&ePrefix: %sExample", rank.getPrefix()));
-            lore.add(CC.format("&eSuffix: &fExample%s", rank.getSuffix()));
-            lore.add(" ");
-            lore.add(CC.format("&eWeight: &c%d", rank.getWeight()));
-            lore.add(CC.format("&eQueue Priority: &c%d", rank.getQueuePriority()));
-            lore.add(" ");
-            lore.add(CC.format("&eDefault: %s",
-                    CC.colorBoolean(rank.isDefaultRank(), "true", "false")));
-            lore.add(CC.format("&eDisguisable: %s",
-                    CC.colorBoolean(rank.isDisguisable(), "true", "false")));
-            lore.add(" ");
-            lore.add(CC.format("&eInherits: &e%s", rank.getInherits().isEmpty() ? "None" : ""));
+            lore.add(CC.format("<yellow>Color: %sExample", rank.getColor()));
+            lore.add(CC.format("<yellow>Chat Color: %sExample", rank.getChatColor()));
+            lore.add(CC.translate(" "));
+            lore.add(CC.format("<yellow>Prefix: %sExample", rank.getPrefix()));
+            lore.add(CC.format("<yellow>Suffix: <white>Example%s", rank.getSuffix()));
+            lore.add(CC.translate(" "));
+            lore.add(CC.format("<yellow>Weight: <red>%d", rank.getWeight()));
+            lore.add(CC.format("<yellow>Queue Priority: <red>%d", rank.getQueuePriority()));
+            lore.add(CC.translate(" "));
+            lore.add(CC.translate("<yellow>Default: " + (rank.isDefaultRank() ? "<green>true" : "<red>false")));
+            lore.add(CC.translate("<yellow>Disguisable: " + (rank.isDisguisable() ? "<green>true" : "<red>false")));
+            lore.add(CC.translate(" "));
+            lore.add(CC.format("<yellow>Inherits: %s", rank.getInherits().isEmpty() ? "None" : ""));
             if (!rank.getInherits().isEmpty()) {
-                rank.getInherits().forEach(inherit -> lore.add(CC.GRAY + " - " + Altara.getSharedInstance().getRankService().getRank(inherit.getUuid()).getName()));
+                rank.getInherits().forEach(inherit -> lore.add(
+                        CC.translate("<gray> - " + Altara.getSharedInstance().getRankService().getRank(inherit.getUuid()).getName())));
             }
-            lore.add(" ");
-            lore.add(CC.format("&ePermissions: &c%d", rank.getPermissions().size()));
-            lore.add(CC.format("&eLocal Permissions: &c%d", rank.getLocalPermissions().size()));
-            lore.add(CC.format("&eInherited Permissions: &c%d", rank.getInheritPermissions().size()));
+            lore.add(CC.translate(" "));
+            lore.add(CC.format("<yellow>Permissions: <red>%d", rank.getPermissions().size()));
+            lore.add(CC.format("<yellow>Local Permissions: <red>%d", rank.getLocalPermissions().size()));
+            lore.add(CC.format("<yellow>Inherited Permissions: <red>%d", rank.getInheritPermissions().size()));
             lore.add(CC.MENU_BAR);
 
             return new ItemBuilder(rank.getMaterial())
@@ -96,7 +96,7 @@ public class RankEditOverviewMenu extends Menu {
         @Override
         public ItemStack getItem(Player player) {
             return new ItemBuilder(Material.EMERALD)
-                    .setDisplayName(CC.GREEN + CC.BOLD + "Setup new rank")
+                    .setDisplayName("<green><bold>Setup new rank")
                     .build();
         }
 

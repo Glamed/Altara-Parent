@@ -8,6 +8,7 @@ import games.sparking.altara.punishment.InfractionType;
 import games.sparking.altara.punishment.PunishmentManager;
 import games.sparking.altara.punishment.PunishmentType;
 import games.sparking.altara.punishment.RestrictionAction;
+import games.sparking.altara.utils.CC;
 import games.sparking.altara.utils.ItemBuilder;
 import games.sparking.altara.utils.Time;
 import org.bukkit.ChatColor;
@@ -204,7 +205,7 @@ public class PunishActionMenu extends Menu {
             }
             return new ItemBuilder(Material.LIME_CONCRETE)
                     .setDisplayName("&aConfirm Punishment")
-                    .setLore(lore)
+                    .setLore(CC.translate(lore))
                     .build();
         }
 

@@ -2,6 +2,7 @@ package games.sparking.altara.playersetting;
 
 import com.google.common.base.Splitter;
 import games.sparking.altara.Altara;
+import games.sparking.altara.profile.Profile;
 import games.sparking.altara.task.Tasks;
 import games.sparking.altara.utils.CC;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +19,23 @@ public abstract class PlayerSetting<T> {
     private final String parent;
     private final String key;
     private final Map<UUID, T> values = new HashMap<>();
+
+    /**
+     * When {@code true} this setting's value is persisted inside the player's
+     * {@link games.sparking.altara.profile.ProfilePreferences} (and therefore
+     * survives restarts / server switches) instead of being stored in Redis.
+     *
+     * <p>Set this field in an instance-initialiser block of the anonymous
+     * subclass to opt-in, e.g.:
+     * <pre>{@code
+     * public static final PlayerSetting<String> MY_SETTING =
+     *         new PlayerSetting<>("parent", "key") {
+     *             { storedInProfile = true; }
+     *             ...
+     *         };
+     * }</pre>
+     */
+    protected boolean storedInProfile = false;
 
     public static List<String> splitDescription(String description) {
         List<String> list = new ArrayList<>();
@@ -51,18 +69,48 @@ public abstract class PlayerSetting<T> {
     public void set(Player player, T value) {
         values.put(player.getUniqueId(), value);
 
+        if (storedInProfile) {
+            Profile profile = Altara.getSharedInstance().getProfileService().getProfile(player.getUniqueId());
+            if (profile != null) {
+                profile.getOptions().getPreferences().set(parent + ":" + key, toString(value));
+                profile.save(() -> {}, true);
+            }
+            return;
+        }
+
         Tasks.runAsync(() -> Altara.getRedisService().executeCommand(redis ->
                 redis.hset("playersettings:" + parent + ":" + key,
                         player.getUniqueId().toString(), toString(value))));
     }
 
     public void load(UUID uuid) {
+        if (storedInProfile) {
+            // Try the in-memory cache first; if the profile isn't loaded yet,
+            // fetch it synchronously (safe — we are on an async pre-login thread).
+            Profile profile = Altara.getSharedInstance().getProfileService().getProfile(uuid);
+            if (profile == null) {
+                profile = Altara.getSharedInstance().getProfileService().loadProfile(uuid);
+            }
+            if (profile != null) {
+                String raw = profile.getOptions().getPreferences().get(parent + ":" + key);
+                values.put(uuid, raw != null ? parse(raw) : getDefaultValue());
+            } else {
+                values.put(uuid, getDefaultValue());
+            }
+            return;
+        }
+
         values.put(uuid, Altara.getRedisService().executeCommand(redis -> {
             if (!redis.hexists("playersettings:" + parent + ":" + key, uuid.toString()))
                 return getDefaultValue();
 
             return parse(redis.hget("playersettings:" + parent + ":" + key, uuid.toString()));
         }));
+    }
+
+    /** Whether this setting is persisted inside the player's Profile preferences. */
+    public boolean isStoredInProfile() {
+        return storedInProfile;
     }
 
     public void remove(UUID uuid) {

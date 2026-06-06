@@ -10,7 +10,9 @@ import games.sparking.altara.npc.NPCBuilder;
 import games.sparking.altara.npc.NPCService;
 import games.sparking.altara.npc.equipment.EquipmentSlot;
 import games.sparking.altara.utils.CC;
-import org.bukkit.ChatColor;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.event.ClickEvent;
+import net.kyori.adventure.text.event.HoverEvent;
 import org.bukkit.Material;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -19,9 +21,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Header(
-        primaryColor = "&9",
-        secondaryColor = "&8",
-        tertiaryColor = "&b",
+        primaryColor = "blue",
+        secondaryColor = "dark_gray",
+        tertiaryColor = "aqua",
         header = "NPC"
 )
 public class NPCCommands {
@@ -90,11 +92,10 @@ public class NPCCommands {
                     hover.add(CC.GRAY + "(Console Command)");
             }
 
-            new ChatMessage(npc.getName() + " - #" + npc.getId())
-                    .color(ChatColor.RED.asBungee())
-                    .hoverText(String.join("\n", hover))
-                    .runCommand("/npc tpto " + npc.getId())
-                    .send(sender);
+            Component msg = Component.text(npc.getName() + " - #" + npc.getId(), CC.RED)
+                    .hoverEvent(HoverEvent.showText(CC.translate(String.join("\n", hover))))
+                    .clickEvent(ClickEvent.runCommand("/npc tpto " + npc.getId()));
+            sender.sendMessage(msg);
         }
         return true;
     }
@@ -105,7 +106,6 @@ public class NPCCommands {
     public boolean setName(CommandSender sender,
                            @Param(name = "npc") NPC npc,
                            @Param(name = "displayName", wildcard = true) String displayName) {
-        displayName = CC.translate(displayName);
         npc.setDisplayName(displayName); // triggers re-spawn
         npcService().save();
         sender.sendMessage(CC.format("&9Set display name of NPC &e#%d &9to '&r%s&9'.",

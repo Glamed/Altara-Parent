@@ -51,7 +51,6 @@ public class ServerSelectorEntry implements StaticConfiguration {
     public ItemStack toItem(Player player) {
         ServerInfo server = getServer();
 
-        // Precompute values as final/effectively final
         final int onlineCount = (server != null) ? server.getOnlinePlayers() : 0;
         final int maxCount = (server != null) ? server.getMaxPlayers() : 0;
         final String state = (server != null) ? getStateName(player, server) : "Offline";
@@ -65,23 +64,18 @@ public class ServerSelectorEntry implements StaticConfiguration {
                 .getDisplayName()
                 : "N/A";
 
-        // Choose item material: normal material if online, REDSTONE_BLOCK if offline
         final Material displayMaterial = (server != null) ? material : Material.REDSTONE_BLOCK;
+        final String displayName = name + ((server == null) ? " <red>(Offline)" : "");
 
-        // Display name with "(Offline)" appended if server is null
-        final String displayName = CC.translate(name) + ((server == null) ? " " + CC.RED + "(Offline)" : "");
-
-        // Build the ItemStack
         return new ItemBuilder(displayMaterial)
                 .setDisplayName(displayName)
                 .setLore(description.stream()
-                        .map(s -> CC.translate(s)
-                                .replaceAll("%status%", state)
-                                .replaceAll("%online%", String.valueOf(onlineCount))
-                                .replaceAll("%max%", String.valueOf(maxCount))
-                                .replaceAll("%rank_on_scope%", rankOnScope)
-                                .replaceAll("%in_queue%", inQueueDisplay)
-                        )
+                        .map(s -> CC.translate(s
+                                .replace("%status%", state)
+                                .replace("%online%", String.valueOf(onlineCount))
+                                .replace("%max%", String.valueOf(maxCount))
+                                .replace("%rank_on_scope%", rankOnScope)
+                                .replace("%in_queue%", inQueueDisplay)))
                         .collect(Collectors.toList()))
                 .build();
     }
@@ -110,17 +104,17 @@ public class ServerSelectorEntry implements StaticConfiguration {
     public static String getStateName(Player player, ServerInfo server) {
         switch (server.getState()) {
             case UNKNOWN:
-                return CC.format("&cOffline&7%s", player.isOp() ? " (UN)" : "");
+                return "<red>Offline<gray>" + (player.isOp() ? " (UN)" : "");
             case HEARTBEAT_TIMEOUT:
-                return CC.format("&cOffline&7%s", player.isOp() ? " (HB)" : "");
+                return "<red>Offline<gray>" + (player.isOp() ? " (HB)" : "");
             case OFFLINE:
-                return CC.translate("&cOffline");
+                return "<red>Offline";
             case WHITELISTED:
-                return CC.translate("&eWhitelisted");
+                return "<yellow>Whitelisted";
             case ONLINE:
-                return CC.translate("&aOnline");
+                return "<green>Online";
         }
-        return CC.translate("&cOffline");
+        return "<red>Offline";
     }
 
 }

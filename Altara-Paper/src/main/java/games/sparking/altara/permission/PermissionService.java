@@ -7,6 +7,7 @@ import games.sparking.altara.profile.Profile;
 import games.sparking.altara.rank.Rank;
 import games.sparking.altara.utils.CC;
 import lombok.RequiredArgsConstructor;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.permissions.PermissionAttachment;
@@ -95,8 +96,8 @@ public class PermissionService {
         return permissions;
     }
 
-    public List<String> getDebugInfo(Player player, String permission) {
-        List<String> debugs = new ArrayList<>();
+    public List<Component> getDebugInfo(Player player, String permission) {
+        List<Component> debugs = new ArrayList<>();
         Profile profile = Altara.getSharedInstance().getProfileService().getProfile(player);
         AtomicBoolean hasPermission = new AtomicBoolean(false);
 
@@ -106,18 +107,18 @@ public class PermissionService {
                 .forEach(uuid -> {
                     Rank rank = Altara.getSharedInstance().getRankService().getRank(uuid);
                     Map<String, Boolean> perms = convert(rank.getAllPermissions());
-                    String result = CC.GRAY + "NOT_SET";
+                    Component result = Component.text("NOT_SET", CC.GRAY);
                     if (perms.containsKey(permission.toLowerCase())) {
                         Boolean value = perms.get(permission.toLowerCase());
                         result = CC.colorBoolean(value, "YES", "NEGATED");
                         if (value)
                             hasPermission.set(true);
                     }
-                    debugs.add(CC.BLUE + "Grant " + rank.getName() + ": " + result);
+                    debugs.add(Component.text("Grant " + rank.getName() + ": ", CC.BLUE).append(result));
                 });
 
         Map<String, Boolean> perms = convert(profile.getPermissions());
-        String result = CC.GRAY + "NOT_SET";
+        Component result = Component.text("NOT_SET", CC.GRAY);
         if (perms.containsKey(permission.toLowerCase())) {
             Boolean value = perms.get(permission.toLowerCase());
             result = CC.colorBoolean(value, "YES", "NEGATED");
@@ -125,14 +126,11 @@ public class PermissionService {
                 hasPermission.set(true);
         }
 
-        debugs.add(CC.BLUE + "Profile: " + result);
-
-        debugs.add(CC.format(
-                "&9Result: &e%s %s &9permission &e%s&9.",
+        debugs.add(Component.text("Profile: ", CC.BLUE).append(result));
+        debugs.add(CC.format("<blue>Result: <yellow>%s</yellow> %s <blue>permission <yellow>%s</yellow>.</blue>",
                 player.getName(),
-                CC.colorBoolean(hasPermission.get(), "has", "doesn't have"),
-                permission
-        ));
+                CC.strip(CC.colorBoolean(hasPermission.get(), "has", "doesn't have")),
+                permission));
 
         return debugs;
     }

@@ -2,7 +2,14 @@ package games.sparking.altara;
 
 import com.google.gson.GsonBuilder;
 import com.github.retrooper.packetevents.PacketEvents;
+import games.sparking.altara.chat.ChatChannelRegistry;
 import games.sparking.altara.chat.ChatListener;
+import games.sparking.altara.chat.command.ChatCommands;
+import games.sparking.altara.chat.impl.AdminChannel;
+import games.sparking.altara.chat.impl.GlobalChannel;
+import games.sparking.altara.chat.impl.LocalChannel;
+import games.sparking.altara.chat.impl.ShadowMuteChannel;
+import games.sparking.altara.chat.impl.StaffChannel;
 import games.sparking.altara.command.BuildVersionCommand;
 import games.sparking.altara.command.CommandService;
 import games.sparking.altara.configuration.ConfigurationService;
@@ -42,6 +49,7 @@ import games.sparking.altara.profiler.command.ProfilerCommand;
 import games.sparking.altara.punishment.commands.PunishCommand;
 import games.sparking.altara.punishment.listener.PunishmentChatListener;
 import games.sparking.altara.punishment.listener.PunishmentLoginListener;
+import games.sparking.altara.messaging.MessageCommands;
 import games.sparking.altara.queue.Queue;
 import games.sparking.altara.queue.QueueService;
 import games.sparking.altara.queue.commands.QueueCommands;
@@ -131,6 +139,24 @@ public class AltaraPaper extends Altara {
         this.npcService = new NPCService(plugin, getConfigurationService());
         npcService.load();
 
+        registerChatChannels();
+
+    }
+
+    // ── Chat channels ──────────────────────────────────────────────────────────
+
+    /**
+     * Registers built-in chat channels in priority order.
+     * Add custom channels here or load them from config as needed.
+     */
+    private void registerChatChannels() {
+        // Registration order matters when channels share a prefix — higher
+        // priority channels are checked first in ChatChannelRegistry.getByPrefix().
+        ChatChannelRegistry.register(GlobalChannel.getInstance());     // ! — default
+        ChatChannelRegistry.register(LocalChannel.getInstance());      // #
+        ChatChannelRegistry.register(StaffChannel.getInstance());      // @
+        ChatChannelRegistry.register(AdminChannel.getInstance());      // $
+        ChatChannelRegistry.register(ShadowMuteChannel.getInstance()); // system-only, no prefix
     }
 
     @Override
@@ -153,7 +179,9 @@ public class AltaraPaper extends Altara {
                 new NPCCommands(),
                 new RebootCommands(),
                 new ServerMonitorCommands(),
-                new QueueCommands()
+                new QueueCommands(),
+                new ChatCommands(),
+                new MessageCommands()
         );
     }
 

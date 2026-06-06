@@ -1,78 +1,108 @@
 package games.sparking.altara.chat.impl;
 
+import games.sparking.altara.Altara;
+import games.sparking.altara.chat.ChannelAudience;
 import games.sparking.altara.chat.ChatChannel;
-import games.sparking.altara.chat.ChatService;
-import games.sparking.altara.profiler.ProfilerService;
-import games.sparking.altara.utils.CC;
-import lombok.Getter;
-import org.bukkit.command.CommandSender;
+import games.sparking.altara.profile.Profile;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
-import java.util.Collections;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
- * A special internal chat channel automatically assigned to accounts that have
- * been flagged as potentially compromised by the Profiler system.
+ * System-only channel used by the Profiler to silently quarantine suspicious
+ * players.  The sender sees their own message normally; staff see it with a
+ * {@code [SM]} marker.  Messages are never relayed to other servers.
  *
- * <p>Behaviour per recipient:
- * <ul>
- *   <li><b>The sender themselves</b> — receives a normal-looking public chat format so
- *       they believe their message went through successfully.</li>
- *   <li><b>Staff</b> (players with {@code altara.profiler}) — see a dimmed copy prefixed
- *       with {@code [SHADOW]} so they can monitor the account's activity.</li>
- *   <li><b>Everyone else</b> — {@code getFormat} returns {@code null}, so the base
- *       {@link ChatChannel#chat} loop skips them entirely.</li>
- *   <li><b>Console</b> — also receives the {@code [SHADOW]} copy for logging.</li>
- * </ul>
- *
- * <p>The channel is stored with {@code priority = -1} which prevents
- * {@link ChatService#setChatChannel} from persisting it to Redis — it lives only
- * in the local {@code playerChatChannels} map.  Calling
- * {@link ChatService#loadChatChannel} for the player at any point will evict this
- * channel and restore whatever was previously saved in Redis.
+ * <p>This channel is <em>not persistable</em> — moving a player into it never
+ * overwrites their saved channel preference, so they return to the correct
+ * channel once the shadow mute is lifted.
  */
-public class ShadowMuteChannel extends ChatChannel {
+public final class ShadowMuteChannel extends ChatChannel {
 
-    @Getter
-    private static final ShadowMuteChannel instance = new ShadowMuteChannel();
+    private static final ShadowMuteChannel INSTANCE = new ShadowMuteChannel();
+    public static ShadowMuteChannel getInstance() { return INSTANCE; }
 
     private ShadowMuteChannel() {
-        super(
-                "shadowmute",
-                CC.DGRAY + "Shadow Mute",
-                null,                       // no access permission — internal only
-                Collections.emptyList(),    // no aliases
-                (char) 0,                   // no prefix trigger
-                -1                          // negative priority → not persisted to Redis
-        );
+        // no prefix — players cannot switch into this channel manually
+        super("ShadowMute", null, true, false, false);
     }
+
+    // ── Custom dispatch ────────────────────────────────────────────────────────
 
     /**
-     * Returns the format string for a given recipient, or {@code null} to suppress delivery.
-     *
-     * <p>The format uses {@code String.format} placeholders:
-     * {@code %1$s} = the sender's display prefix, {@code %2$s} = the raw message.
+     * Overrides the default dispatch so only the sender and online staff receive
+     * the message, with appropriate formatting per audience.
      */
     @Override
-    public String getFormat(Player sender, CommandSender recipient) {
-        // The sender sees their own message formatted like normal public chat.
-        if (recipient instanceof Player recipientPlayer && recipientPlayer.equals(sender)) {
-            return "%1$s" + CC.format(" &8&l» &f") + "%2$s";
+    public void dispatch(Player sender, String rawMessage) {
+        Profile profile = Altara.getSharedInstance().getProfileService().getProfile(sender.getUniqueId());
+        Component senderView = format(profile != null ? profile : new Profile(sender.getUniqueId(), sender.getName()), rawMessage);
+        Component staffView  = formatForStaff(profile != null ? profile : new Profile(sender.getUniqueId(), sender.getName()), rawMessage);
+
+        List<String> staffRecipients = new ArrayList<>();
+
+        // Sender always receives their own message (appears normal to them).
+        sender.sendMessage(senderView);
+
+        // Staff receive the staff-annotated version.
+        for (Player staff : Bukkit.getOnlinePlayers()) {
+            if (staff.getUniqueId().equals(sender.getUniqueId())) continue;
+            if (staff.hasPermission("altara.staff")) {
+                staff.sendMessage(staffView);
+                staffRecipients.add(staff.getName());
+            }
         }
 
-        // Staff and console see a dimmed shadow copy.
-        if (recipient.hasPermission(ProfilerService.PERMISSION)) {
-            return CC.format("&8[&7SHADOW&8] ") + "%1$s" + CC.format(" &8&l» &7") + "%2$s";
-        }
+        // Console always gets the staff view.
+        Bukkit.getConsoleSender().sendMessage(staffView);
 
-        // Everyone else: suppress — produce no output.
-        return null;
+        // Log.
+        Altara.getSharedInstance().getLogger().info(
+                "[SHADOW-MUTE] " + sender.getName() + " -> staff[" +
+                String.join(", ", staffRecipients) + "]: " + rawMessage);
     }
 
+    // ── Formatting ─────────────────────────────────────────────────────────────
+
+    /** The version the muted player sees — looks like normal global chat. */
     @Override
-    public boolean onChat(Player player, String message) {
-        // Always allow the message to continue to the format/delivery phase.
-        return true;
+    public Component format(Profile sender, String message) {
+        return Component.empty()
+                .append(legacy(sender.getCurrentGrant().asRank().getPrefix()))
+                .append(legacy(sender.getCurrentName()))
+                .append(legacy(sender.getCurrentGrant().asRank().getSuffix()))
+                .append(Component.text(": "))
+                .append(legacy(sender.getCurrentGrant().asRank().getChatColor() + message));
+    }
+
+    /** The version staff sees — prefixed with a bold red [SM] tag. */
+    private Component formatForStaff(Profile sender, String message) {
+        return Component.empty()
+                .append(Component.text("[SM] ", NamedTextColor.DARK_RED, TextDecoration.BOLD))
+                .append(format(sender, message));
+    }
+
+    // ── Audience (fallback — dispatch is fully overridden above) ───────────────
+
+    @Override
+    public ChannelAudience getAudience() {
+        return new ChannelAudience() {
+            @Override
+            public boolean canSee(Player viewer, Player sender, ChatChannel channel) {
+                return viewer.getUniqueId().equals(sender.getUniqueId())
+                        || viewer.hasPermission("altara.staff");
+            }
+
+            @Override
+            public boolean canSeeRemote(Player viewer, ChatChannel channel) {
+                return false;
+            }
+        };
     }
 }
 

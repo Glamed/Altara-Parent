@@ -229,8 +229,8 @@ public class AltaraSettings implements PlayerSettingProvider {
         @Override
         public List<String> getDescription() {
             return Arrays.asList(
-                    CC.YELLOW + "If enabled, you will see messages",
-                    CC.YELLOW + "sent in the global chat channel."
+                    CC.YELLOW + "If enabled, you will receive",
+                    CC.YELLOW + "chat from other servers."
             );
         }
 
@@ -281,6 +281,39 @@ public class AltaraSettings implements PlayerSettingProvider {
         }
     };
 
+    /**
+     * Stores the name of the player's active {@link games.sparking.altara.chat.ChatChannel}.
+     * Persisted in the player's Profile so the choice survives restarts.
+     * Not shown in the settings menu — managed via {@code /channel}.
+     */
+    public static final PlayerSetting<String> ACTIVE_CHANNEL =
+            new PlayerSetting<String>("altara", "active_channel") {
+                { storedInProfile = true; }
+
+                @Override
+                public String getDefaultValue() {
+                    return "Global";
+                }
+
+                @Override
+                public String parse(String input) {
+                    return input;
+                }
+
+                @Override
+                public org.bukkit.inventory.ItemStack getIcon(Player player) {
+                    return new games.sparking.altara.utils.ItemBuilder(Material.AIR).build();
+                }
+
+                @Override
+                public void click(Player player, org.bukkit.event.inventory.ClickType clickType) {}
+
+                @Override
+                public boolean canUpdate(Player player) {
+                    return false; // hidden from the settings menu
+                }
+            };
+
     @Override
     public List<PlayerSetting> getProvidedSettings() {
         return Arrays.asList(
@@ -290,7 +323,8 @@ public class AltaraSettings implements PlayerSettingProvider {
                 STAFF_SHOWN,
                 GLOBAL_CHAT,
                 ALL_CHAT,
-                TIME_ZONE // even tho we don't show this in the menu, it still has to be provided to be loaded
+                TIME_ZONE,    // hidden from menu — must still be provided to be loaded
+                ACTIVE_CHANNEL // hidden from menu — managed by /channel
         );
     }
 

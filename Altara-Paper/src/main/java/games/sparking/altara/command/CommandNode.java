@@ -11,7 +11,9 @@ import games.sparking.altara.utils.Time;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import net.md_5.bungee.api.ChatColor;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextColor;
 import org.apache.commons.lang3.StringUtils;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -33,8 +35,7 @@ public class CommandNode {
     private List<String> aliases = new ArrayList<>();
     private String permission;
     private String description = "N/A";
-    private ChatColor color = ChatColor.GRAY;
-    private boolean async;
+    private TextColor color = NamedTextColor.GRAY;    private boolean async;
     private boolean hidden;
     private boolean playerOnly;
     private CommandCooldown commandCooldown;
@@ -90,130 +91,57 @@ public class CommandNode {
         return this;
     }
 
-    public ChatMessage getUsage(String realLabel) {
-        ChatMessage usage = new ChatMessage(CC.errorMsg("Invalid syntax.", "Try *" + realLabel + "* "))
-                .hoverText(CC.YELLOW + description);
-
-        List<FlagData> flags = new ArrayList<>();
-        for (Data parameter : parameters) {
-            if (!(parameter instanceof FlagData data))
-                continue;
-
-            if (data.isHidden())
-                continue;
-
-            flags.add(data);
-        }
-
-        List<ParameterData> params = new ArrayList<>();
-        for (Data parameter : parameters) {
-            if (!(parameter instanceof ParameterData))
-                continue;
-
-            params.add((ParameterData) parameter);
-        }
-
-        if (!params.isEmpty()) {
-            int index = 0;
-            for (ParameterData param : params) {
-                boolean required = param.getDefaultValue().isEmpty();
-                boolean wildcard = param.isWildCard();
-                usage.add((required ? "(" : "[") + param.getName() + (wildcard ? "..." : "") + (required ? ")" : "]") +
-                        (index != params.size() - 1 ? " " : "")).color(ChatColor.WHITE);
-                usage.hoverText(CC.YELLOW + description);
-                index++;
-            }
-        }
-
-        boolean firstFlag = true;
-
-        if (!flags.isEmpty()) {
-
-            usage.add(" (").color(ChatColor.WHITE);
-            usage.hoverText(CC.YELLOW + description);
-
-            for (FlagData flag : flags) {
-                if (!firstFlag) {
-                    usage.add(" | ").color(ChatColor.WHITE);
-                    usage.hoverText(CC.YELLOW + description);
-                }
-                firstFlag = false;
-                usage.add("-" + flag.getNames().get(0)).color(ChatColor.WHITE);
-                usage.hoverText(CC.GRAY + flag.getDescription());
-            }
-
-            usage.add(")").color(ChatColor.WHITE);
-            usage.hoverText(CC.YELLOW + description);
-        }
-
-        usage.add(".");
-
-        flags.clear();
-        params.clear();
-        return usage;
+    public Component getUsage(String realLabel) {
+        return CC.errorMsg("Invalid syntax.", "Try " + realLabel + " " + buildSignature());
     }
 
-    public ChatMessage getList(String realLabel, ChatColor chatColor) {
-        ChatMessage usage = new ChatMessage(realLabel)
-                .hoverText(CC.YELLOW + description);
+    public String getList(String realLabel) {
+        return realLabel + buildSignature();
+    }
 
+    /** Builds a plain-text parameter/flag signature, e.g. {@code "(name) [age] (-silent)."} */
+    private String buildSignature() {
         List<FlagData> flags = new ArrayList<>();
         for (Data parameter : parameters) {
-            if (!(parameter instanceof FlagData data))
-                continue;
-
-            if (data.isHidden())
-                continue;
-
+            if (!(parameter instanceof FlagData data) || data.isHidden()) continue;
             flags.add(data);
         }
 
         List<ParameterData> params = new ArrayList<>();
         for (Data parameter : parameters) {
-            if (!(parameter instanceof ParameterData))
-                continue;
-
-            params.add((ParameterData) parameter);
+            if (parameter instanceof ParameterData data) params.add(data);
         }
 
+        StringBuilder sig = new StringBuilder();
+
         if (!params.isEmpty()) {
+            sig.append(" ");
             int index = 0;
             for (ParameterData param : params) {
                 boolean required = param.getDefaultValue().isEmpty();
                 boolean wildcard = param.isWildCard();
-                usage.add((required ? "(" : "[") + param.getName() + (wildcard ? "..." : "") + (required ? ")" : "]") +
-                        (index != params.size() - 1 ? " " : "")).color(chatColor);
-                usage.hoverText(CC.YELLOW + description);
+                sig.append(required ? "(" : "[")
+                   .append(param.getName())
+                   .append(wildcard ? "..." : "")
+                   .append(required ? ")" : "]");
+                if (index != params.size() - 1) sig.append(" ");
                 index++;
             }
         }
 
-        boolean firstFlag = true;
-
         if (!flags.isEmpty()) {
-
-            usage.add(" (").color(chatColor);
-            usage.hoverText(CC.YELLOW + description);
-
+            sig.append(" (");
+            boolean firstFlag = true;
             for (FlagData flag : flags) {
-                if (!firstFlag) {
-                    usage.add(" | ").color(chatColor);
-                    usage.hoverText(CC.YELLOW + description);
-                }
+                if (!firstFlag) sig.append(" | ");
                 firstFlag = false;
-                usage.add("-" + flag.getNames().get(0)).color(chatColor);
-                usage.hoverText(CC.GRAY + flag.getDescription());
+                sig.append("-").append(flag.getNames().get(0));
             }
-
-            usage.add(")").color(chatColor);
-            usage.hoverText(CC.YELLOW + description);
+            sig.append(")");
         }
 
-        usage.add(".");
-
-        flags.clear();
-        params.clear();
-        return usage;
+        sig.append(".");
+        return sig.toString();
     }
 
     public boolean invoke(CommandSender sender, List<String> args, List<String> flags) {
@@ -235,21 +163,38 @@ public class CommandNode {
                     return true;
                 }
 
-                String primaryColor = header.primaryColor();
+                String primaryColor   = header.primaryColor();
                 String secondaryColor = header.secondaryColor();
-                String tertiaryColor = header.tertiaryColor();
-                String title = header.header();
+                String tertiaryColor  = header.tertiaryColor();
+                String title          = header.header();
                 String subHeaderColor = header.subHeaderColor();
-                String subHeader = header.subHeader();
+                String subHeader      = header.subHeader();
 
-                sender.sendMessage(CC.genLine(primaryColor, secondaryColor, tertiaryColor, title, subHeaderColor, subHeader));
-                usable.forEach(node ->
-                        sender.sendMessage(CC.format(tertiaryColor) + " " + (sender instanceof Player ? "/" : "")
-                                + node.getList(node.getFullLabel(), CC.toType(tertiaryColor)).toPlainText() +
-                                (node.getDescription().isEmpty() || node.getDescription().equalsIgnoreCase("N/A")
-                                        ? "" : CC.GRAY + " - " + CC.WHITE + node.getDescription()))
-                );
-                sender.sendMessage(CC.genLine(primaryColor, secondaryColor));
+                TextColor primary   = parseHeaderColor(primaryColor);
+                TextColor secondary = parseHeaderColor(secondaryColor);
+                TextColor tertiary  = parseHeaderColor(tertiaryColor);
+                TextColor subHdrClr = parseHeaderColor(subHeaderColor);
+
+                sender.sendMessage(CC.genLine(primary, secondary, tertiary,
+                        title.isEmpty()    ? Component.empty() : Component.text(title),
+                        subHdrClr,
+                        subHeader.isEmpty() ? Component.empty() : Component.text(subHeader)));
+
+                usable.forEach(node -> {
+                    String listText = node.getList(node.getFullLabel());
+                    String prefix   = (sender instanceof Player ? "/" : "");
+                    String desc     = node.getDescription();
+                    Component line = Component.text()
+                            .append(Component.text(prefix + listText, tertiary))
+                            .append(desc.isEmpty() || desc.equalsIgnoreCase("N/A")
+                                    ? Component.empty()
+                                    : Component.text(" - ", CC.GRAY)
+                                            .append(Component.text(desc, CC.WHITE)))
+                            .build();
+                    sender.sendMessage(line);
+                });
+
+                sender.sendMessage(CC.genLine(primary, secondary));
                 return true;
             }
             sender.sendMessage(CommandService.UNKNOWN_COMMAND_MESSAGE);
@@ -393,6 +338,18 @@ public class CommandNode {
         long end = (commandCooldown.global() ? globalCooldown : cooldowns.get(player))
                 + commandCooldown.timeUnit().toMillis(commandCooldown.time());
         return Time.formatDetailed(end - System.currentTimeMillis());
+    }
+
+    /**
+     * Parses a color name from a {@link Header} annotation field into an
+     * Adventure {@link TextColor}.  Accepts any name in
+     * {@link NamedTextColor#NAMES} (e.g. {@code "red"}, {@code "dark_gray"}).
+     * Falls back to {@link NamedTextColor#WHITE} for unknown names.
+     */
+    private static TextColor parseHeaderColor(String name) {
+        if (name == null || name.isBlank()) return NamedTextColor.WHITE;
+        TextColor c = NamedTextColor.NAMES.value(name);
+        return c != null ? c : NamedTextColor.WHITE;
     }
 
 }

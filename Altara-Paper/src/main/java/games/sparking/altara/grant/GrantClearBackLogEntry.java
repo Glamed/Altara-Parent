@@ -6,6 +6,7 @@ import games.sparking.altara.profile.packet.ProfileUpdatePacket;
 import games.sparking.altara.utils.CC;
 import games.sparking.altara.utils.PlayerMessagePacket;
 import games.sparking.altara.uuid.UUIDCache;
+import net.kyori.adventure.text.Component;
 import okhttp3.Request;
 import org.bukkit.Bukkit;
 
@@ -24,11 +25,11 @@ public class GrantClearBackLogEntry extends BackLogEntry {
 
     @Override
     public void onSend(RequestResponse response) {
-        String message;
+        Component message;
         if (!response.wasSuccessful())
-            message = CC.format("&c[Grant BackLog] Could not clear grants of &e%s&c: %s (%d)",
+            message = CC.format("<red>[Grant BackLog] Could not clear grants of <white>%s</white>: %s (%d)</red>",
                     UUIDCache.getName(uuid), response.getErrorMessage(), response.getCode());
-        else message = CC.format("&a[Grant BackLog] Successfully cleared &e%d &agrants of &e%s&a.",
+        else message = CC.format("<green>[Grant BackLog] Successfully cleared <white>%d</white> grants of <white>%s</white>.</green>",
                 response.asObject().get("removed").getAsInt(), UUIDCache.getName(uuid));
 
         if (clearedBy == null)

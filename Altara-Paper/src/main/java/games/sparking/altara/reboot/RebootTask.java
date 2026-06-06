@@ -32,10 +32,9 @@ public class RebootTask extends BukkitRunnable {
     @Override
     public void run() {
         if (ANNOUNCE_TIMES.contains(secondsRemaining)) {
-            Bukkit.broadcastMessage(RebootService.CHAT_BAR);
-            Bukkit.broadcastMessage(CC.RED + "Server rebooting in "
-                    + Time.formatDetailed(secondsRemaining, TimeUnit.SECONDS) + ".");
-            Bukkit.broadcastMessage(RebootService.CHAT_BAR);
+            Bukkit.broadcast(RebootService.CHAT_BAR);
+            Bukkit.broadcast(CC.format("<red>Server rebooting in %s.", Time.formatDetailed(secondsRemaining, TimeUnit.SECONDS)));
+            Bukkit.broadcast(RebootService.CHAT_BAR);
         }
 
         if (secondsRemaining == 0) {

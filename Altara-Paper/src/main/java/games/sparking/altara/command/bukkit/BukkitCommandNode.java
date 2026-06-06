@@ -7,9 +7,9 @@ import games.sparking.altara.command.data.FlagData;
 import games.sparking.altara.command.data.ParameterData;
 import games.sparking.altara.command.permission.PermissionAdapter;
 import games.sparking.altara.task.impl.AsynchronousTaskChain;
+import games.sparking.altara.utils.CC;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -58,7 +58,7 @@ public class BukkitCommandNode implements CommandExecutor, TabCompleter {
         Runnable execution = () -> {
             try {
                 if (!executionNode.invoke(sender, arguments, flags)) {
-                    executionNode.getUsage(realLabel).send(sender);
+                    sender.sendMessage(executionNode.getUsage(realLabel));
                 }
             } catch (Exception e) {
                 handleCommandError(sender, e);
@@ -132,11 +132,11 @@ public class BukkitCommandNode implements CommandExecutor, TabCompleter {
 
     private void handleCommandError(CommandSender sender, Exception e) {
         if (sender.isOp()) {
-            sender.sendMessage(ChatColor.RED + "An error (" + e.getClass().getSimpleName()
-                    + ": " + e.getMessage() + ") occurred while executing your command.");
+            sender.sendMessage(CC.errorMsg("Command error.",
+                    e.getClass().getSimpleName() + ": " + e.getMessage()));
         } else {
-            sender.sendMessage(ChatColor.RED + "An error occurred while executing your command. "
-                    + "Please contact the server administration if this continues to happen.");
+            sender.sendMessage(CC.errorMsg("An error occurred while executing your command.",
+                    "Please contact the server administration if this continues to happen."));
         }
         e.printStackTrace();
     }

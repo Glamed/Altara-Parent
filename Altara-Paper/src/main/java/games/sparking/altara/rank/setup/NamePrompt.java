@@ -10,8 +10,8 @@ public class NamePrompt extends ChatInput<String> {
 
     public NamePrompt() {
         super(String.class);
-        text(CC.translate("&ePlease enter the name for the rank, or say &ccancel &eto cancel."));
-        escapeMessage(CC.RED + "You cancelled the rank creation.");
+        text("<yellow>Please enter the name for the rank, or say <red>cancel</red> to cancel.");
+        escapeMessage("<red>You cancelled the rank creation.");
         onCancel(player -> RankEditingMenu.RANK_SETUPS.remove(player.getUniqueId()));
 
         accept((player, input) -> {

@@ -26,7 +26,7 @@ public class LobbyConfig extends LocalConfig {
 
     private boolean hidePlayers = false;
 
-    private String scoreboardTitle = "Spaking Games";
+    private String scoreboardTitle = "Sparking Games";
 
     private List<String> scoreBoardLines =
             Arrays.asList(

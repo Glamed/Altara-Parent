@@ -14,6 +14,7 @@ import games.sparking.altara.command.permission.defaults.PlayerOnlyPermission;
 import games.sparking.altara.utils.CC;
 import games.sparking.altara.utils.ClassUtils;
 import games.sparking.altara.utils.Messages;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.World;
@@ -36,8 +37,8 @@ public class CommandService {
     public static final Map<String, CommandNode> REGISTERED_COMMANDS = new HashMap<>();
     private static final Map<String, PermissionAdapter> PERMISSION_ADAPTER_MAP = new HashMap<>();
     private static final Map<Class<?>, ParameterType<?>> PARAMETER_MAP = new HashMap<>();
-    public static String NO_PERMISSION_MESSAGE = CC.errorMsg(Messages.PERMISSION);
-    public static String UNKNOWN_COMMAND_MESSAGE = CC.errorMsg(Messages.UNKNOWN_COMMAND);
+    public static Component NO_PERMISSION_MESSAGE = CC.errorMsg(Messages.PERMISSION);
+    public static Component UNKNOWN_COMMAND_MESSAGE = CC.errorMsg(Messages.UNKNOWN_COMMAND);
     private static SimpleCommandMap COMMAND_MAP;
 
     static {

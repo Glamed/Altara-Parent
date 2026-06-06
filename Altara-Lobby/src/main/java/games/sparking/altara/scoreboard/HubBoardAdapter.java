@@ -31,36 +31,36 @@ public class HubBoardAdapter implements ScoreboardAdapter {
         StringAnimation animation = new StringAnimation();
 
         animation.add(new StaticAnimation(
-                CC.DRED + CC.BOLD + AltaraLobby.getLobbyInstance().getLobbyConfig().getScoreboardTitle(),
+                "<dark_red><bold>" + AltaraLobby.getLobbyInstance().getLobbyConfig().getScoreboardTitle(),
                 10
         ));
         animation.add(new FadeAnimation(
                 AltaraLobby.getLobbyInstance().getLobbyConfig().getScoreboardTitle(),
-                CC.DRED + CC.BOLD,
-                CC.RED + CC.BOLD,
+                "<dark_red><bold>",
+                "<red><bold>",
                 false
         ));
         animation.add(new BlinkAnimation(
                 AltaraLobby.getLobbyInstance().getLobbyConfig().getScoreboardTitle(),
-                CC.DRED + CC.BOLD,
-                CC.RED + CC.BOLD,
+                "<dark_red><bold>",
+                "<red><bold>",
                 3,
                 2
         ));
         animation.add(new StaticAnimation(
-                CC.DRED + CC.BOLD + AltaraLobby.getLobbyInstance().getLobbyConfig().getScoreboardTitle(),
+                "<dark_red><bold>" + AltaraLobby.getLobbyInstance().getLobbyConfig().getScoreboardTitle(),
                 10
         ));
         animation.add(new FadeAnimation(
                 AltaraLobby.getLobbyInstance().getLobbyConfig().getScoreboardTitle(),
-                CC.DRED + CC.BOLD,
-                CC.RED + CC.BOLD,
+                "<dark_red><bold>",
+                "<red><bold>",
                 true
         ));
         animation.add(new BlinkAnimation(
                 AltaraLobby.getLobbyInstance().getLobbyConfig().getScoreboardTitle(),
-                CC.DRED + CC.BOLD,
-                CC.RED + CC.BOLD,
+                "<dark_red><bold>",
+                "<red><bold>",
                 3,
                 2
         ));

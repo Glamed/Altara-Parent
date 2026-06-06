@@ -45,8 +45,30 @@ public class ItemBuilder {
 
     // --- Lore ---
 
-    public ItemBuilder setLore(ArrayList<Component> lore) {
+    public ItemBuilder setLore(List<Component> lore) {
         this.itemMeta.lore(lore);
+        return this;
+    }
+
+    /**
+     * Accepts both {@code List<Component>} and {@code List<String>}.
+     * Strings are treated as MiniMessage format strings.
+     */
+    @SuppressWarnings("unchecked")
+    public ItemBuilder setLoreRaw(List<?> lore) {
+        if (lore == null || lore.isEmpty()) {
+            this.itemMeta.lore(List.of());
+            return this;
+        }
+        if (lore.get(0) instanceof Component) {
+            this.itemMeta.lore((List<Component>) lore);
+        } else {
+            List<Component> components = new ArrayList<>();
+            for (Object line : lore) {
+                components.add(CC.translateToComponent(line.toString()));
+            }
+            this.itemMeta.lore(components);
+        }
         return this;
     }
 
@@ -56,18 +78,9 @@ public class ItemBuilder {
     }
 
     /**
-     * Legacy fallback — translates & color codes per line
+     * Sets lore from plain strings. Each line is treated as a MiniMessage string.
      */
     public ItemBuilder setLore(String... lore) {
-        List<Component> components = new ArrayList<>();
-        for (String line : lore) {
-            components.add(CC.translateToComponent(line));
-        }
-        this.itemMeta.lore(components);
-        return this;
-    }
-
-    public ItemBuilder setLore(List<String> lore) {
         List<Component> components = new ArrayList<>();
         for (String line : lore) {
             components.add(CC.translateToComponent(line));

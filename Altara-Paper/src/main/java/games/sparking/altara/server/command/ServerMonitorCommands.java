@@ -13,9 +13,9 @@ import org.bukkit.entity.Player;
 
 @RequiredArgsConstructor
 @Header(
-        primaryColor = "&4",
-        secondaryColor = "&8",
-        tertiaryColor = "&c",
+        primaryColor = "dark_red",
+        secondaryColor = "dark_gray",
+        tertiaryColor = "red",
         header = "Server Monitor"
 )
 public class ServerMonitorCommands {

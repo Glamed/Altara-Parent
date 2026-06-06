@@ -6,7 +6,6 @@ import lombok.Getter;
 import lombok.Setter;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
@@ -69,29 +68,20 @@ public class VisibilityService {
 
         VisibilityAction finalAction = VisibilityAction.NEUTRAL;
         for (VisibilityAdapter adapter : VISIBILITY_ADAPTERS) {
-            ChatColor color = ChatColor.GRAY;
             VisibilityAction provided = adapter.canSee(player, target);
-            if (provided != VisibilityAction.NEUTRAL) {
-                color = provided == VisibilityAction.SHOW ? ChatColor.GREEN : ChatColor.RED;
+            String color = provided == VisibilityAction.NEUTRAL ? "<gray>"
+                    : (provided == VisibilityAction.SHOW ? "<green>" : "<red>");
 
-                if (finalAction == VisibilityAction.NEUTRAL)
-                    finalAction = provided;
-            }
+            if (provided != VisibilityAction.NEUTRAL && finalAction == VisibilityAction.NEUTRAL)
+                finalAction = provided;
 
-            debugs.add(CC.translateToComponent(CC.format(
-                    "&9%s (%d): %s",
-                    adapter.getName(),
-                    adapter.getPriority(),
-                    color + provided.name()
-            )));
+            debugs.add(CC.format("<blue>%s (%d): %s%s",
+                    adapter.getName(), adapter.getPriority(), color, provided.name()));
         }
 
-        debugs.add(CC.translateToComponent(CC.format(
-                "&9Result: &e%s %s &9see &e%s&9.",
-                player.getName(),
-                CC.colorBoolean(finalAction != VisibilityAction.HIDE, "can", "cannot"),
-                target.getName()
-        )));
+        debugs.add(CC.translate("<blue>Result: <yellow>" + player.getName() + " " +
+                (finalAction != VisibilityAction.HIDE ? "<green>can" : "<red>cannot") +
+                " <blue>see <yellow>" + target.getName() + "<blue>."));
         return debugs;
     }
 

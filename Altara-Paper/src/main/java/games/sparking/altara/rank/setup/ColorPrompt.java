@@ -13,8 +13,8 @@ public class ColorPrompt extends ChatInput<String> {
 
     public ColorPrompt() {
         super(String.class);
-        text(CC.translate("&ePlease enter the color for this rank, or type &ccancel &eto cancel."));
-        escapeMessage(CC.RED + "You cancelled the further rank setup.");
+        text("<yellow>Please enter the color for this rank, or type <red>cancel</red> to cancel.");
+        escapeMessage("<red>You cancelled the further rank setup.");
         onCancel(player -> RankEditingMenu.RANK_SETUPS.remove(player.getUniqueId()));
 
         accept((player, input) -> {

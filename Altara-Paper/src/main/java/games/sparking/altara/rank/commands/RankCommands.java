@@ -16,6 +16,9 @@ import games.sparking.altara.rank.packets.RankDeletePacket;
 import games.sparking.altara.utils.CC;
 import games.sparking.altara.utils.PasteUtils;
 import lombok.RequiredArgsConstructor;
+import net.kyori.adventure.text.event.ClickEvent;
+import net.kyori.adventure.text.event.HoverEvent;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
@@ -25,9 +28,9 @@ import java.util.List;
 
 @RequiredArgsConstructor
 @Header(
-        primaryColor = "&4",
-        secondaryColor = "&8",
-        tertiaryColor = "&c",
+        primaryColor = "dark_red",
+        secondaryColor = "dark_gray",
+        tertiaryColor = "red",
         header = "Rank"
 )
 public class RankCommands {
@@ -61,29 +64,27 @@ public class RankCommands {
     public boolean rankList(CommandSender sender,
                             @Flag(names = {"-priority"}, description = "Sort the ranks by queue priority") boolean priority) {
         sender.sendMessage(CC.SMALL_CHAT_BAR);
-        sender.sendMessage(CC.RED + CC.BOLD + "Ranks");
+        sender.sendMessage(CC.translate("<red><bold>Ranks"));
         List<Rank> ranks = priority ? Altara.getSharedInstance().getRankService().getRanksSortedPriority()
                 : Altara.getSharedInstance().getRankService().getRanksSorted();
         for (Rank rank : ranks) {
             List<String> hover = Arrays.asList(
-                    CC.format(" &eName: &f%s", rank.getName()),
-                    CC.format(" &eColor: %sExample", rank.getColor()),
-                    CC.format(" &eChat Color: %sExample", rank.getChatColor()),
-                    CC.format(" &ePrefix: %sExample", rank.getPrefix()),
-                    CC.format(" &eSuffix: &fExample%s", rank.getSuffix()),
+                    " <yellow>Name: <white>" + rank.getName(),
+                    " <yellow>Color: " + rank.getColor() + "Example",
+                    " <yellow>Chat Color: " + rank.getChatColor() + "Example",
+                    " <yellow>Prefix: " + rank.getPrefix() + "Example",
+                    " <yellow>Suffix: <white>Example" + rank.getSuffix(),
                     " ",
-                    CC.translate("&7&oClick to show more info"));
+                    "<gray><italic>Click to show more info");
 
-            new ChatMessage(
-                    CC.format(
-                            "&f - %s &f(%s: %d)%s",
+            sender.sendMessage(CC.format(
+                            "<white> - %s <white>(%s: %d)%s",
                             rank.getName(),
                             priority ? "Priority" : "Weight",
                             priority ? rank.getQueuePriority() : rank.getWeight(),
-                            rank.isDefaultRank() ? " (Default)" : ""))
-                    .hoverText(String.join("\n", hover))
-                    .runCommand("/rank info " + rank.getName())
-                    .send(sender);
+                            rank.isDefaultRank() ? " (Default)" : "")
+                    .hoverEvent(HoverEvent.showText(CC.translate(String.join("\n", hover))))
+                    .clickEvent(ClickEvent.runCommand("/rank info " + rank.getName())));
         }
         sender.sendMessage(CC.SMALL_CHAT_BAR);
         return true;
@@ -93,26 +94,27 @@ public class RankCommands {
             permission = "rank.command.argument.info",
             description = "View information about a specific rank")
     public boolean rankInfo(CommandSender sender, @Param(name = "rank") Rank rank) {
-        sender.sendMessage(CC.genLine("&8", "&3", "&b", "Rank Information", "&f", rank.getName()));
-        sender.sendMessage(CC.format(" &bName: &f%s", rank.getName()));
-        sender.sendMessage(CC.format(" &bColor: %sExample", rank.getColor()));
-        sender.sendMessage(CC.format(" &bChat Color: %sExample", rank.getChatColor()));
-        sender.sendMessage(CC.format(" &bPrefix: %sExample", rank.getPrefix()));
-        sender.sendMessage(CC.format(" &bPrefix: &fExample%s", rank.getSuffix()));
-        sender.sendMessage(CC.format(" &bWeight: &f%d", rank.getWeight()));
-        sender.sendMessage(CC.format(" &bQueue Priority: &f%d", rank.getQueuePriority()));
-        sender.sendMessage(CC.format(" &bDefault: %s",
-                CC.colorBoolean(rank.isDefaultRank(), "true", "false")));
-        sender.sendMessage(CC.format(" &bDiscord ID: &f%s", rank.getDiscordId()));
-        sender.sendMessage(CC.format(" &bInherits: &f(%d)", rank.getInherits().size()));
-        rank.getInherits().forEach(inherit -> sender.sendMessage(CC.format("&7 -&f %s", inherit)));
-        sender.sendMessage(CC.format(" &bPermissions: &f(%d) %s",
+        sender.sendMessage(CC.genLine(NamedTextColor.DARK_GRAY, NamedTextColor.DARK_AQUA,
+                NamedTextColor.AQUA, CC.translate("Rank Information"),
+                NamedTextColor.WHITE, CC.translate(rank.getName())));
+        sender.sendMessage(CC.format(" <aqua>Name: <white>%s", rank.getName()));
+        sender.sendMessage(CC.format(" <aqua>Color: %sExample", rank.getColor()));
+        sender.sendMessage(CC.format(" <aqua>Chat Color: %sExample", rank.getChatColor()));
+        sender.sendMessage(CC.format(" <aqua>Prefix: %sExample", rank.getPrefix()));
+        sender.sendMessage(CC.format(" <aqua>Suffix: <white>Example%s", rank.getSuffix()));
+        sender.sendMessage(CC.format(" <aqua>Weight: <white>%d", rank.getWeight()));
+        sender.sendMessage(CC.format(" <aqua>Queue Priority: <white>%d", rank.getQueuePriority()));
+        sender.sendMessage(CC.translate(" <aqua>Default: " + (rank.isDefaultRank() ? "<green>true" : "<red>false")));
+        sender.sendMessage(CC.format(" <aqua>Discord ID: <white>%s", rank.getDiscordId()));
+        sender.sendMessage(CC.format(" <aqua>Inherits: <white>(%d)", rank.getInherits().size()));
+        rank.getInherits().forEach(inherit -> sender.sendMessage(CC.format("<gray> - <white>%s", inherit)));
+        sender.sendMessage(CC.format(" <aqua>Permissions: <white>(%d) %s",
                 rank.getPermissions().size(), String.join(", ", rank.getPermissions())));
-        sender.sendMessage(CC.format(" &bLocal Permissions: &f(%d) %s",
+        sender.sendMessage(CC.format(" <aqua>Local Permissions: <white>(%d) %s",
                 rank.getLocalPermissions().size(), String.join(", ", rank.getLocalPermissions())));
-        sender.sendMessage(CC.format(" &bInherited Permissions: &f(%d) %s",
+        sender.sendMessage(CC.format(" <aqua>Inherited Permissions: <white>(%d) %s",
                 rank.getInheritPermissions().size(), String.join(", ", rank.getInheritPermissions())));
-        sender.sendMessage(CC.genLine("&8", "&3"));
+        sender.sendMessage(CC.genLine(NamedTextColor.DARK_GRAY, NamedTextColor.DARK_AQUA));
         return true;
     }
 
@@ -130,7 +132,7 @@ public class RankCommands {
         Rank rank = Altara.getSharedInstance().getRankService().getRank(rankName);
 
         if (rank == null) {
-            sender.sendMessage(CC.format(CC.errorMsg("Invalid rank.", "Rank &e%s &cnot found."), rankName));
+            sender.sendMessage(CC.errorMsg("Invalid rank.", String.format("Rank *%s* not found.", rankName)));
             return false;
         }
 
@@ -387,7 +389,7 @@ public class RankCommands {
     public boolean rankSetChatColor(CommandSender sender,
                                     @Param(name = "rank") Rank rank,
                                     @Param(name = "color") String color) {
-        rank.setChatColor(CC.translate(color));
+        rank.setChatColor(color);
         rank.save(sender, () -> {
         });
         sender.sendMessage(CC.format("&eYou set the chat color of %s &eto %sExample&e.",
@@ -401,7 +403,7 @@ public class RankCommands {
     public boolean rankSetColor(CommandSender sender,
                                 @Param(name = "rank") Rank rank,
                                 @Param(name = "color") String color) {
-        rank.setColor(CC.translate(color));
+        rank.setColor(color);
         rank.save(sender, () -> {
         });
         sender.sendMessage(CC.format("&eYou set the color of %s &eto %sExample&e.",
@@ -415,7 +417,7 @@ public class RankCommands {
     public boolean rankSetPrefix(CommandSender sender,
                                  @Param(name = "rank") Rank rank,
                                  @Param(name = "prefix", wildcard = true) String prefix) {
-        rank.setPrefix(CC.translate(prefix));
+        rank.setPrefix(prefix);
         rank.save(sender, () -> {
         });
         sender.sendMessage(CC.format("&eYou set the prefix of %s &eto %sExample&e.",
@@ -429,7 +431,7 @@ public class RankCommands {
     public boolean rankSetSuffix(CommandSender sender,
                                  @Param(name = "rank") Rank rank,
                                  @Param(name = "prefix", wildcard = true) String suffix) {
-        rank.setSuffix(CC.translate(suffix));
+        rank.setSuffix(suffix);
         rank.save(sender, () -> {
         });
         sender.sendMessage(CC.format("&eYou set the suffix of %s &eto %sExample&e.",

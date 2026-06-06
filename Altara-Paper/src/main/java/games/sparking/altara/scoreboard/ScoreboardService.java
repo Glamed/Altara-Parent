@@ -26,7 +26,7 @@ public class ScoreboardService {
     public void startScoreboardUpdater() {
         Tasks.runTimer(() -> {
             for (Scoreboard scoreboard : scoreboards.values()) {
-                scoreboard.setTitle(CC.translate(getAdapter().getTitle(scoreboard.getPlayer())));
+                scoreboard.setTitle(getAdapter().getTitle(scoreboard.getPlayer()));
                 scoreboard.update();
             }
         }, 0, 3);
@@ -60,7 +60,7 @@ public class ScoreboardService {
                         break;
                     }
 
-                    scoreboard.setLeftAlignedText(currentLine++, CC.translate(line));
+                    scoreboard.setLeftAlignedText(currentLine++, line);
                 }
 
                 // clear leftovers

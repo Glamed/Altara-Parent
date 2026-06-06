@@ -1,121 +1,84 @@
 package games.sparking.altara.chat;
 
-
-import games.sparking.altara.Altara;
-import games.sparking.altara.chat.impl.PublicChat;
-import games.sparking.altara.utils.CC;
-import lombok.Getter;
-import lombok.Setter;
-import org.bukkit.command.CommandSender;
+import games.sparking.altara.chat.impl.GlobalChannel;
+import games.sparking.altara.playersetting.AltaraSettings;
 import org.bukkit.entity.Player;
 
-import java.util.*;
-import java.util.function.BiFunction;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 
-public class ChatService {
+/**
+ * Manages the active {@link ChatChannel} for each online player.
+ *
+ * <p>The active channel is the one used when a player types without a prefix.
+ * It is persisted via {@link AltaraSettings#ACTIVE_CHANNEL} (which is
+ * {@code storedInProfile = true}) so the choice survives restarts and server
+ * switches.
+ */
+public final class ChatService {
 
-    private static final Map<UUID, ChatChannel> playerChatChannels = new HashMap<>();
-    private static final Map<String, ChatChannel> chatChannels = new HashMap<>();
-    @Getter
-    @Setter
-    private static BiFunction<Player, CommandSender, String> prefixGetter = (player, sender) -> player.getDisplayName();
-    @Getter
-    @Setter
-    private static DefaultChannelProvider defaultChannelProvider = DefaultChannelProvider.DEFAULT;
-    @Getter
-    @Setter
-    private static ChatChannel defaultChannel = new PublicChat();
+    /** In-memory channel map (populated on join, cleared on quit). */
+    private static final Map<UUID, ChatChannel> CHANNELS = new HashMap<>();
 
-    public static void registerChatChannel(ChatChannel channel) {
-        chatChannels.put(channel.getName().toLowerCase(), channel);
-    }
+    private ChatService() {}
 
-    public static ChatChannel fromPlayer(Player player) {
-        ChatChannel chatChannel = playerChatChannels.get(player.getUniqueId());
-        if (chatChannel == null) {
-            chatChannel = defaultChannelProvider.getDefaultChannel(player);
-            setChatChannel(player, chatChannel, true);
-        }
+    // ── Channel management ────────────────────────────────────────────────────
 
-        return chatChannel;
-    }
-
-    /** Looks up a channel by name or alias. Name matching is case-insensitive. */
-    public static ChatChannel fromName(String name) {
-        String lower = name.toLowerCase();
-        ChatChannel channel = chatChannels.get(lower);
-        if (channel != null) return channel;
-
-        for (ChatChannel chatChannel : chatChannels.values()) {
-            if (chatChannel.getAliases().contains(lower))
-                return chatChannel;
-        }
-        return null;
-    }
-
-    public static ChatChannel fromPrefix(char prefix) {
-        for (ChatChannel chatChannel : chatChannels.values()) {
-            if (chatChannel.getPrefix() == prefix)
-                return chatChannel;
-        }
-
-        return null;
-    }
-
+    /**
+     * Sets {@code player}'s active channel.
+     *
+     * @param player  the player
+     * @param channel the target channel
+     * @param silent  if {@code true} no notification is sent to the player
+     */
     public static void setChatChannel(Player player, ChatChannel channel, boolean silent) {
-        if (channel.getPriority() >= 0)
-            Altara.getRedisService().executeCommand(redis ->
-                    redis.hset("ChatChannel" + (channel instanceof LocalChatChannel
-                                    ? ":" + Altara.getSharedInstance().getMainConfig().getServerConfig().getLocalServerName() : ""),
-                            player.getUniqueId().toString(), channel.getName().toLowerCase()));
+        CHANNELS.put(player.getUniqueId(), channel);
 
-        if (!(channel instanceof LocalChatChannel) && channel.getPriority() >= 0)
-            Altara.getRedisService().executeCommand(redis ->
-                    redis.hdel("ChatChannel:" + Altara.getSharedInstance().getMainConfig().getServerConfig().getLocalServerName(),
-                            player.getUniqueId().toString()));
+        // Persist the preference unless the channel is non-persistable (e.g. shadow-mute).
+        if (channel.isPersistable()) {
+            AltaraSettings.ACTIVE_CHANNEL.set(player, channel.getName());
+        }
 
-        if (channel.getPriority() >= 0)
-            loadChatChannel(player.getUniqueId());
-        else playerChatChannels.put(player.getUniqueId(), channel);
-
-        if (!silent)
-            player.sendMessage(CC.YELLOW + "You are now talking in "
-                    + channel.getDisplayName().toLowerCase() + CC.YELLOW + " chat.");
+        if (!silent) {
+            player.sendMessage(net.kyori.adventure.text.Component.text(
+                    "You are now in the " + channel.getName() + " channel.",
+                    games.sparking.altara.utils.CC.YELLOW));
+        }
     }
 
+    /**
+     * Loads the channel that was last saved in {@code uuid}'s profile preferences
+     * and applies it in-memory.  Falls back to {@link GlobalChannel} if no
+     * preference is stored or the saved channel name no longer exists.
+     *
+     * <p>Must be called on the main thread (or at least after the Player object
+     * exists), e.g. from {@link org.bukkit.event.player.PlayerJoinEvent}.
+     */
     public static void loadChatChannel(UUID uuid) {
-        playerChatChannels.put(uuid,
-                Altara.getRedisService().executeCommand(redis -> {
-                    ChatChannel globalChannel = null;
-                    ChatChannel localChannel = null;
+        Player player = org.bukkit.Bukkit.getPlayer(uuid);
+        if (player == null) return;
 
-                    if (redis.hexists("ChatChannel", uuid.toString()))
-                        globalChannel = fromName(redis.hget("ChatChannel", uuid.toString()));
+        String saved  = AltaraSettings.ACTIVE_CHANNEL.get(player);
+        ChatChannel ch = ChatChannelRegistry.getByName(saved);
 
-                    if (redis.hexists("ChatChannel:" + Altara.getSharedInstance().getMainConfig().getServerConfig().getLocalServerName(),
-                            uuid.toString()))
-                        localChannel = fromName(redis.hget("ChatChannel:" + Altara.getSharedInstance().getMainConfig().getServerConfig().getLocalServerName(),
-                                uuid.toString()));
+        // If the saved channel is non-persistable we shouldn't restore it.
+        if (ch == null || !ch.isPersistable()) ch = GlobalChannel.getInstance();
 
-                    // Prefer the local channel if it has equal or higher priority.
-                    if (globalChannel == null || (localChannel != null
-                            && localChannel.getPriority() >= globalChannel.getPriority()))
-                        globalChannel = localChannel;
-
-                    return globalChannel;
-                }));
+        CHANNELS.put(uuid, ch);
     }
 
-    public static void removePlayer(Player player) {
-        playerChatChannels.remove(player.getUniqueId());
+    /**
+     * Returns {@code player}'s current active channel, defaulting to
+     * {@link GlobalChannel} if none is set.
+     */
+    public static ChatChannel getChatChannel(Player player) {
+        return CHANNELS.getOrDefault(player.getUniqueId(), GlobalChannel.getInstance());
     }
 
-    /** Returns all registered channels sorted by priority (highest first). */
-    public static List<ChatChannel> getChannels() {
-        List<ChatChannel> sorted = new ArrayList<>(chatChannels.values());
-        sorted.sort(Comparator.comparingInt(ChatChannel::getPriority).reversed());
-        return sorted;
+    /** Removes the in-memory channel entry when a player quits. */
+    public static void removePlayer(UUID uuid) {
+        CHANNELS.remove(uuid);
     }
-
-
 }
+

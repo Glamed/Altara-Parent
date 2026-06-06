@@ -3,13 +3,19 @@ package games.sparking.altara.reboot;
 import games.sparking.altara.AltaraPaper;
 import games.sparking.altara.utils.CC;
 import lombok.Getter;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Bukkit;
 
 import java.util.concurrent.TimeUnit;
 
 public class RebootService {
 
-    public static final String CHAT_BAR = CC.RED + "⚠ " + CC.DRED + CC.STRIKE_THROUGH + "------------------------" + CC.RED + " ⚠";
+    public static final Component CHAT_BAR = Component.text()
+            .append(Component.text("⚠ ", CC.RED))
+            .append(Component.text("------------------------", CC.DRED, TextDecoration.STRIKETHROUGH))
+            .append(Component.text(" ⚠", CC.RED))
+            .build();
 
     @Getter
     private static RebootTask rebootTask = null;
@@ -28,9 +34,9 @@ public class RebootService {
 
         rebootTask.cancel();
         rebootTask = null;
-        Bukkit.broadcastMessage(RebootService.CHAT_BAR);
-        Bukkit.broadcastMessage(CC.RED + "The reboot has been cancelled.");
-        Bukkit.broadcastMessage(RebootService.CHAT_BAR);
+        Bukkit.broadcast(CHAT_BAR);
+        Bukkit.broadcast(Component.text("The reboot has been cancelled.", CC.RED));
+        Bukkit.broadcast(CHAT_BAR);
     }
 
     public static boolean isRebooting() {

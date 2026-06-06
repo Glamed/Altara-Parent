@@ -43,7 +43,7 @@ public class NpcHologramProvider implements HologramProvider {
 
         List<String> resolved = new ArrayList<>();
         for (String line : entry.getNpcLines()) {
-            resolved.add(CC.translate(line)
+            resolved.add(line
                     .replace("%online%",        String.valueOf(onlineCount))
                     .replace("%max%",           String.valueOf(maxCount))
                     .replace("%in_queue%",      inQueue)

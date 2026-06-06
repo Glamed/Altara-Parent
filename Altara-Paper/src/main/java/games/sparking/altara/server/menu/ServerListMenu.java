@@ -10,6 +10,7 @@ import games.sparking.altara.utils.ItemBuilder;
 import games.sparking.altara.utils.Time;
 import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.ClickType;
@@ -41,38 +42,38 @@ public class ServerListMenu extends Menu {
 
         @Override
         public ItemStack getItem(Player player) {
-            List<String> lore = new ArrayList<>();
+            List<Component> lore = new ArrayList<>();
             int players = server.isOnline() ? server.getOnlinePlayers() : 0;
 
             lore.add(CC.MENU_BAR);
-            lore.add(CC.YELLOW + "Grant Scope: " + CC.RED + server.getGroup());
-            lore.add(CC.YELLOW + "Players: " + CC.RED + players + CC.YELLOW + "/" + CC.RED + server.getMaxPlayers());
+            lore.add(CC.format("<yellow>Grant Scope: <red>%s", server.getGroup()));
+            lore.add(CC.format("<yellow>Players: <red>%d<yellow>/<red>%d", players, server.getMaxPlayers()));
             if (server.isQueueEnabled())
-                lore.add(CC.format("&ePlayers Queued: &c%d%s",
-                        server.getPlayersInQueue(), server.isQueuePaused() ? CC.GRAY + " (Paused)" : ""));
+                lore.add(CC.format("<yellow>Players Queued: <red>%d%s",
+                        server.getPlayersInQueue(), server.isQueuePaused() ? " <gray>(Paused)" : ""));
             if (server.isOnline()) {
                 if (!server.isProxy()) {
-                    lore.add(CC.YELLOW + "TPS: " + CC.RED + formatTps(server.getTps()));
-                    lore.add(CC.YELLOW + "Full tick: " + CC.RED + (Math.round(server.getFullTick() * 10.0D) / 10.0D) + "ms");
+                    lore.add(CC.format("<yellow>TPS: <red>%s", formatTps(server.getTps())));
+                    lore.add(CC.format("<yellow>Full tick: <red>%sms", Math.round(server.getFullTick() * 10.0D) / 10.0D));
                 }
-                lore.add(CC.YELLOW + "Memory: " + CC.RED + server.getUsedMemory() + "mb" + CC.YELLOW + "/"
-                        + CC.RED + server.getAllocatedMemory() + "mb");
+                lore.add(CC.format("<yellow>Memory: <red>%dmb<yellow>/<red>%dmb",
+                        server.getUsedMemory(), server.getAllocatedMemory()));
             }
-            lore.add(" ");
-            lore.add(CC.YELLOW + "State: " + server.getState().getInternalName());
+            lore.add(CC.translate(" "));
+            lore.add(CC.format("<yellow>State: %s", server.getState().getInternalName()));
             if (server.getState() == ServerState.HEARTBEAT_TIMEOUT) {
-                lore.add(CC.YELLOW + "Last Heartbeat: " + CC.RED + Time.formatTimeAgo(server.getLastHeartbeat()));
+                lore.add(CC.format("<yellow>Last Heartbeat: <red>%s", Time.formatTimeAgo(server.getLastHeartbeat())));
             } else if (server.getState() == ServerState.OFFLINE) {
-                lore.add(CC.YELLOW + "Last Online: " + CC.RED + Time.formatTimeAgo(server.getLastHeartbeat()));
+                lore.add(CC.format("<yellow>Last Online: <red>%s", Time.formatTimeAgo(server.getLastHeartbeat())));
             }
             if (!server.isProxy()) {
-                lore.add(" ");
-                lore.add(CC.GRAY + CC.ITALIC + "Click to connect.");
+                lore.add(CC.translate(" "));
+                lore.add(CC.translate("<gray><italic>Click to connect."));
             }
             lore.add(CC.MENU_BAR);
 
             return new ItemBuilder(server.isOnline() ? Material.PAPER : Material.MAP)
-                    .setDisplayName(CC.YELLOW + server.getName())
+                    .setDisplayName(CC.format("<yellow>%s", server.getName()))
                     .setLore(lore)
                     .build();
         }

@@ -6,6 +6,7 @@ import games.sparking.altara.utils.CC;
 import games.sparking.altara.utils.PlayerMessagePacket;
 import games.sparking.altara.uuid.UUIDCache;
 import games.sparking.altara.uuid.UUIDUtils;
+import net.kyori.adventure.text.Component;
 import okhttp3.Request;
 import org.bukkit.Bukkit;
 
@@ -24,18 +25,18 @@ public class GrantBackLogEntry extends BackLogEntry {
 
     @Override
     public void onSend(RequestResponse response) {
-        String message;
+        Component message;
 
         if (!response.wasSuccessful())
             message = CC.format(
-                    "&c[Grant BackLog] Could not %s grant for &e%s&c: %s (%d)",
+                    "<red>[Grant BackLog] Could not %s grant for <white>%s</white>: %s (%d)</red>",
                     grant.isRemoved() ? "remove" : "create",
                     UUIDCache.getName(uuid),
                     response.getErrorMessage(),
                     response.getCode()
             );
         else message = CC.format(
-                "&a[Grant BackLog] Successfully %s grant for &e%s&a.",
+                "<green>[Grant BackLog] Successfully %s grant for <white>%s</white>.</green>",
                 grant.isRemoved() ? "removed" : "created",
                 UUIDCache.getName(uuid)
         );

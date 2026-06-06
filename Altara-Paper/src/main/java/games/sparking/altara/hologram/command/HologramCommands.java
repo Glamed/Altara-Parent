@@ -13,8 +13,10 @@ import games.sparking.altara.utils.CC;
 import games.sparking.altara.hologram.leaderboard.LeaderboardCategory;
 import games.sparking.altara.hologram.leaderboard.LeaderboardEntry;
 import games.sparking.altara.hologram.leaderboard.LeaderboardHologram;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.event.ClickEvent;
+import net.kyori.adventure.text.event.HoverEvent;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.Sound;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -24,9 +26,9 @@ import java.util.Arrays;
 import java.util.List;
 
 @Header(
-        primaryColor = "&5",
-        secondaryColor = "&8",
-        tertiaryColor = "&d",
+        primaryColor = "dark_purple",
+        secondaryColor = "dark_gray",
+        tertiaryColor = "light_purple",
         header = "Hologram"
 )
 public class HologramCommands {
@@ -120,13 +122,12 @@ public class HologramCommands {
 
             int i = 0;
             for (HologramLine line : hologram.getCurrentLines())
-                hover.add(CC.GRAY + (++i) + ". " + CC.RESET + line.getText());
+                hover.add(String.format("%d. %s", ++i, line.getText()));
 
-            new ChatMessage(hologram.getName() + " - #" + hologram.getId())
-                    .color(ChatColor.RED.asBungee())
-                    .hoverText(String.join("\n", hover))
-                    .runCommand("/hologram tpto " + hologram.getId())
-                    .send(sender);
+            Component msg = Component.text(hologram.getName() + " - #" + hologram.getId(), CC.RED)
+                    .hoverEvent(HoverEvent.showText(CC.translate(String.join("\n", hover))))
+                    .clickEvent(ClickEvent.runCommand("/hologram tpto " + hologram.getId()));
+            sender.sendMessage(msg);
         }
         return true;
     }

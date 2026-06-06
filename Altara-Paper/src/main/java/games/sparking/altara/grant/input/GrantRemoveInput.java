@@ -8,13 +8,15 @@ import games.sparking.altara.grant.Grant;
 import games.sparking.altara.profile.Profile;
 import games.sparking.altara.task.Tasks;
 import games.sparking.altara.utils.CC;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 
 public class GrantRemoveInput extends ChatInput<String> {
 
     public GrantRemoveInput(Profile target, Grant grant) {
         super(String.class);
-        text(CC.translate("&ePlease enter the reason for the removal of this grant, or say &ccancel &eto cancel."));
-        escapeMessage(CC.RED + "You cancelled the grant removal.");
+        text("<yellow>Please enter the reason for the removal of this grant, or say <red>cancel</red> to cancel.");
+        escapeMessage("<red>You cancelled the grant removal.");
 
         accept((player, input) -> {
             grant.setRemovedAt(System.currentTimeMillis());
@@ -23,23 +25,25 @@ public class GrantRemoveInput extends ChatInput<String> {
             grant.setRemoved(true);
 
             Tasks.runAsync(() -> {
-                //Packet packet = new GrantRemovePacket(target.getUuid(), grant.getRank().getUuid());
                 RequestResponse response = AltaraPaper.getPaperInstance().getBukkitProfileService().removeGrant(target, grant);
                 if (response.couldNotConnect()) {
-                    player.sendMessage(CC.format("&cCould not connect to API to remove grant. " +
-                                    "Adding grant to the queue. Error: %s (%d)",
+                    player.sendMessage(CC.format(
+                            "<red>Could not connect to API to remove grant. Adding to queue. Error: %s (%d)</red>",
                             response.getErrorMessage(), response.getCode()));
                 } else if (!response.wasSuccessful()) {
-                    player.sendMessage(CC.format("&cCould not remove grant: %s (%d)",
+                    player.sendMessage(CC.format(
+                            "<red>Could not remove grant: %s (%d)</red>",
                             response.getErrorMessage(), response.getCode()));
                     return;
                 }
 
-                player.sendMessage(CC.format(
-                        "&aYou've removed a %s&a grant from %s&a.",
-                        grant.asRank().getName(),
-                        target.getName()
-                ));
+                player.sendMessage(Component.text()
+                        .append(Component.text("You've removed a ", NamedTextColor.GREEN))
+                        .append(Component.text(grant.asRank().getName(), NamedTextColor.WHITE))
+                        .append(Component.text(" grant from ", NamedTextColor.GREEN))
+                        .append(Component.text(target.getName(), NamedTextColor.WHITE))
+                        .append(Component.text(".", NamedTextColor.GREEN))
+                        .build());
             });
             return true;
         });
