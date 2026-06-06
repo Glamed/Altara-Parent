@@ -70,13 +70,13 @@ public class PunishmentLoginListener implements Listener {
                 : ban.getInfractionType();
         boolean permanent = suspension == null || suspension.getDuration() == -1L;
 
-        String raw = "<dark_purple>Your account has been suspended"
+        String raw = "<red>Your account has been suspended"
                 + "\n<gray>\"" + reasonText + "<gray>\""
                 + "\n\n<gray>This suspension " + (permanent
                     ? "will never expire"
-                    : "will expire in <light_purple>" + (suspension != null
+                    : "will expire in <red>" + (suspension != null
                         ? Time.formatDetailed(suspension.getDuration()) : "N/A") + "<gray>")
-                + ". Visit <light_purple><underlined>crystallwars.net/appeal<reset><gray> to submit an appeal";
+                + ". Visit <red><underlined>sparking.games/appeal<reset><gray> to submit an appeal";
 
         return CC.format(raw);
     }
