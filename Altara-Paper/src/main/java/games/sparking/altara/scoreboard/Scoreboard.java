@@ -13,6 +13,8 @@ import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
+import games.sparking.altara.utils.CC;
+
 public class Scoreboard {
 
     private final ScoreboardEntry[] entries = new ScoreboardEntry[15];
@@ -93,7 +95,7 @@ public class Scoreboard {
         user.sendPacket(new WrapperPlayServerScoreboardObjective(
                 internalName,
                 WrapperPlayServerScoreboardObjective.ObjectiveMode.CREATE,
-                Component.text(title),
+                CC.translate(title),
                 null
         ));
 
@@ -110,7 +112,7 @@ public class Scoreboard {
         user.sendPacket(new WrapperPlayServerScoreboardObjective(
                 internalName,
                 WrapperPlayServerScoreboardObjective.ObjectiveMode.REMOVE,
-                Component.text(title),
+                CC.translate(title),
                 null
         ));
 
@@ -229,7 +231,7 @@ public class Scoreboard {
             user.writePacket(new WrapperPlayServerScoreboardObjective(
                     internalName,
                     WrapperPlayServerScoreboardObjective.ObjectiveMode.UPDATE,
-                    Component.text(title),
+                    CC.translate(title),
                     null
             ));
 
