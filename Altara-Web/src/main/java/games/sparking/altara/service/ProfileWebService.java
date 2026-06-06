@@ -38,8 +38,33 @@ public class ProfileWebService {
                     if (!profile.has("activeGrants") || profile.get("activeGrants").isJsonNull()) {
                         profile.add("activeGrants", new JsonArray());
                     }
+                    // Normalize any grant whose "scopes" was stored as a legacy comma-string.
+                    normalizeGrantScopes(profile.get("activeGrants").getAsJsonArray());
                     return profile;
                 });
+    }
+
+    /**
+     * Converts any grant entry whose {@code scopes} value is a comma-joined string
+     * (legacy format) into a proper JSON array so clients can deserialize
+     * {@code List<String>} without errors.
+     */
+    private void normalizeGrantScopes(JsonArray grants) {
+        for (com.google.gson.JsonElement el : grants) {
+            if (!el.isJsonObject()) continue;
+            com.google.gson.JsonObject grant = el.getAsJsonObject();
+            if (!grant.has("scopes")) continue;
+            com.google.gson.JsonElement scopesEl = grant.get("scopes");
+            if (scopesEl.isJsonPrimitive() && scopesEl.getAsJsonPrimitive().isString()) {
+                String raw = scopesEl.getAsString();
+                JsonArray arr = new JsonArray();
+                for (String s : raw.split(",")) {
+                    String trimmed = s.trim();
+                    if (!trimmed.isEmpty()) arr.add(trimmed);
+                }
+                grant.add("scopes", arr);
+            }
+        }
     }
 
     @Caching(evict = {

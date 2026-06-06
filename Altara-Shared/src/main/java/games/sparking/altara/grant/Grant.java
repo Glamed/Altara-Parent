@@ -51,7 +51,23 @@ public class Grant {
     }
 
     public Grant(JsonElement element) {
-        Grant temp = JsonConfigurationService.gson.fromJson(element, Grant.class);
+        // Defensive copy so we can mutate without touching the caller's object
+        com.google.gson.JsonObject obj = element.getAsJsonObject().deepCopy();
+
+        // Backward-compat: scopes may be stored as a legacy comma-joined string
+        // (e.g. "lobby,GLOBAL") rather than a proper JSON array. Normalize it
+        // before handing the object to Gson so deserialization never crashes.
+        if (obj.has("scopes") && obj.get("scopes").isJsonPrimitive()) {
+            String raw = obj.get("scopes").getAsString();
+            com.google.gson.JsonArray arr = new com.google.gson.JsonArray();
+            for (String s : raw.split(",")) {
+                String trimmed = s.trim();
+                if (!trimmed.isEmpty()) arr.add(trimmed);
+            }
+            obj.add("scopes", arr);
+        }
+
+        Grant temp = JsonConfigurationService.gson.fromJson(obj, Grant.class);
 
         this.id = temp.id;
         this.uuid = temp.uuid;
