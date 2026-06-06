@@ -8,7 +8,6 @@ import games.sparking.altara.utils.ItemBuilder;
 import games.sparking.altara.utils.Messages;
 import lombok.RequiredArgsConstructor;
 import net.kyori.adventure.text.Component;
-import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
@@ -37,7 +36,7 @@ public class PunishMenu extends Menu {
 
     @Override
     public Component getTitle(Player player) {
-        return CC.format("Punish " + target.getName());
+        return CC.format("<gray>Punish <light_purple>" + target.getName());
     }
 
     @Override
@@ -45,45 +44,32 @@ public class PunishMenu extends Menu {
         return 54;
     }
 
-
     @Override
     public Map<Integer, Button> getButtons(Player player) {
         Map<Integer, Button> buttons = new HashMap<>();
-        buttons.put(4, new HeadButton(target));
+        buttons.put(4,  new HeadButton(target));
         buttons.put(49, new ModifyPunishmentsButton());
 
-
-//        int index = 20;
-//        for (games.sparking.crystalguard.punish.InfractionType types : games.sparking.crystalguard.punish.InfractionType.values()) {
-//            buttons.put(index, new TypeButton(types, (Player) target));
-//            if (++index % 9 == 7) {
-//                index += 4;
-//            }
-//        }
-//        int index = 19;
-//        for (InfractionType types : InfractionType.values()) {
-//            buttons.put(index, new TypeButton(types, (Player) target));
-//            if (++index % 9 == 8) {
-//                index += 2;
-//            }
-//        }
-        int total = InfractionType.visibleValues().length;
+        InfractionType[] visible = InfractionType.visibleValues();
+        int total = visible.length;
         int index = 19;
 
         for (int i = 0; i < total; ) {
             int itemsThisRow = Math.min(7, total - i);
-            int rowStart = (index / 7) * 9;
-            int startOffset = (9 - itemsThisRow) / 2;
+            int rowStart     = (index / 7) * 9;
+            int startOffset  = (9 - itemsThisRow) / 2;
 
             for (int j = 0; j < itemsThisRow; j++, i++) {
-                int slot = rowStart + startOffset + j;
-                buttons.put(slot, new TypeButton(InfractionType.visibleValues()[i]));
+                buttons.put(rowStart + startOffset + j, new TypeButton(visible[i]));
             }
 
             index += 7;
         }
+
         return buttons;
     }
+
+    // ── Buttons ────────────────────────────────────────────────────────────────
 
     @RequiredArgsConstructor
     public class HeadButton extends Button {
@@ -94,7 +80,7 @@ public class PunishMenu extends Menu {
         public ItemStack getItem(Player player) {
             return new ItemBuilder(Material.PLAYER_HEAD)
                     .setSkullOwner(p.getName())
-                    .setDisplayName(ChatColor.translateAlternateColorCodes('&', "&7Punish &d" + p.getName()))
+                    .setDisplayName(CC.format("<gray>Punish <light_purple>" + p.getName()))
                     .build();
         }
     }
@@ -103,34 +89,32 @@ public class PunishMenu extends Menu {
 
         private final InfractionType infractionType;
 
-        public TypeButton(InfractionType InfractionType) {
-            this.infractionType = InfractionType;
+        public TypeButton(InfractionType infractionType) {
+            this.infractionType = infractionType;
         }
 
         @Override
         public ItemStack getItem(Player player) {
-            String desc = infractionType.getDescription();
-            List<String> lore = new ArrayList<>();
+            // Word-wrap the description at ~40 chars per line.
+            List<Component> lore = new ArrayList<>();
             StringBuilder line = new StringBuilder();
-            for (String w : desc.split(" ")) {
-                if (line.length() + w.length() + 1 > 40) {
-                    lore.add(ChatColor.translateAlternateColorCodes('&', "&7&o" + line));
-                    line = new StringBuilder(w);
+            for (String word : infractionType.getDescription().split(" ")) {
+                if (line.length() + word.length() + 1 > 40) {
+                    lore.add(CC.format("<gray><italic>" + line));
+                    line = new StringBuilder(word);
                 } else {
                     if (!line.isEmpty()) line.append(" ");
-                    line.append(w);
+                    line.append(word);
                 }
             }
-            if (!line.isEmpty())
-                lore.add(ChatColor.translateAlternateColorCodes('&', "&7&o" + line));
+            if (!line.isEmpty()) lore.add(CC.format("<gray><italic>" + line));
 
             return new ItemBuilder(infractionType.getMaterial())
                     .addFlag(ItemFlag.HIDE_ADDITIONAL_TOOLTIP)
-                    .setDisplayName(ChatColor.translateAlternateColorCodes('&', "&5&l" + infractionType.getDisplayName()))
-                    .setLore(lore.toArray(new String[0]))
+                    .setDisplayName(CC.format("<dark_purple><bold>" + infractionType.getDisplayName()))
+                    .setLore(lore)
                     .build();
         }
-
 
         @Override
         public void click(Player whoClicked, int slot, ClickType clickType, int hotbarButton) {
@@ -140,7 +124,9 @@ public class PunishMenu extends Menu {
                 return;
             }
 
-            new PunishActionMenu().initialize(onlineTarget, infractionType, message, PunishMenu.this).openMenu(whoClicked);
+            new PunishActionMenu()
+                    .initialize(onlineTarget, infractionType, message, PunishMenu.this)
+                    .openMenu(whoClicked);
         }
     }
 
@@ -149,7 +135,7 @@ public class PunishMenu extends Menu {
         @Override
         public ItemStack getItem(Player player) {
             return new ItemBuilder(Material.WRITABLE_BOOK)
-                    .setDisplayName(CC.format("&dModify Existing Punishments"))
+                    .setDisplayName(CC.format("<light_purple>Modify Existing Punishments"))
                     .setLore(
                             CC.format("<gray>View punishment history and edit"),
                             CC.format("<gray>active actions, timespans, and reasons.")
