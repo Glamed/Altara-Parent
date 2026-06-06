@@ -2,24 +2,15 @@ package games.sparking.altara.chat.impl;
 
 import games.sparking.altara.Altara;
 import games.sparking.altara.profile.Profile;
+import games.sparking.altara.utils.CC;
 import lombok.Getter;
 import lombok.Setter;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Handles the formatting, delivery, and logging of direct (private) messages.
- *
- * <p>This is not a switchable channel — it is used internally by
- * {@code MessageCommands} so that DMs pass
- * through the same formatting and logging infrastructure as every other channel.
- *
- * <p>Logging can be toggled at runtime via {@link #setLog(boolean)}.
- */
 @Setter
 @Getter
 public final class DirectMessageChannel {
@@ -32,21 +23,10 @@ public final class DirectMessageChannel {
 
     private DirectMessageChannel() {}
 
-    // ── Dispatch ───────────────────────────────────────────────────────────────
-
-    /**
-     * Formats and delivers a private message from {@code sender} to
-     * {@code target}, then logs it and notifies any social spies.
-     *
-     * @param sender   the sending profile
-     * @param target   the receiving profile
-     * @param message  raw message text
-     * @param spies    profiles of players who are social-spying on this conversation
-     */
     public void dispatch(Profile sender, Profile target, String message, List<Profile> spies) {
-        Component toSender   = formatOutgoing(sender, target, message);
-        Component toTarget   = formatIncoming(sender, target, message);
-        Component toSpy      = formatSpy(sender, target, message);
+        Component toSender = formatOutgoing(sender, target, message);
+        Component toTarget = formatIncoming(sender, target, message);
+        Component toSpy    = formatSpy(sender, target, message);
 
         sender.player().sendMessage(toSender);
         target.player().sendMessage(toTarget);
@@ -62,50 +42,39 @@ public final class DirectMessageChannel {
         if (log) {
             Altara.getSharedInstance().getLogger().info(
                     "[DM] " + sender.getCurrentName() +
-                    " -> " + target.getCurrentName() +
-                    (spyNames.isEmpty() ? "" : " (spied by: " + String.join(", ", spyNames) + ")") +
-                    ": " + message);
+                            " -> " + target.getCurrentName() +
+                            (spyNames.isEmpty() ? "" : " (spied by: " + String.join(", ", spyNames) + ")") +
+                            ": " + message
+            );
         }
     }
 
-    // ── Formatting ─────────────────────────────────────────────────────────────
-
-    /** What the sender sees: {@code (To <target>) message} */
     private Component formatOutgoing(Profile sender, Profile target, String message) {
-        return Component.empty()
-                .append(Component.text("(To ", NamedTextColor.GRAY))
-                .append(rankName(target))
-                .append(Component.text(") ", NamedTextColor.GRAY))
-                .append(Component.text(message, NamedTextColor.WHITE));
+        return CC.format(
+                "<gray>(To </gray>" + rankNameLegacy(target) + "<gray>) </gray><white>" + message
+        );
     }
 
-    /** What the target sees: {@code (From <sender>) message} */
     private Component formatIncoming(Profile sender, Profile target, String message) {
-        return Component.empty()
-                .append(Component.text("(From ", NamedTextColor.GRAY))
-                .append(rankName(sender))
-                .append(Component.text(") ", NamedTextColor.GRAY))
-                .append(Component.text(message, NamedTextColor.WHITE));
+        return CC.format(
+                "<gray>(From </gray>" + rankNameLegacy(sender) + "<gray>) </gray><white>" + message
+        );
     }
 
-    /** What social spies see: {@code (<sender> -> <target>) message} */
     private Component formatSpy(Profile sender, Profile target, String message) {
-        return Component.empty()
-                .append(Component.text("[SPY] ", NamedTextColor.GOLD))
-                .append(Component.text("(", NamedTextColor.GRAY))
-                .append(rankName(sender))
-                .append(Component.text(" -> ", NamedTextColor.GRAY))
-                .append(rankName(target))
-                .append(Component.text(") ", NamedTextColor.GRAY))
-                .append(Component.text(message, NamedTextColor.WHITE));
+        return CC.format(
+                "<gold>[SPY] </gold><gray>(" +
+                        rankNameLegacy(sender) +
+                        "<gray> -> </gray>" +
+                        rankNameLegacy(target) +
+                        "<gray>) </gray><white>" +
+                        message
+        );
     }
 
-    private static Component rankName(Profile profile) {
+    private static String rankNameLegacy(Profile profile) {
         String prefix = profile.getCurrentGrant().asRank().getPrefix();
         String name   = profile.getCurrentName();
-        return LegacyComponentSerializer.legacyAmpersand().deserialize(prefix + name);
+        return prefix + name;
     }
 }
-
-
-
