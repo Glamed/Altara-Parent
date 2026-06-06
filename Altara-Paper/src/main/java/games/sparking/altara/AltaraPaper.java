@@ -14,6 +14,7 @@ import games.sparking.altara.configuration.LocalConfig;
 import games.sparking.altara.configuration.entry.LocalPermissionConfig;
 import games.sparking.altara.configuration.entry.LocalPermissionEntry;
 import games.sparking.altara.gamemode.GamemodeCommand;
+import games.sparking.altara.grant.commands.GrantCommands;
 import games.sparking.altara.hologram.HologramService;
 import games.sparking.altara.hologram.command.HologramCommands;
 import games.sparking.altara.hologram.command.parameter.HologramParameter;
@@ -49,6 +50,7 @@ import games.sparking.altara.queue.Queue;
 import games.sparking.altara.queue.QueueService;
 import games.sparking.altara.queue.commands.QueueCommands;
 import games.sparking.altara.rank.Rank;
+import games.sparking.altara.rank.commands.RankCommands;
 import games.sparking.altara.rank.parameter.RankParameter;
 import games.sparking.altara.reboot.RebootCommands;
 import games.sparking.altara.scoreboard.ScoreboardListener;
@@ -176,6 +178,8 @@ public class AltaraPaper extends Altara {
                 new ServerMonitorCommands(),
                 new QueueCommands(),
                 new ChatCommands(),
+                new RankCommands(),
+                new GrantCommands(),
                 new MessageCommands()
         );
     }
