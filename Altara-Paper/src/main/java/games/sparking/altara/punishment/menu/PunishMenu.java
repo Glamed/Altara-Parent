@@ -7,6 +7,7 @@ import games.sparking.altara.utils.CC;
 import games.sparking.altara.utils.ItemBuilder;
 import lombok.RequiredArgsConstructor;
 import net.kyori.adventure.text.Component;
+import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
@@ -19,25 +20,18 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Infraction-type selection menu — the first step of the punishment builder.
- *
- * <p>Opens to a grid of {@link InfractionType} options. Clicking one forwards
- * the staff member to {@link PunishActionMenu} where they can review / tweak the
- * recommended restriction actions before confirming.
- */
 public class PunishMenu extends Menu {
 
     private final OfflinePlayer target;
-    private final String        interceptedMessage;
+    private final String message;
 
     public PunishMenu(OfflinePlayer target) {
         this(target, null);
     }
 
-    public PunishMenu(OfflinePlayer target, String interceptedMessage) {
-        this.target             = target;
-        this.interceptedMessage = interceptedMessage;
+    public PunishMenu(OfflinePlayer target, String message) {
+        this.target = target;
+        this.message = message;
     }
 
     @Override
@@ -50,30 +44,44 @@ public class PunishMenu extends Menu {
         return 54;
     }
 
+
     @Override
     public Map<Integer, Button> getButtons(Player player) {
         Map<Integer, Button> buttons = new HashMap<>();
         buttons.put(4, new HeadButton(target));
 
-        InfractionType[] types = InfractionType.visibleValues();
-        int total = types.length;
+
+//        int index = 20;
+//        for (games.sparking.crystalguard.punish.InfractionType types : games.sparking.crystalguard.punish.InfractionType.values()) {
+//            buttons.put(index, new TypeButton(types, (Player) target));
+//            if (++index % 9 == 7) {
+//                index += 4;
+//            }
+//        }
+//        int index = 19;
+//        for (InfractionType types : InfractionType.values()) {
+//            buttons.put(index, new TypeButton(types, (Player) target));
+//            if (++index % 9 == 8) {
+//                index += 2;
+//            }
+//        }
+        int total = InfractionType.visibleValues().length;
         int index = 19;
 
         for (int i = 0; i < total; ) {
-            int itemsThisRow  = Math.min(7, total - i);
-            int rowStart      = (index / 7) * 9;
-            int startOffset   = (9 - itemsThisRow) / 2;
+            int itemsThisRow = Math.min(7, total - i);
+            int rowStart = (index / 7) * 9;
+            int startOffset = (9 - itemsThisRow) / 2;
 
             for (int j = 0; j < itemsThisRow; j++, i++) {
                 int slot = rowStart + startOffset + j;
-                buttons.put(slot, new TypeButton(types[i]));
+                buttons.put(slot, new TypeButton(InfractionType.visibleValues()[i]));
             }
+
             index += 7;
         }
         return buttons;
     }
-
-    // ── Inner buttons ──────────────────────────────────────────────────────────
 
     @RequiredArgsConstructor
     public class HeadButton extends Button {
@@ -84,7 +92,7 @@ public class PunishMenu extends Menu {
         public ItemStack getItem(Player player) {
             return new ItemBuilder(Material.PLAYER_HEAD)
                     .setSkullOwner(p.getName())
-                    .setDisplayName("<gray>Punish <light_purple>" + p.getName())
+                    .setDisplayName(CC.format("<gray>Punish <purple>" + p.getName()))
                     .build();
         }
     }
@@ -93,48 +101,44 @@ public class PunishMenu extends Menu {
 
         private final InfractionType infractionType;
 
-        public TypeButton(InfractionType infractionType) {
-            this.infractionType = infractionType;
+        public TypeButton(InfractionType InfractionType) {
+            this.infractionType = InfractionType;
         }
 
         @Override
         public ItemStack getItem(Player player) {
-            // Word-wrap the description to ~40 chars per line
-            List<String> lore = new ArrayList<>();
+            String desc = infractionType.getDescription();
+            List<Component> lore = new ArrayList<>();
             StringBuilder line = new StringBuilder();
-            for (String word : infractionType.getDescription().split(" ")) {
-                if (line.length() + word.length() + 1 > 40) {
-                    lore.add("<gray><italic>" + line);
-                    line = new StringBuilder(word);
+            for (String w : desc.split(" ")) {
+                if (line.length() + w.length() + 1 > 40) {
+                    lore.add(CC.format("<gray><i>" + line));
+                    line = new StringBuilder(w);
                 } else {
                     if (!line.isEmpty()) line.append(" ");
-                    line.append(word);
+                    line.append(w);
                 }
             }
-            if (!line.isEmpty()) lore.add("<gray><italic>" + line);
+            if (!line.isEmpty())
+                lore.add(CC.format("<gray><i>" + line));
 
-            Material mat = infractionType.getMaterial();
-
-            return new ItemBuilder(mat)
+            return new ItemBuilder(infractionType.getMaterial())
                     .addFlag(ItemFlag.HIDE_ADDITIONAL_TOOLTIP)
-                    .setDisplayName("<dark_purple><bold>" + infractionType.getDisplayName())
-                    .setLore(CC.format(lore))
+                    .setDisplayName(CC.format("<dark_purple><b>" + infractionType.getDisplayName()))
+                    .setLore(lore)
                     .build();
         }
+
 
         @Override
         public void click(Player whoClicked, int slot, ClickType clickType, int hotbarButton) {
             Player onlineTarget = target.getPlayer();
             if (onlineTarget == null) {
-                whoClicked.sendMessage(CC.format("<red>That player is no longer online."));
+                whoClicked.sendMessage(ChatColor.RED + "That player is no longer online.");
                 return;
             }
-            new PunishActionMenu()
-                    .initialize(onlineTarget, infractionType, interceptedMessage, PunishMenu.this)
-                    .openMenu(whoClicked);
+
+            new PunishActionMenu().initialize(onlineTarget, infractionType, message, PunishMenu.this).openMenu(whoClicked);
         }
     }
-
-    // (material is now part of InfractionType — see InfractionType.getMaterial())
 }
-
