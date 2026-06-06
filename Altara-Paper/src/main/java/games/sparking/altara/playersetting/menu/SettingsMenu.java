@@ -5,7 +5,9 @@ import games.sparking.altara.menu.Menu;
 import games.sparking.altara.menu.fill.FillTemplate;
 import games.sparking.altara.playersetting.PlayerSetting;
 import games.sparking.altara.playersetting.PlayerSettingService;
+import games.sparking.altara.utils.CC;
 import lombok.RequiredArgsConstructor;
+import net.kyori.adventure.text.Component;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.ClickType;
 import org.bukkit.inventory.ItemStack;
@@ -18,8 +20,8 @@ import java.util.Map;
 public class SettingsMenu extends Menu {
 
     @Override
-    public String getTitle(Player player) {
-        return "Settings";
+    public Component getTitle(Player player) {
+        return CC.format("Settings");
     }
 
     @Override

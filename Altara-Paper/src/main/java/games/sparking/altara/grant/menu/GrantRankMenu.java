@@ -10,7 +10,6 @@ import games.sparking.altara.utils.CC;
 import games.sparking.altara.utils.ItemBuilder;
 import lombok.RequiredArgsConstructor;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.ClickType;
 import org.bukkit.inventory.ItemStack;
@@ -24,8 +23,8 @@ public class GrantRankMenu extends Menu {
     private boolean clicked = false;
 
     @Override
-    public String getTitle(Player player) {
-        return "Select a rank: " + procedure.getTarget().getName();
+    public Component getTitle(Player player) {
+        return CC.format("Select a rank: " + procedure.getTarget().getName());
     }
 
     @Override

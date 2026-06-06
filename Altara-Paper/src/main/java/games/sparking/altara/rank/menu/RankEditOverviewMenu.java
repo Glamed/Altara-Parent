@@ -35,8 +35,8 @@ public class RankEditOverviewMenu extends Menu {
     private final Profile profile;
 
     @Override
-    public String getTitle(Player player) {
-        return "Rank Editor";
+    public Component getTitle(Player player) {
+        return CC.format("Rank Editor");
     }
 
     @Override

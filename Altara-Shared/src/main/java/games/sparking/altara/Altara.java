@@ -5,21 +5,19 @@ import games.sparking.altara.configuration.defaults.MainConfig;
 import games.sparking.altara.configuration.defaults.MongoConfig;
 import games.sparking.altara.configuration.defaults.RedisConfig;
 import games.sparking.altara.disguise.DisguiseService;
-import games.sparking.altara.profiler.ProfilerService;
-import games.sparking.altara.punishment.PunishmentService;
-import games.sparking.altara.task.TaskImplementor;
-import games.sparking.altara.task.Tasks;
+import games.sparking.altara.logging.CommonLogger;
 import games.sparking.altara.mongo.MongoService;
 import games.sparking.altara.profile.ProfileService;
+import games.sparking.altara.profiler.ProfilerService;
+import games.sparking.altara.punishment.PunishmentService;
 import games.sparking.altara.rank.Rank;
 import games.sparking.altara.rank.RankService;
 import games.sparking.altara.redis.RedisService;
 import games.sparking.altara.server.ServerInfo;
+import games.sparking.altara.task.TaskImplementor;
+import games.sparking.altara.task.Tasks;
 import games.sparking.altara.task.impl.AsynchronousTaskChain;
 import lombok.Getter;
-import lombok.Setter;
-
-import games.sparking.altara.logging.CommonLogger;
 
 import java.util.List;
 import java.util.UUID;

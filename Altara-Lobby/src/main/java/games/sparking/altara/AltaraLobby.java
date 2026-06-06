@@ -12,7 +12,6 @@ import games.sparking.altara.scoreboard.ScoreboardService;
 import games.sparking.altara.spawn.SpawnCommands;
 import games.sparking.altara.spawn.SpawnListener;
 import lombok.Getter;
-import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.List;

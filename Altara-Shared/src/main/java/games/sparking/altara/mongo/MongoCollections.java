@@ -1,12 +1,11 @@
 package games.sparking.altara.mongo;
 
-import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
-import games.sparking.altara.Altara;
-/*import games.sparking.altara.punish.Punishment;
-import games.sparking.altara.reports.Report;*/
 import lombok.Data;
 import lombok.Getter;
+
+/*import games.sparking.altara.punish.Punishment;
+import games.sparking.altara.reports.Report;*/
 
 @Data
 public class MongoCollections {

@@ -3,11 +3,7 @@ package games.sparking.altara.framework;
 import lombok.Getter;
 import org.bukkit.plugin.Plugin;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 /**
  * Central registry for all games and the player-to-game mapping.

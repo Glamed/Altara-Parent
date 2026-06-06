@@ -1,7 +1,6 @@
 package games.sparking.altara.logging;
 
 import games.sparking.altara.AltaraProxy;
-import org.slf4j.Logger;
 
 public class VelocityLogger implements CommonLogger {
 

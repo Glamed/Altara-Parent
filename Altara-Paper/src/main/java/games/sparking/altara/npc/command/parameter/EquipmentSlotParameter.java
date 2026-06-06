@@ -3,7 +3,6 @@ package games.sparking.altara.npc.command.parameter;
 import games.sparking.altara.command.parameter.ParameterType;
 import games.sparking.altara.npc.equipment.EquipmentSlot;
 import games.sparking.altara.utils.CC;
-import org.apache.commons.lang3.StringUtils;
 import org.bukkit.command.CommandSender;
 
 import java.util.Arrays;

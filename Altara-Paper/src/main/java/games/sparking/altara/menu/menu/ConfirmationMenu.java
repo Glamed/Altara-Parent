@@ -4,6 +4,8 @@ import games.sparking.altara.menu.Button;
 import games.sparking.altara.menu.Menu;
 import games.sparking.altara.menu.buttons.ConfirmationButton;
 import games.sparking.altara.menu.fill.FillTemplate;
+import games.sparking.altara.utils.CC;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -47,9 +49,8 @@ public class ConfirmationMenu extends Menu {
         this.denyName = denyName;
     }
 
-    @Override
-    public String getTitle(Player player) {
-        return title;
+    public Component getTitle(Player player) {
+        return CC.format(title);
     }
 
     @Override

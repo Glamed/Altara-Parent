@@ -1,8 +1,8 @@
 package games.sparking.altara.chat;
 
 import games.sparking.altara.Altara;
-import games.sparking.altara.profile.Profile;
 import games.sparking.altara.chat.packet.ChatMessagePacket;
+import games.sparking.altara.profile.Profile;
 import lombok.Getter;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;

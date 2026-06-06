@@ -7,6 +7,8 @@ import games.sparking.altara.menu.page.PagedMenu;
 import games.sparking.altara.utils.ItemBuilder;
 import lombok.Getter;
 import lombok.Setter;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -15,7 +17,6 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 
-import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -23,8 +24,6 @@ public abstract class Menu {
 
     @Getter
     private static final Map<Player, Menu> openedMenus = new HashMap<>();
-
-    private static Method openInventoryMethod;
 
     private Map<Integer, Button> buttons = new HashMap<>();
     private Inventory inventory;
@@ -36,7 +35,7 @@ public abstract class Menu {
     @Setter
     private BukkitTask updateRunnable;
 
-    public abstract String getTitle(Player player);
+    public abstract Component getTitle(Player player);
 
     public abstract Map<Integer, Button> getButtons(Player player);
 
@@ -52,58 +51,62 @@ public abstract class Menu {
         return (int) (Math.ceil((highest + 1) / 9D) * 9D);
     }
 
+    private String legacyTitle(Player player) {
+        Component title = getTitle(player);
+
+        String plain = PlainTextComponentSerializer.plainText().serialize(title);
+
+        if (plain.length() > 32) {
+            plain = plain.substring(0, 32);
+        }
+
+        return plain;
+    }
+
     public void openMenu(Player player) {
         this.buttons = this.getButtons(player);
         int size = this.getSize() == -1 ? this.calculateSize(buttons) : this.getSize();
         boolean update = false;
 
-        String title = this.getTitle(player);
-        if (title.length() > 32) {
-            title = title.substring(0, 32);
-        }
+        Component title = this.getTitle(player);
+        String legacyTitle = legacyTitle(player);
 
         Inventory inventory = Bukkit.createInventory(player, size, title);
+
         Menu previousMenu = openedMenus.get(player);
 
-        /*if (player.getOpenInventory().getTopInventory() != null) {
-            if (previousMenu != null) {
-                previousMenu.setCancelIncomingUpdates(true);
-                if (previousMenu.getUpdateRunnable() != null) {
-                    previousMenu.getUpdateRunnable().cancel();
-                }
-            }
-            int previousSize = player.getOpenInventory().getTopInventory().getSize();
-            if ((previousSize == size) && (!title.equals(player.getOpenInventory().getTopInventory().getTitle()))) {
-                updateInventory(player, title, null);
-                inventory = player.getOpenInventory().getTopInventory();
-                update = true;
-            }
+        if (previousMenu != null) {
+            previousMenu.setCancelIncomingUpdates(true);
 
-        }*/
-
-        if (player.getOpenInventory().getTopInventory() != null) {
-            if (previousMenu != null) {
-                previousMenu.setCancelIncomingUpdates(true);
-                if (previousMenu.getUpdateRunnable() != null)
-                    previousMenu.getUpdateRunnable().cancel();
-            }
-
-            int previousSize = player.getOpenInventory().getTopInventory().getSize();
-            String previousTitle = player.getOpenInventory().getTitle();
-            if (previousSize == size && previousTitle.equalsIgnoreCase(title)) {
-                inventory = player.getOpenInventory().getTopInventory();
-                update = true;
+            if (previousMenu.getUpdateRunnable() != null) {
+                previousMenu.getUpdateRunnable().cancel();
             }
         }
 
-        if (getMenuFiller() != null)
-            getMenuFiller().fill(this, player, buttons, size);
+        int previousSize = player.getOpenInventory().getTopInventory().getSize();
+        Component previousTitle = player.getOpenInventory().title();
 
-        for (Map.Entry<Integer, Button> buttonEntry : buttons.entrySet())
+        if (previousSize == size &&
+                PlainTextComponentSerializer.plainText().serialize(previousTitle)
+                        .equalsIgnoreCase(PlainTextComponentSerializer.plainText().serialize(title))) {
+
+            inventory = player.getOpenInventory().getTopInventory();
+            update = true;
+        }
+
+        if (getMenuFiller() != null) {
+            getMenuFiller().fill(this, player, buttons, size);
+        }
+
+        for (Map.Entry<Integer, Button> buttonEntry : buttons.entrySet()) {
             inventory.setItem(buttonEntry.getKey(), buttonEntry.getValue().getItem(player));
+        }
 
         for (int i = 0; i < inventory.getContents().length; i++) {
-            if ((buttons.get(i) == null) && (inventory.getItem(i) != null) && (inventory.getItem(i).getType() != Material.AIR)) {
+            if (buttons.get(i) == null &&
+                    inventory.getItem(i) != null &&
+                    inventory.getItem(i).getType() != Material.AIR) {
+
                 inventory.setItem(i, new ItemBuilder(Material.AIR).build());
             }
         }
@@ -115,18 +118,18 @@ public abstract class Menu {
         } else {
             player.openInventory(this.inventory);
         }
+
         this.startUpdateTask(player, this instanceof PagedMenu);
         this.onOpen(player);
+
         openedMenus.put(player, this);
         cancelIncomingUpdates = false;
     }
 
     public void onOpen(Player player) {
-
     }
 
     public void onClose(Player player) {
-
     }
 
     public boolean isAutoUpdate() {
@@ -161,21 +164,15 @@ public abstract class Menu {
         return true;
     }
 
-
     public void startUpdateTask(Player player, boolean pagedMenu) {
-        if (!this.isAutoUpdate()) {
-            return;
-        }
-
-        if (this.updateRunnable != null) {
-            return;
-        }
+        if (!this.isAutoUpdate()) return;
+        if (this.updateRunnable != null) return;
 
         this.updateRunnable = new BukkitRunnable() {
             @Override
             public void run() {
-                if ((player == null) || (!player.isOnline())) {
-                    this.cancel();
+                if (player == null || !player.isOnline()) {
+                    cancel();
                     return;
                 }
 
@@ -185,28 +182,32 @@ public abstract class Menu {
     }
 
     public void updateInventory(Player player, boolean pagedMenu) {
-        if (cancelIncomingUpdates) {
-            return;
-        }
+        if (cancelIncomingUpdates) return;
+
         buttons = getButtons(player);
         int size = getSize() == -1 ? calculateSize(buttons) : getSize();
 
-        if (getMenuFiller() != null)
+        if (getMenuFiller() != null) {
             getMenuFiller().fill(this, player, buttons, size);
+        }
 
-        for (Map.Entry<Integer, Button> buttonEntry : buttons.entrySet())
+        for (Map.Entry<Integer, Button> buttonEntry : buttons.entrySet()) {
             inventory.setItem(buttonEntry.getKey(), buttonEntry.getValue().getItem(player));
+        }
 
         for (int i = 0; i < inventory.getContents().length; i++) {
-            if ((buttons.get(i) == null) && (inventory.getItem(i) != null) && (inventory.getItem(i).getType() != Material.AIR)) {
+            if (buttons.get(i) == null &&
+                    inventory.getItem(i) != null &&
+                    inventory.getItem(i).getType() != Material.AIR) {
+
                 inventory.setItem(i, new ItemBuilder(Material.AIR).build());
             }
         }
+
         player.getOpenInventory().getTopInventory().setContents(inventory.getContents());
     }
 
     public int getSlot(int row, int slot) {
         return 9 * row + slot;
     }
-
 }

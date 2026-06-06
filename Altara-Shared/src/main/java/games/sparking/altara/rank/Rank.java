@@ -1,20 +1,14 @@
 package games.sparking.altara.rank;
 
-import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import games.sparking.altara.Altara;
-import games.sparking.altara.configuration.JsonConfigurationService;
 import games.sparking.altara.connection.RequestHandler;
 import games.sparking.altara.connection.RequestResponse;
 import games.sparking.altara.rank.packets.RankUpdatePacket;
 import games.sparking.altara.task.Tasks;
 import games.sparking.altara.utils.JsonObjClass;
-import games.sparking.altara.utils.json.JsonBuilder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
-import org.bson.codecs.pojo.annotations.BsonIgnore;
 import org.bukkit.Material;
-
 import org.bukkit.command.CommandSender;
 
 import java.awt.*;

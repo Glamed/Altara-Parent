@@ -13,8 +13,6 @@ import games.sparking.altara.server.ServerInfo;
 import games.sparking.altara.utils.CC;
 import games.sparking.altara.uuid.UUIDCache;
 import lombok.RequiredArgsConstructor;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 

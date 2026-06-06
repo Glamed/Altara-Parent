@@ -29,9 +29,8 @@ public class RankEditingMenu extends Menu {
     private final Rank rank;
     private boolean save = false;
 
-    @Override
-    public String getTitle(Player player) {
-        return "Editing: " + rank.getName();
+    public Component getTitle(Player player) {
+        return CC.format("Editing: " + rank.getName());
     }
 
     @Override

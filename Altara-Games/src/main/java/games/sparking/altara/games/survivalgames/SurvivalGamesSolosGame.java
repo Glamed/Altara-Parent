@@ -18,7 +18,6 @@ import org.bukkit.event.player.PlayerQuitEvent;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.UUID;
 
 /**
  * Survival Games — Solo variant.

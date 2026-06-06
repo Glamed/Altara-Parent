@@ -2,7 +2,6 @@ package games.sparking.altara.hologram.statics;
 
 import games.sparking.altara.configuration.defaults.SimpleLocationConfig;
 import games.sparking.altara.hologram.Hologram;
-import games.sparking.altara.hologram.HologramBuilder;
 import games.sparking.altara.hologram.HologramLine;
 import games.sparking.altara.hologram.config.HologramConfigEntry;
 import lombok.Getter;

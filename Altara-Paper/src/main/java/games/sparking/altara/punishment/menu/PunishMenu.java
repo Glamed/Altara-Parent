@@ -6,6 +6,7 @@ import games.sparking.altara.punishment.InfractionType;
 import games.sparking.altara.utils.CC;
 import games.sparking.altara.utils.ItemBuilder;
 import lombok.RequiredArgsConstructor;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
@@ -40,8 +41,8 @@ public class PunishMenu extends Menu {
     }
 
     @Override
-    public String getTitle(Player player) {
-        return "Punish " + target.getName();
+    public Component getTitle(Player player) {
+        return CC.format("Punish " + target.getName());
     }
 
     @Override

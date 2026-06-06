@@ -1,6 +1,5 @@
 package games.sparking.altara.grant.input;
 
-import games.sparking.altara.Altara;
 import games.sparking.altara.AltaraPaper;
 import games.sparking.altara.chatinput.ChatInput;
 import games.sparking.altara.connection.RequestResponse;

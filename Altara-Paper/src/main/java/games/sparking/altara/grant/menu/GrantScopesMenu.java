@@ -1,6 +1,5 @@
 package games.sparking.altara.grant.menu;
 
-import games.sparking.altara.Altara;
 import games.sparking.altara.AltaraPaper;
 import games.sparking.altara.connection.RequestResponse;
 import games.sparking.altara.grant.Grant;
@@ -35,9 +34,8 @@ public class GrantScopesMenu extends Menu {
     private final List<String> scopes = new ArrayList<>();
     private boolean clicked = false;
 
-    @Override
-    public String getTitle(Player player) {
-        return "Select scopes: " + profile.getGrantProcedure().getRank().getName();
+    public Component getTitle(Player player) {
+        return CC.format("Select scopes: " + profile.getGrantProcedure().getRank().getName());
     }
 
     @Override

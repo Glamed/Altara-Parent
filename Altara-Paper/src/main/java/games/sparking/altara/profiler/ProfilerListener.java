@@ -1,7 +1,7 @@
 package games.sparking.altara.profiler;
 
-import games.sparking.altara.AltaraPaper;
 import games.sparking.altara.Altara;
+import games.sparking.altara.AltaraPaper;
 import games.sparking.altara.chat.ChatService;
 import games.sparking.altara.chat.impl.ShadowMuteChannel;
 import games.sparking.altara.profile.Profile;

@@ -1,6 +1,5 @@
 package games.sparking.altara.server.command;
 
-import games.sparking.altara.Altara;
 import games.sparking.altara.command.annotation.Command;
 import games.sparking.altara.command.annotation.Header;
 import games.sparking.altara.command.annotation.Param;

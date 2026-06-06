@@ -1,6 +1,5 @@
 package games.sparking.altara.grant.menu;
 
-import games.sparking.altara.AltaraPaper;
 import games.sparking.altara.chatinput.ChatInput;
 import games.sparking.altara.chatinput.ChatInputChain;
 import games.sparking.altara.grant.input.GrantDurationInput;
@@ -22,7 +21,6 @@ import org.bukkit.inventory.ItemStack;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-
 
 @RequiredArgsConstructor
 public class GrantDurationMenu extends Menu {
@@ -48,8 +46,8 @@ public class GrantDurationMenu extends Menu {
     private boolean clicked = false;
 
     @Override
-    public String getTitle(Player player) {
-        return "Select a duration " + profile.getGrantProcedure().getRank().getName();
+    public Component getTitle(Player player) {
+        return CC.format("Select a duration " + profile.getGrantProcedure().getRank().getName());
     }
 
     @Override

@@ -1,7 +1,7 @@
 package games.sparking.altara.messaging;
 
-import games.sparking.altara.AltaraPaper;
 import games.sparking.altara.Altara;
+import games.sparking.altara.AltaraPaper;
 import games.sparking.altara.chat.impl.DirectMessageChannel;
 import games.sparking.altara.command.annotation.Command;
 import games.sparking.altara.command.annotation.Param;

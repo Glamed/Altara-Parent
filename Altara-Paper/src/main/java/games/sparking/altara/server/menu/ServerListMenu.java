@@ -22,8 +22,8 @@ import java.util.*;
 public class ServerListMenu extends Menu {
 
     @Override
-    public String getTitle(Player player) {
-        return "Servers";
+    public Component getTitle(Player player) {
+        return CC.format("Servers");
     }
 
     @Override

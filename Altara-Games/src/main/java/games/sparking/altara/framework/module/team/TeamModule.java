@@ -1,10 +1,6 @@
 package games.sparking.altara.framework.module.team;
 
-import games.sparking.altara.framework.AbstractGame;
-import games.sparking.altara.framework.Game;
-import games.sparking.altara.framework.GameModule;
-import games.sparking.altara.framework.GameState;
-import games.sparking.altara.framework.GameType;
+import games.sparking.altara.framework.*;
 import games.sparking.altara.framework.annotation.GameEvent;
 import org.bukkit.entity.Player;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;

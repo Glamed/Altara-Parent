@@ -3,7 +3,6 @@ package games.sparking.altara.menu.buttons;
 import games.sparking.altara.menu.Button;
 import games.sparking.altara.menu.Menu;
 import games.sparking.altara.utils.ItemBuilder;
-import net.md_5.bungee.api.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.ClickType;

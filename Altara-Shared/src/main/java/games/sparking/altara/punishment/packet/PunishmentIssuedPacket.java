@@ -3,7 +3,6 @@ package games.sparking.altara.punishment.packet;
 import games.sparking.altara.Altara;
 import games.sparking.altara.SystemType;
 import games.sparking.altara.punishment.Punishment;
-import games.sparking.altara.punishment.PunishmentType;
 import games.sparking.altara.punishment.RestrictionAction;
 import games.sparking.altara.redis.packet.Packet;
 import games.sparking.altara.utils.Time;

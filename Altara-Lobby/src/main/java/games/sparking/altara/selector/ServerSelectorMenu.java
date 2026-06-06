@@ -8,8 +8,8 @@ import games.sparking.altara.server.ServerInfo;
 import games.sparking.altara.utils.CC;
 import games.sparking.altara.utils.ItemBuilder;
 import lombok.RequiredArgsConstructor;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.ClickType;
@@ -21,8 +21,8 @@ import java.util.Map;
 public class ServerSelectorMenu extends Menu {
 
     @Override
-    public String getTitle(Player player) {
-        return "Server Selector";
+    public Component getTitle(Player player) {
+        return CC.format("Server Selector");
     }
 
     @Override

@@ -2,7 +2,6 @@ package games.sparking.altara.configuration;
 
 import games.sparking.altara.AltaraLobby;
 import games.sparking.altara.configuration.defaults.LocationConfig;
-import games.sparking.altara.configuration.defaults.MainConfig;
 import games.sparking.altara.configuration.defaults.SimpleLocationConfig;
 import games.sparking.altara.selector.ServerSelectorEntry;
 import lombok.Data;

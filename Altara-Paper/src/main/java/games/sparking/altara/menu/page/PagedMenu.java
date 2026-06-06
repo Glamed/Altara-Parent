@@ -2,7 +2,9 @@ package games.sparking.altara.menu.page;
 
 import games.sparking.altara.menu.Button;
 import games.sparking.altara.menu.Menu;
+import games.sparking.altara.utils.CC;
 import lombok.Getter;
+import net.kyori.adventure.text.Component;
 import org.bukkit.entity.Player;
 
 import java.util.HashMap;
@@ -71,8 +73,7 @@ public abstract class PagedMenu extends Menu {
         return null;
     }
 
-    @Override
-    public String getTitle(Player player) {
-        return "(" + page + "/" + getPages(player) + ") " + getRawTitle(player);
+    public Component getTitle(Player player) {
+        return CC.format("(" + page + "/" + getPages(player) + ") " + getRawTitle(player));
     }
 }

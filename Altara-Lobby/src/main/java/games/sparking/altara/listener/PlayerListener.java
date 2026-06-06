@@ -1,7 +1,6 @@
 package games.sparking.altara.listener;
 
 import games.sparking.altara.AltaraLobby;
-import games.sparking.altara.playersetting.LobbySettings;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;

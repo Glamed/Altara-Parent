@@ -1,10 +1,10 @@
 package games.sparking.altara.queue.packet;
 
-import games.sparking.altara.Altara;
 import games.sparking.altara.AltaraPaper;
 import games.sparking.altara.redis.packet.Packet;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
+
 import java.util.UUID;
 
 @NoArgsConstructor

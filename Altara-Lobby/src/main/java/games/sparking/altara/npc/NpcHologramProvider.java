@@ -6,7 +6,6 @@ import games.sparking.altara.hologram.updating.HologramProvider;
 import games.sparking.altara.queue.QueueService;
 import games.sparking.altara.selector.ServerSelectorEntry;
 import games.sparking.altara.server.ServerInfo;
-import games.sparking.altara.utils.CC;
 import lombok.RequiredArgsConstructor;
 import org.bukkit.entity.Player;
 

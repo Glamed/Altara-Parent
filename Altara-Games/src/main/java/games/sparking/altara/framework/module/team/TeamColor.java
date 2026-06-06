@@ -6,7 +6,6 @@ import net.kyori.adventure.text.format.TextColor;
 import net.md_5.bungee.api.ChatColor;
 import org.bukkit.DyeColor;
 import org.bukkit.Material;
-import org.w3c.dom.Text;
 
 /**
  * Colour identifiers for colour-based {@link GameTeam}s.
