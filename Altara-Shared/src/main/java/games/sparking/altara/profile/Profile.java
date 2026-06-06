@@ -262,6 +262,8 @@ public class Profile {
         Grant grant = null;
 
         for (Grant current : this.getActiveGrants()) {
+            // Team grants represent memberships, not display ranks — exclude them here
+            if (current.asRank().isTeam()) continue;
             if (grant == null) {
                 grant = current;
                 continue;
@@ -306,6 +308,8 @@ public class Profile {
         Grant grant = null;
 
         for (Grant current : this.getActiveGrantsOn(scope)) {
+            // Team grants represent memberships, not display ranks — exclude them here
+            if (current.asRank().isTeam()) continue;
             if (grant == null) {
                 grant = current;
                 continue;

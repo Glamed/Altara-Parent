@@ -1,12 +1,14 @@
 package games.sparking.altara.profile;
 
+import com.google.gson.JsonArray;
 import games.sparking.altara.connection.RequestHandler;
 import games.sparking.altara.connection.RequestResponse;
 import games.sparking.altara.grant.Grant;
 import games.sparking.altara.grant.GrantBackLogEntry;
+import games.sparking.altara.grant.packets.GrantAddPacket;
+import games.sparking.altara.grant.packets.GrantRemovePacket;
 import games.sparking.altara.utils.json.JsonBuilder;
 import lombok.RequiredArgsConstructor;
-import org.apache.commons.lang3.StringUtils;
 
 @RequiredArgsConstructor
 public class BukkitProfileService {
@@ -18,15 +20,24 @@ public class BukkitProfileService {
         builder.add("grantedBy", grant.getGrantedBy());
         builder.add("grantedAt", grant.getGrantedAt());
         builder.add("grantedReason", grant.getGrantedReason());
-        builder.add("scopes", StringUtils.join(grant.getScopes(), ","));
+
+        // Send scopes as a proper JSON array so Gson can deserialize List<String> correctly
+        JsonArray scopesArray = new JsonArray();
+        grant.getScopes().forEach(scopesArray::add);
+        builder.add("scopes", scopesArray);
+
         builder.add("duration", grant.getDuration());
         builder.add("end", grant.getEnd());
 
         RequestResponse response = RequestHandler.post("api/profile/%s/grants", builder.build(),
                 target.getUuid().toString());
-        if (response.couldNotConnect())
+        if (response.couldNotConnect()) {
             RequestHandler.addToBackLog(new GrantBackLogEntry(grant, target.getUuid(),
                     response.getRequestBuilder()));
+        } else if (response.wasSuccessful()) {
+            // Notify the target player (whichever server they're on) of the new grant
+            new GrantAddPacket(target.getUuid(), grant.getRank(), grant.getDuration()).publish();
+        }
         return response;
     }
 
@@ -39,10 +50,13 @@ public class BukkitProfileService {
 
         RequestResponse response = RequestHandler.put("api/profile/%s/grants/%s", builder.build(),
                 target.getUuid().toString(), grant.getId().toString());
-        if (response.couldNotConnect())
+        if (response.couldNotConnect()) {
             RequestHandler.addToBackLog(new GrantBackLogEntry(grant, target.getUuid(),
                     response.getRequestBuilder()));
-        else if (!response.wasSuccessful()) {
+        } else if (response.wasSuccessful()) {
+            // Notify the target player their grant was removed
+            new GrantRemovePacket(target.getUuid(), grant.getRank()).publish();
+        } else {
             grant.setRemovedBy("N/A");
             grant.setRemovedAt(-1);
             grant.setRemovedReason("N/A");

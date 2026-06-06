@@ -122,10 +122,10 @@ public class ProfileWebService {
             @CacheEvict(value = CacheConfig.PROFILES,       key = "#uuid.toString()"),
             @CacheEvict(value = CacheConfig.PROFILE_GRANTS, key = "#uuid.toString()")
     })
-    public boolean clearGrants(UUID uuid) {
-        boolean ok = profileRepository.clearGrants(uuid.toString());
-        if (ok) publishProfileUpdate(uuid.toString());
-        return ok;
+    public int clearGrants(UUID uuid, String removedBy, long removedAt, String removedReason) {
+        int count = profileRepository.clearGrants(uuid.toString(), removedBy, removedAt, removedReason);
+        if (count > 0) publishProfileUpdate(uuid.toString());
+        return count;
     }
 
     // ------------------------------------------------------------------

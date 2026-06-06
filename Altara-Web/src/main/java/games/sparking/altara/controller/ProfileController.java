@@ -149,11 +149,28 @@ public class ProfileController {
     // ------------------------------------------------------------------
     // POST /api/profile/{uuid}/grants/clear  — clear all grants
     // ------------------------------------------------------------------
-    @PostMapping(value = "/{uuid}/grants/clear", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<String> clearGrants(@PathVariable UUID uuid) {
-        boolean ok = profileWebService.clearGrants(uuid);
-        if (!ok) return notFound("Profile not found: " + uuid);
-        return ok("{\"success\":true}");
+    @PostMapping(value = "/{uuid}/grants/clear",
+            consumes = {MediaType.APPLICATION_JSON_VALUE, "*/*"},
+            produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<String> clearGrants(@PathVariable UUID uuid,
+                                              @RequestBody(required = false) String body) {
+        try {
+            String removedBy     = "Console";
+            long   removedAt     = System.currentTimeMillis();
+            String removedReason = "N/A";
+
+            if (body != null && !body.isBlank()) {
+                JsonObject json = JsonParser.parseString(body).getAsJsonObject();
+                if (json.has("removedBy"))     removedBy     = json.get("removedBy").getAsString();
+                if (json.has("removedAt"))     removedAt     = json.get("removedAt").getAsLong();
+                if (json.has("removedReason")) removedReason = json.get("removedReason").getAsString();
+            }
+
+            int removed = profileWebService.clearGrants(uuid, removedBy, removedAt, removedReason);
+            return ok("{\"removed\":" + removed + "}");
+        } catch (Exception e) {
+            return badRequest(e.getMessage());
+        }
     }
 
     // ------------------------------------------------------------------

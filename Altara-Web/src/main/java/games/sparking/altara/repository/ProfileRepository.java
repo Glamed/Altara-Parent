@@ -190,11 +190,41 @@ public class ProfileRepository {
     }
 
     /**
-     * Clear all grants from a profile.
+     * Mark all active, non-removed grants in a profile as removed.
+     * Returns the number of grants that were marked.
      */
-    public boolean clearGrants(String uuid) {
-        Update update = new Update().set("activeGrants", List.of());
-        return mongoTemplate.updateFirst(byUuid(uuid), update, COLLECTION).getMatchedCount() > 0;
+    public int clearGrants(String uuid, String removedBy, long removedAt, String removedReason) {
+        Document profile = mongoTemplate.findOne(byUuid(uuid), Document.class, COLLECTION);
+        if (profile == null) return 0;
+
+        @SuppressWarnings("unchecked")
+        List<Document> grants = (List<Document>) profile.getOrDefault("activeGrants", new ArrayList<>());
+
+        int count = 0;
+        long now = System.currentTimeMillis();
+        for (Document g : grants) {
+            boolean alreadyRemoved = Boolean.TRUE.equals(g.getBoolean("removed"));
+            if (alreadyRemoved) continue;
+
+            // Check expiry: end == -1 means permanent, otherwise check timestamp
+            Object endObj = g.get("end");
+            long end = endObj instanceof Number ? ((Number) endObj).longValue() : -1L;
+            boolean active = (end == -1 || end >= now);
+            if (!active) continue;
+
+            g.put("removed",       true);
+            g.put("removedBy",     removedBy);
+            g.put("removedAt",     removedAt);
+            g.put("removedReason", removedReason);
+            count++;
+        }
+
+        if (count > 0) {
+            profile.put("activeGrants", grants);
+            mongoTemplate.save(profile, COLLECTION);
+        }
+
+        return count;
     }
 
     // ------------------------------------------------------------------
