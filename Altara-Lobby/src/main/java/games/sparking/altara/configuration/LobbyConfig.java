@@ -38,14 +38,13 @@ public class LobbyConfig extends LocalConfig {
                     " %rank%",
                     " ",
                     "%rotate%",
-                    "",
-                    "<gray><italic>%connnection_address%",
+                    "<gray><italic>%connection_address%",
                     "<gray><strikethrough>--------------------");
 
     private List<String> scoreBoardQueueLines =
             Arrays.asList(
                     "<dark_red>Queue:",
-                    " %queue_name% <gray>(#%queue_position% / %queue_total%)",
+                    " %queue_name% <gray>(#<queue_position> / %queue_total%)",
                     ""
             );
 
