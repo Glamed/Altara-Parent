@@ -49,7 +49,7 @@ public class AccountStatus {
         int total = 0;
 
         for (Punishment p : history) {
-            if (p.isRemoved() || p.getIssuedAt() < cutoff) continue;
+            if (!p.isActive() || p.getIssuedAt() < cutoff) continue;
 
             boolean counted = false;
             for (RestrictionAction action : p.getActions()) {

@@ -5,6 +5,7 @@ import games.sparking.altara.menu.Menu;
 import games.sparking.altara.punishment.InfractionType;
 import games.sparking.altara.utils.CC;
 import games.sparking.altara.utils.ItemBuilder;
+import games.sparking.altara.utils.Messages;
 import lombok.RequiredArgsConstructor;
 import net.kyori.adventure.text.Component;
 import org.bukkit.ChatColor;
@@ -49,6 +50,7 @@ public class PunishMenu extends Menu {
     public Map<Integer, Button> getButtons(Player player) {
         Map<Integer, Button> buttons = new HashMap<>();
         buttons.put(4, new HeadButton(target));
+        buttons.put(49, new ModifyPunishmentsButton());
 
 
 //        int index = 20;
@@ -92,7 +94,7 @@ public class PunishMenu extends Menu {
         public ItemStack getItem(Player player) {
             return new ItemBuilder(Material.PLAYER_HEAD)
                     .setSkullOwner(p.getName())
-                    .setDisplayName(CC.format("<gray>Punish <purple>" + p.getName()))
+                    .setDisplayName(ChatColor.translateAlternateColorCodes('&', "&7Punish &d" + p.getName()))
                     .build();
         }
     }
@@ -108,11 +110,11 @@ public class PunishMenu extends Menu {
         @Override
         public ItemStack getItem(Player player) {
             String desc = infractionType.getDescription();
-            List<Component> lore = new ArrayList<>();
+            List<String> lore = new ArrayList<>();
             StringBuilder line = new StringBuilder();
             for (String w : desc.split(" ")) {
                 if (line.length() + w.length() + 1 > 40) {
-                    lore.add(CC.format("<gray><i>" + line));
+                    lore.add(ChatColor.translateAlternateColorCodes('&', "&7&o" + line));
                     line = new StringBuilder(w);
                 } else {
                     if (!line.isEmpty()) line.append(" ");
@@ -120,12 +122,12 @@ public class PunishMenu extends Menu {
                 }
             }
             if (!line.isEmpty())
-                lore.add(CC.format("<gray><i>" + line));
+                lore.add(ChatColor.translateAlternateColorCodes('&', "&7&o" + line));
 
             return new ItemBuilder(infractionType.getMaterial())
                     .addFlag(ItemFlag.HIDE_ADDITIONAL_TOOLTIP)
-                    .setDisplayName(CC.format("<dark_purple><b>" + infractionType.getDisplayName()))
-                    .setLore(lore)
+                    .setDisplayName(ChatColor.translateAlternateColorCodes('&', "&5&l" + infractionType.getDisplayName()))
+                    .setLore(lore.toArray(new String[0]))
                     .build();
         }
 
@@ -134,11 +136,30 @@ public class PunishMenu extends Menu {
         public void click(Player whoClicked, int slot, ClickType clickType, int hotbarButton) {
             Player onlineTarget = target.getPlayer();
             if (onlineTarget == null) {
-                whoClicked.sendMessage(ChatColor.RED + "That player is no longer online.");
+                whoClicked.sendMessage(CC.errorMsg(Messages.CONNECTED));
                 return;
             }
 
             new PunishActionMenu().initialize(onlineTarget, infractionType, message, PunishMenu.this).openMenu(whoClicked);
+        }
+    }
+
+    public class ModifyPunishmentsButton extends Button {
+
+        @Override
+        public ItemStack getItem(Player player) {
+            return new ItemBuilder(Material.WRITABLE_BOOK)
+                    .setDisplayName(CC.format("&dModify Existing Punishments"))
+                    .setLore(
+                            CC.format("<gray>View punishment history and edit"),
+                            CC.format("<gray>active actions, timespans, and reasons.")
+                    )
+                    .build();
+        }
+
+        @Override
+        public void click(Player whoClicked, int slot, ClickType clickType, int hotbarButton) {
+            new PunishmentModifyMenu(target, PunishMenu.this).openMenu(whoClicked);
         }
     }
 }

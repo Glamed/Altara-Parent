@@ -2,27 +2,36 @@ package games.sparking.altara.punishment.packet;
 
 import games.sparking.altara.Altara;
 import games.sparking.altara.SystemType;
+import games.sparking.altara.punishment.InfractionType;
 import games.sparking.altara.punishment.Punishment;
+import games.sparking.altara.punishment.PunishmentType;
 import games.sparking.altara.punishment.RestrictionAction;
 import games.sparking.altara.redis.packet.Packet;
+import games.sparking.altara.task.Tasks;
 import games.sparking.altara.utils.Time;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.TextComponent;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 /**
- * Published by <b>Altara-Web</b> after persisting a new punishment to MongoDB.
+ * Published by the Web API whenever a new {@link Punishment} is persisted to MongoDB.
  *
- * <ul>
- *   <li>Paper servers receive it and apply the punishment effect to the online player.</li>
- *   <li>The Proxy can intercept for pre-login ban-kicks (not implemented here – handled at login).</li>
- *   <li>The Web server itself ignores it (it already holds the source of truth).</li>
- * </ul>
+ * <p>Receipt is a no-op on non-Paper nodes. On Paper:
+ * <ol>
+ *   <li>The local {@code PunishmentService} cache is updated.</li>
+ *   <li>If the punished player is online, the punishment is enforced immediately
+ *       (kick for suspension, chat notice otherwise).</li>
+ * </ol>
  */
 @AllArgsConstructor
 @NoArgsConstructor
@@ -34,93 +43,148 @@ public class PunishmentIssuedPacket extends Packet {
 
     @Override
     public void receive() {
-        // Update the local punishment cache on every node except the source (WEB)
-        if (Altara.getSystemType() != SystemType.WEB) {
-            Altara.getSharedInstance().getPunishmentService().updateCacheFromPacket(punishment);
-        }
-
+        // Only Paper servers need to react to issued punishments.
         if (Altara.getSystemType() != SystemType.PAPER) return;
+        if (punishment == null) return;
 
-        Player player = Bukkit.getPlayer(UUID.fromString(punishment.getPlayerUuid()));
-        if (player == null) return; // player not on this server — another node will handle it
+        Altara.getSharedInstance().getPunishmentService().updateCacheFromPacket(punishment);
+        Tasks.run(this::enforceLocally);
+    }
 
-        RestrictionAction suspension = punishment.getSuspensionAction();
-        if (suspension != null && !suspension.hasExpired(punishment.getIssuedAt())) {
-            handleBan(player, suspension);
-        } else {
-            handleNoticeActions(player);
+    // ── Enforcement ────────────────────────────────────────────────────────────
+
+    private void enforceLocally() {
+        if (punishment.getPlayerUuid() == null) return;
+
+        UUID playerUuid;
+        try {
+            playerUuid = UUID.fromString(punishment.getPlayerUuid());
+        } catch (IllegalArgumentException e) {
+            return;
         }
+
+        Player player = Bukkit.getPlayer(playerUuid);
+        if (player == null) return;
+
+        RestrictionAction suspension = punishment.getActiveRestriction(PunishmentType.SUSPENSION);
+        if (suspension != null) {
+            sendSuspensionKick(player, suspension);
+            return;
+        }
+
+        sendRestrictionNotice(player);
     }
 
-    // ── Private helpers ────────────────────────────────────────────────────────
+    // ── Player messages ────────────────────────────────────────────────────────
 
-    private void handleBan(Player player, RestrictionAction suspension) {
-        String reasonText = punishment.getInfractionTypeEnum() != null
-                ? punishment.getInfractionTypeEnum().getDisplayName()
-                : punishment.getInfractionType();
+    private void sendSuspensionKick(Player player, RestrictionAction suspension) {
+        String reasonText = punishment.getReason() != null
+                ? punishment.getReason().getDisplayName() : "Policy Violation";
         boolean permanent = suspension.getDuration() == -1L;
+        long    duration  = suspension.getDuration();
 
-        String banMessage = "<red>Your account has been suspended"
+        Component msg = MM.deserialize(
+                "<dark_purple>Your account has been suspended"
                 + "\n<gray>\"" + reasonText + "<gray>\""
-                + "\n\n<gray>This suspension " + (permanent
-                    ? "will never expire"
-                    : "will expire in <red>" + Time.formatDetailed(suspension.getDuration()) + "<gray>")
-                + ". Visit <red><underlined>" + Altara.getSharedInstance().getMainConfig().getServerConfig().getWebsite() + "/appeal<reset><gray> to submit an appeal";
+                + "\n\n<gray>This suspension "
+                + (permanent
+                        ? "will never expire"
+                        : "will expire in <light_purple>" + Time.formatDetailed(duration) + "<gray>")
+                + ". Visit <light_purple><underlined>sparking.games/appeal<reset><gray> to submit an appeal"
+        );
 
-        player.kick(MM.deserialize(banMessage));
+        player.kick(msg);
     }
 
-    private void handleNoticeActions(Player player) {
-        sendHeader(player);
-        player.sendMessage(f(" <gray>Your recent activity violated our Terms of Service"));
+    private void sendRestrictionNotice(Player player) {
+        player.sendMessage(dashLine("Account Action"));
+        player.sendMessage(MM.deserialize(" <gray>Your recent activity violated our Terms of Service"));
 
-        String msg = punishment.getMessage();
-        if (msg != null && !msg.isBlank()) {
+        if (punishment.getMessage() != null) {
             player.sendMessage(Component.empty());
-            player.sendMessage(f("  <dark_gray><bold>→ <dark_gray>[<gray>Member<dark_gray>]<gray> " + player.getName() + " <dark_gray>»<white> " + msg));
+            player.sendMessage(MM.deserialize(
+                    "  <dark_gray><bold>→ </bold><dark_gray>[<gray>Member<dark_gray>]<gray> "
+                    + player.getName() + " <dark_gray>»<white> " + punishment.getMessage()));
+            player.sendMessage(Component.empty());
         }
 
         player.sendMessage(Component.empty());
-        player.sendMessage(f(" <gray>We took these actions<dark_gray>:"));
-
-        for (RestrictionAction action : punishment.getActions()) {
-            player.sendMessage(f("  <dark_red>x<red> " + action.getType().getActionLine(action.getDuration())));
-        }
-        if (msg != null && !msg.isBlank()) {
-            player.sendMessage(f("  <dark_red>x<red> This content has been removed so no one can see it."));
+        player.sendMessage(MM.deserialize(" <gray>We took these actions<dark_gray>:"));
+        for (String line : buildActionLines()) {
+            player.sendMessage(MM.deserialize("  <dark_red>✕ <red>" + line));
         }
 
         sendReasonSection(player);
-        sendHeader(player);
+        player.sendMessage(dashLine(null));
     }
 
-    private void sendHeader(Player player) {
-        player.sendMessage(MM.deserialize("<dark_purple><strikethrough>" + "─".repeat(48)));
+    private List<String> buildActionLines() {
+        List<String> lines = new ArrayList<>();
+        if (punishment.getMessage() != null) {
+            lines.add("This content has been removed so no one can see it.");
+        }
+        if (punishment.getActions() != null) {
+            for (RestrictionAction action : punishment.getActions()) {
+                lines.add(action.getType().getActionLine(action.getDuration()));
+            }
+        }
+        return lines;
     }
 
     private void sendReasonSection(Player player) {
         player.sendMessage(Component.empty());
-        var infraction = punishment.getInfractionTypeEnum();
-        if (infraction == games.sparking.altara.punishment.InfractionType.TEMP_AUTOMATED) {
-            player.sendMessage(f(" <gray>Why this action was taken<dark_gray>:"));
-            player.sendMessage(f("  <gray>This temporary action was triggered by our"));
-            player.sendMessage(f("  <gray>automated moderation systems and is pending"));
-            player.sendMessage(f("  <gray>manual review by our Trust & Safety team."));
+
+        if (punishment.getReason() == InfractionType.TEMP_AUTOMATED) {
+            player.sendMessage(MM.deserialize(" <gray>Why this action was taken<dark_gray>:"));
+            player.sendMessage(MM.deserialize("  <gray>This temporary action was triggered by our automated"));
+            player.sendMessage(MM.deserialize("  <gray>moderation systems and is pending staff review."));
             player.sendMessage(Component.empty());
-            player.sendMessage(f(" <gray>You cannot appeal this action at this time."));
-        } else {
-            String name = infraction != null ? infraction.getDisplayName() : punishment.getInfractionType();
-            player.sendMessage(f(" <gray>Why we took these actions<dark_gray>:"));
-            player.sendMessage(f("  <gray>Our trust and safety team uses automation and manual"));
-            player.sendMessage(f("  <gray>review to enforce our rules. We believe that you have"));
-            player.sendMessage(f("  <gray>violated our community guidelines on <light_purple>" + name + "<gray>."));
-            player.sendMessage(Component.empty());
-            player.sendMessage(f(" <gray>Please review our <aqua><underlined>Community Guidelines<gray>."));
-            player.sendMessage(f(" <gray>Did we make a mistake? <aqua><underlined>Let us know<gray>!"));
+            player.sendMessage(MM.deserialize(" <gray>You cannot appeal this action at this time."));
+            return;
         }
+
+        String reasonDisplay = punishment.getReason() != null
+                ? punishment.getReason().getDisplayName() : "Policy Violation";
+
+        player.sendMessage(MM.deserialize(" <gray>Why we took these actions<dark_gray>:"));
+        player.sendMessage(MM.deserialize("  <gray>Our trust and safety team believes you have violated"));
+        player.sendMessage(MM.deserialize("  <gray>our community guidelines on <red>" + reasonDisplay + "<gray>."));
+        player.sendMessage(Component.empty());
+        player.sendMessage(MM.deserialize(" <gray>Please review our <aqua><underlined>Community Guidelines<gray>."));
+        player.sendMessage(MM.deserialize(" <gray>Did we make a mistake? <aqua><underlined>Let us know<gray>!"));
     }
 
-    private static Component f(String s) {
-        return MM.deserialize(s);
+    // ── Line builder ───────────────────────────────────────────────────────────
+
+    /**
+     * Builds an alternating dark-gray / dark-red dash line.
+     * If {@code label} is non-blank the label is centered between dash segments.
+     */
+    private static Component dashLine(String label) {
+        if (label == null || label.isBlank()) {
+            TextComponent.Builder b = Component.text();
+            boolean alt = true;
+            for (int i = 0; i < 48; i++) {
+                b.append(Component.text("-", alt ? NamedTextColor.DARK_GRAY : NamedTextColor.DARK_RED));
+                alt = !alt;
+            }
+            return b.build();
+        }
+
+        int dashes = Math.max(2, (48 - label.length() - 4) / 2);
+        TextComponent.Builder b = Component.text();
+        boolean alt = true;
+        for (int i = 0; i < dashes; i++) {
+            b.append(Component.text("-", alt ? NamedTextColor.DARK_GRAY : NamedTextColor.DARK_RED));
+            alt = !alt;
+        }
+        b.append(Component.text("[", NamedTextColor.DARK_GRAY));
+        b.append(Component.text(label, NamedTextColor.RED, TextDecoration.BOLD));
+        b.append(Component.text("]", NamedTextColor.DARK_GRAY));
+        for (int i = 0; i < dashes; i++) {
+            b.append(Component.text("-", alt ? NamedTextColor.DARK_GRAY : NamedTextColor.DARK_RED));
+            alt = !alt;
+        }
+        return b.build();
     }
 }

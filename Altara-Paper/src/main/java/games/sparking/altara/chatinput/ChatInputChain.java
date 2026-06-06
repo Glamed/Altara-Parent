@@ -1,5 +1,6 @@
 package games.sparking.altara.chatinput;
 
+import net.kyori.adventure.text.Component;
 import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
@@ -15,7 +16,7 @@ public class ChatInputChain {
 
     private boolean exitOnInvalidInput = false;
     private String[] escapeSequences = null;
-    private String escapeMessage = null;
+    private Component escapeMessage = null;
 
     public ChatInputChain exitOnInvalidInput() {
         this.exitOnInvalidInput = true;
@@ -27,7 +28,7 @@ public class ChatInputChain {
         return this;
     }
 
-    public ChatInputChain escapeMessage(String escapeMessage) {
+    public ChatInputChain escapeMessage(Component escapeMessage) {
         this.escapeMessage = escapeMessage;
         return this;
     }

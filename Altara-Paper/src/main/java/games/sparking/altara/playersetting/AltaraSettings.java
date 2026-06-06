@@ -5,6 +5,7 @@ import games.sparking.altara.utils.CC;
 import games.sparking.altara.utils.ItemBuilder;
 import games.sparking.altara.utils.Statics;
 import games.sparking.altara.visibility.VisibilityService;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.ClickType;
@@ -37,8 +38,8 @@ public class AltaraSettings implements PlayerSettingProvider {
         @Override
         public List<String> getDescription() {
             return Arrays.asList(
-                    CC.YELLOW + "If enabled, you will be able to",
-                    CC.YELLOW + "receive private messages."
+                    NamedTextColor.YELLOW + "If enabled, you will be able to",
+                    NamedTextColor.YELLOW + "receive private messages."
             );
         }
 
@@ -73,8 +74,8 @@ public class AltaraSettings implements PlayerSettingProvider {
         @Override
         public List<String> getDescription() {
             return Arrays.asList(
-                    CC.YELLOW + "If enabled, you will hear a sound",
-                    CC.YELLOW + "when you receive a private message."
+                    NamedTextColor.YELLOW + "If enabled, you will hear a sound",
+                    NamedTextColor.YELLOW + "when you receive a private message."
             );
         }
 
@@ -109,8 +110,8 @@ public class AltaraSettings implements PlayerSettingProvider {
         @Override
         public List<String> getDescription() {
             return Arrays.asList(
-                    CC.YELLOW + "If enabled, you will be able to",
-                    CC.YELLOW + "see staff only messages."
+                    NamedTextColor.YELLOW + "If enabled, you will be able to",
+                    NamedTextColor.YELLOW + "see staff only messages."
             );
         }
 
@@ -150,8 +151,8 @@ public class AltaraSettings implements PlayerSettingProvider {
         @Override
         public List<String> getDescription() {
             return Arrays.asList(
-                    CC.YELLOW + "If enabled, you will be able to",
-                    CC.YELLOW + "see vanished staff members."
+                    NamedTextColor.YELLOW + "If enabled, you will be able to",
+                    NamedTextColor.YELLOW + "see vanished staff members."
             );
         }
 
@@ -229,8 +230,8 @@ public class AltaraSettings implements PlayerSettingProvider {
         @Override
         public List<String> getDescription() {
             return Arrays.asList(
-                    CC.YELLOW + "If enabled, you will receive",
-                    CC.YELLOW + "chat from other servers."
+                    NamedTextColor.YELLOW + "If enabled, you will receive",
+                    NamedTextColor.YELLOW + "chat from other servers."
             );
         }
 
@@ -264,9 +265,9 @@ public class AltaraSettings implements PlayerSettingProvider {
         @Override
         public List<String> getDescription() {
             return Arrays.asList(
-                    CC.YELLOW + "If disabled, you will not see",
-                    CC.YELLOW + "any chat messages. Your own",
-                    CC.YELLOW + "messages still send globally."
+                    NamedTextColor.YELLOW + "If disabled, you will not see",
+                    NamedTextColor.YELLOW + "any chat messages. Your own",
+                    NamedTextColor.YELLOW + "messages still send globally."
             );
         }
 

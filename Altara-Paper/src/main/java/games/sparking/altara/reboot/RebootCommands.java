@@ -16,17 +16,17 @@ public class RebootCommands {
              description = "Start the reboot timer")
     public boolean reboot(CommandSender sender, @Param(name = "duration") Duration duration) {
         if (duration.isPermanent()) {
-            sender.sendMessage(CC.RED + "Cannot start permanent reboot task.");
+            sender.sendMessage(CC.errorMsg("Invalid duration.", "Reboots can not be permanent."));
             return false;
         }
 
         if (RebootService.isRebooting()) {
-            sender.sendMessage(CC.RED + "Reboot already in progress.");
+            sender.sendMessage(CC.errorMsg("Invalid request.", "Server reboot is already in progress."));
             return false;
         }
 
         RebootService.reboot(duration.getDuration());
-        sender.sendMessage(CC.format("<blue>Rebooting in <yellow>%s<blue>.", Time.formatDetailed(duration.getDuration())));
+        sender.sendMessage(CC.noticeMsg("", "Server will reboot in *" + Time.formatDetailed(duration.getDuration()) + "*."));
         return true;
     }
 
@@ -35,7 +35,6 @@ public class RebootCommands {
             description = "Cancel the reboot timer")
     public boolean now(CommandSender sender) {
         Bukkit.getServer().restart();
-
         return true;
     }
 
@@ -45,7 +44,7 @@ public class RebootCommands {
              description = "Cancel the reboot timer")
     public boolean cancel(CommandSender sender) {
         if (!RebootService.isRebooting()) {
-            sender.sendMessage(CC.RED + "Not rebooting.");
+            sender.sendMessage(CC.errorMsg("Invalid Request.", "This server is Not rebooting."));
             return false;
         }
 

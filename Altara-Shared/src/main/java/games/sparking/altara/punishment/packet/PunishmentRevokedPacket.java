@@ -5,18 +5,15 @@ import games.sparking.altara.SystemType;
 import games.sparking.altara.redis.packet.Packet;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
-import net.kyori.adventure.text.minimessage.MiniMessage;
-import org.bukkit.Bukkit;
-import org.bukkit.entity.Player;
 
 import java.util.UUID;
 
 /**
- * Published by <b>Altara-Web</b> after revoking / removing a punishment.
+ * Published by the Web API whenever a {@link games.sparking.altara.punishment.Punishment}
+ * is soft-deleted (revoked) via {@code DELETE /api/punishment/{id}}.
  *
- * <p>On reception every Paper node removes the punishment from its local cache.
- * If the player is online and the revoked punishment was a ban (now lifted)
- * they receive a notification.
+ * <p>Receipt is a no-op on non-Paper nodes. On Paper the record is removed from the
+ * local cache so active-check hot-paths (mute, ban) immediately reflect the revocation.
  */
 @AllArgsConstructor
 @NoArgsConstructor
@@ -24,22 +21,24 @@ public class PunishmentRevokedPacket extends Packet {
 
     private String punishmentId;
     private String playerUuid;
-    /** UUID of the staff member who revoked the punishment (nullable for automated revocations). */
     private String revokedBy;
 
     @Override
     public void receive() {
-        // Evict from local punishment cache on all nodes
-        if (Altara.getSystemType() != SystemType.WEB) {
-            Altara.getSharedInstance().getPunishmentService().removeFromCacheFromPacket(punishmentId, UUID.fromString(playerUuid));
+        // Only Paper servers maintain a local punishment cache that needs updating.
+        if (Altara.getSystemType() != SystemType.PAPER) return;
+        if (punishmentId == null || playerUuid == null) return;
+
+        UUID uuid;
+        try {
+            uuid = UUID.fromString(playerUuid);
+        } catch (IllegalArgumentException e) {
+            return;
         }
 
-        if (Altara.getSystemType() != SystemType.PAPER) return;
-
-        Player player = Bukkit.getPlayer(UUID.fromString(playerUuid));
-        if (player == null) return;
-
-        player.sendMessage(MiniMessage.miniMessage().deserialize(
-                "<green>A moderation action against your account has been lifted."));
+        Altara.getSharedInstance()
+              .getPunishmentService()
+              .removeFromCacheFromPacket(punishmentId, uuid);
     }
 }
+

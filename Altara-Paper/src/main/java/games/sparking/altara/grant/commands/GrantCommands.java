@@ -49,7 +49,7 @@ public class GrantCommands {
             playerOnly = true,
             async = true)
     public boolean grants(Player sender, @Param(name = "player") Profile target) {
-        sender.sendMessage(CC.YELLOW + "Loading grants of " + target.getName() + "...");
+        sender.sendMessage(CC.format("<yellow>Loading grants of " + target.getName() + "..."));
         RequestResponse response = RequestHandler.get("api/profile/%s/grants", target.getUuid().toString());
         if (!response.wasSuccessful()) {
             sender.sendMessage(CC.format("<red>Could not load grants: %s (%d)",

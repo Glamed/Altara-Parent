@@ -12,6 +12,7 @@ import games.sparking.altara.utils.ItemBuilder;
 import games.sparking.altara.utils.Time;
 import lombok.RequiredArgsConstructor;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -64,7 +65,7 @@ public class GrantDurationMenu extends Menu {
             @Override
             public ItemStack getItem(Player player) {
                 return new ItemBuilder(Material.BOOK)
-                        .setDisplayName(Component.text("Custom", CC.YELLOW, TextDecoration.BOLD))
+                        .setDisplayName(Component.text("Custom", NamedTextColor.YELLOW, TextDecoration.BOLD))
                         .build();
             }
 
@@ -82,7 +83,7 @@ public class GrantDurationMenu extends Menu {
     public void onClose(Player player) {
         if (!clicked) {
             profile.setGrantProcedure(null);
-            player.sendMessage(Component.text("You cancelled the grant procedure.", CC.RED));
+            player.sendMessage(CC.errorMsg("You cancelled the grant procedure."));
         }
     }
 
@@ -95,7 +96,7 @@ public class GrantDurationMenu extends Menu {
         @Override
         public ItemStack getItem(Player player) {
             return new ItemBuilder(material)
-                    .setDisplayName(Component.text(Time.formatDetailed(duration), CC.YELLOW, TextDecoration.BOLD))
+                    .setDisplayName(Component.text(Time.formatDetailed(duration), NamedTextColor.YELLOW, TextDecoration.BOLD))
                     .build();
         }
 

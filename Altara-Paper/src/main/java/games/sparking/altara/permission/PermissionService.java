@@ -8,6 +8,7 @@ import games.sparking.altara.rank.Rank;
 import games.sparking.altara.utils.CC;
 import lombok.RequiredArgsConstructor;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.permissions.PermissionAttachment;
@@ -107,18 +108,18 @@ public class PermissionService {
                 .forEach(uuid -> {
                     Rank rank = Altara.getSharedInstance().getRankService().getRank(uuid);
                     Map<String, Boolean> perms = convert(rank.getAllPermissions());
-                    Component result = Component.text("NOT_SET", CC.GRAY);
+                    Component result = Component.text("NOT_SET", NamedTextColor.GRAY);
                     if (perms.containsKey(permission.toLowerCase())) {
                         Boolean value = perms.get(permission.toLowerCase());
                         result = CC.colorBoolean(value, "YES", "NEGATED");
                         if (value)
                             hasPermission.set(true);
                     }
-                    debugs.add(Component.text("Grant " + rank.getName() + ": ", CC.BLUE).append(result));
+                    debugs.add(Component.text("Grant " + rank.getName() + ": ", NamedTextColor.BLUE).append(result));
                 });
 
         Map<String, Boolean> perms = convert(profile.getPermissions());
-        Component result = Component.text("NOT_SET", CC.GRAY);
+        Component result = Component.text("NOT_SET", NamedTextColor.GRAY);
         if (perms.containsKey(permission.toLowerCase())) {
             Boolean value = perms.get(permission.toLowerCase());
             result = CC.colorBoolean(value, "YES", "NEGATED");
@@ -126,7 +127,7 @@ public class PermissionService {
                 hasPermission.set(true);
         }
 
-        debugs.add(Component.text("Profile: ", CC.BLUE).append(result));
+        debugs.add(Component.text("Profile: ", NamedTextColor.BLUE).append(result));
         debugs.add(CC.format("<blue>Result: <yellow>%s</yellow> %s <blue>permission <yellow>%s</yellow>.</blue>",
                 player.getName(),
                 CC.strip(CC.colorBoolean(hasPermission.get(), "has", "doesn't have")),

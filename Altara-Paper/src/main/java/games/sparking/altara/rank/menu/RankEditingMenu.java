@@ -97,8 +97,11 @@ public class RankEditingMenu extends Menu {
         public void click(Player whoClicked, int slot, ClickType clickType, int hotbarButton) {
             whoClicked.getOpenInventory().close();
             new ChatInput<String>(String.class)
-                    .text("<yellow>Please enter the permission you would like to add, or say <red>cancel</red> to cancel.")
-                    .escapeMessage("<red>You cancelled the permission adding process.")
+                    .text(
+                            CC.noticeMsg("", "Please enter the new permission for this rank."),
+                            CC.noticeMsg("", "You can type *cancel* at any time to exit this process.")
+                    )
+                    .escapeMessage(CC.errorMsg("You cancelled the permission change."))
                     .onCancel(RankEditingMenu.this::openMenu)
                     .accept((player, input) -> {
                         if (local) {
@@ -145,8 +148,11 @@ public class RankEditingMenu extends Menu {
         public void click(Player whoClicked, int slot, ClickType clickType, int hotbarButton) {
             whoClicked.getOpenInventory().close();
             new ChatInput<String>(String.class)
-                    .text("<yellow>Please enter the permission you would like to remove, or say <red>cancel</red> to cancel.")
-                    .escapeMessage("<red>You cancelled the permission removal process.")
+                    .text(
+                            CC.noticeMsg("", "Please enter the permission you'd like to remove from this rank."),
+                            CC.noticeMsg("", "You can type *cancel* at any time to exit this process.")
+                    )
+                    .escapeMessage(CC.errorMsg("You cancelled the permission removal."))
                     .onCancel(RankEditingMenu.this::openMenu)
                     .accept((player, input) -> {
                         if (local) {
@@ -206,8 +212,11 @@ public class RankEditingMenu extends Menu {
         public void click(Player whoClicked, int slot, ClickType clickType, int hotbarButton) {
             whoClicked.getOpenInventory().close();
             new ChatInput<String>(String.class)
-                    .text("<yellow>Please enter the new prefix for this rank, or say <red>cancel</red> to cancel.")
-                    .escapeMessage("<red>You cancelled the prefix change.")
+                    .text(
+                            CC.noticeMsg("", "Please enter the new prefix for this rank."),
+                            CC.noticeMsg("", "You can type *cancel* at any time to exit this process.")
+                    )
+                    .escapeMessage(CC.errorMsg("You cancelled the prefix change."))
                     .onCancel(RankEditingMenu.this::openMenu)
                     .accept((player, input) -> {
                         rank.setPrefix(input);
@@ -234,8 +243,11 @@ public class RankEditingMenu extends Menu {
         public void click(Player whoClicked, int slot, ClickType clickType, int hotbarButton) {
             whoClicked.getOpenInventory().close();
             new ChatInput<String>(String.class)
-                    .text("<yellow>Please enter the new suffix for this rank, or say <red>cancel</red> to cancel.")
-                    .escapeMessage("<red>You cancelled the suffix change.")
+                    .text(
+                            CC.noticeMsg("", "Please enter the new suffix for this rank."),
+                            CC.noticeMsg("", "You can type *cancel* at any time to exit this process.")
+                    )
+                    .escapeMessage(CC.errorMsg("You cancelled the suffix change."))
                     .onCancel(RankEditingMenu.this::openMenu)
                     .accept((player, input) -> {
                         rank.setSuffix(input);
@@ -262,8 +274,11 @@ public class RankEditingMenu extends Menu {
         public void click(Player whoClicked, int slot, ClickType clickType, int hotbarButton) {
             whoClicked.getOpenInventory().close();
             new ChatInput<String>(String.class)
-                    .text("<yellow>Please enter the new color for this rank, or say <red>cancel</red> to cancel.")
-                    .escapeMessage("<red>You cancelled the color change.")
+                    .text(
+                            CC.noticeMsg("", "Please enter the new color for this rank."),
+                            CC.noticeMsg("", "You can type *cancel* at any time to exit this process.")
+                    )
+                    .escapeMessage(CC.errorMsg("You cancelled the color change."))
                     .onCancel(RankEditingMenu.this::openMenu)
                     .accept((player, input) -> {
                         if (input.contains(" ")) {
@@ -294,8 +309,11 @@ public class RankEditingMenu extends Menu {
         public void click(Player whoClicked, int slot, ClickType clickType, int hotbarButton) {
             whoClicked.getOpenInventory().close();
             new ChatInput<String>(String.class)
-                    .text("<yellow>Please enter the new chat color for this rank, or say <red>cancel</red> to cancel.")
-                    .escapeMessage("<red>You cancelled the chat color change.")
+                    .text(
+                            CC.noticeMsg("", "Please enter the new color for this rank."),
+                            CC.noticeMsg("", "You can type *cancel* at any time to exit this process.")
+                    )
+                    .escapeMessage(CC.errorMsg("You cancelled the queue color change."))
                     .onCancel(RankEditingMenu.this::openMenu)
                     .accept((player, input) -> {
                         if (input.contains(" ")) {
@@ -335,8 +353,11 @@ public class RankEditingMenu extends Menu {
         public void click(Player whoClicked, int slot, ClickType clickType, int hotbarButton) {
             whoClicked.getOpenInventory().close();
             new ChatInput<Rank>(Rank.class)
-                    .text("<yellow>Please enter the name of the child, or say <red>cancel</red> to cancel.")
-                    .escapeMessage("<red>You cancelled the inherit toggling.")
+                    .text(
+                            CC.noticeMsg("", "Please enter the name of the child."),
+                            CC.noticeMsg("", "You can type *cancel* at any time to exit this process.")
+                    )
+                    .escapeMessage(CC.errorMsg("You cancelled the queue priority change."))
                     .onCancel(RankEditingMenu.this::openMenu)
                     .accept((player, input) -> {
                         if (rank.getInherits().contains(input)) {
@@ -369,8 +390,11 @@ public class RankEditingMenu extends Menu {
         public void click(Player whoClicked, int slot, ClickType clickType, int hotbarButton) {
             whoClicked.getOpenInventory().close();
             new ChatInput<Integer>(Integer.class)
-                    .text("<yellow>Please enter the new weight for this rank, or say <red>cancel</red> to cancel.")
-                    .escapeMessage("<red>You cancelled the weight change.")
+                    .text(
+                            CC.noticeMsg("", "Please enter the new weight for this rank."),
+                            CC.noticeMsg("", "You can type *cancel* at any time to exit this process.")
+                    )
+                    .escapeMessage(CC.errorMsg("You cancelled the weight change."))
                     .onCancel(RankEditingMenu.this::openMenu)
                     .accept((player, input) -> {
                         rank.setWeight(input);
@@ -397,8 +421,11 @@ public class RankEditingMenu extends Menu {
         public void click(Player whoClicked, int slot, ClickType clickType, int hotbarButton) {
             whoClicked.getOpenInventory().close();
             new ChatInput<Integer>(Integer.class)
-                    .text("<yellow>Please enter the new queue priority for this rank, or say <red>cancel</red> to cancel.")
-                    .escapeMessage("<red>You cancelled the queue priority change.")
+                    .text(
+                            CC.noticeMsg("", "Please enter the new queue priority for this rank."),
+                            CC.noticeMsg("", "You can type *cancel* at any time to exit this process.")
+                    )
+                    .escapeMessage(CC.errorMsg("You cancelled the queue priority change."))
                     .onCancel(RankEditingMenu.this::openMenu)
                     .accept((player, input) -> {
                         rank.setQueuePriority(input);

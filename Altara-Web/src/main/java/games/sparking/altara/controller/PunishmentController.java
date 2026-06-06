@@ -18,8 +18,9 @@ import java.util.UUID;
  * REST controller exposing the Punishment API.
  *
  * <pre>
- *   POST   /api/punishment                          — Issue a punishment
+ *   POST   /api/punishment                          — Issue a punishment (multi-action)
  *   GET    /api/punishment/{id}                     — Get by ID
+ *   PATCH  /api/punishment/{id}                     — Partial update (infractionType / message / notes / actions)
  *   DELETE /api/punishment/{id}                     — Revoke (soft-delete)
  *   GET    /api/punishment/player/{uuid}            — All punishments for player
  *   GET    /api/punishment/player/{uuid}/active     — Active punishments for player
@@ -110,6 +111,35 @@ public class PunishmentController {
                 .orElse(notFound("Punishment not found: " + id));
     }
 
+    // ── Update (PATCH) ─────────────────────────────────────────────────────────
+
+    /**
+     * Partially updates a punishment.
+     *
+     * <h3>Accepted fields</h3>
+     * <pre>{@code
+     * {
+     *   "infractionType": "SPAM",               // optional
+     *   "message":        null,                  // optional (null clears it)
+     *   "notes":          "Staff note",          // optional
+     *   "actions": [                             // optional – replaces entire list
+     *     { "type": "CHAT_RESTRICTION", "duration": 3600000 }
+     *   ]
+     * }
+     * }</pre>
+     */
+    @PatchMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<String> updatePunishment(@PathVariable String id, @RequestBody String body) {
+        try {
+            JsonObject json = JsonParser.parseString(body).getAsJsonObject();
+            return punishmentWebService.updatePunishment(id, json)
+                    .map(p -> ok(Statics.GSON.toJson(p)))
+                    .orElse(notFound("Punishment not found: " + id));
+        } catch (Exception e) {
+            return badRequest(e.getMessage());
+        }
+    }
+
     // ── Enum Metadata ──────────────────────────────────────────────────────────
 
     /**
@@ -139,7 +169,7 @@ public class PunishmentController {
         for (PunishmentType type : PunishmentType.values()) {
             JsonObject obj = new JsonObject();
             obj.addProperty("name",        type.name());
-            obj.addProperty("displayName", type.getDisplayName());
+            obj.addProperty("displayName", type.getName());
             arr.add(obj);
         }
         return ok(Statics.GSON.toJson(arr));

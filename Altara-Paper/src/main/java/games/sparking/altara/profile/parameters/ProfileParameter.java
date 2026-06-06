@@ -24,8 +24,8 @@ public class ProfileParameter implements ParameterType<Profile> {
     @Override
     public Profile parse(CommandSender sender, String source) {
         if (Bukkit.isPrimaryThread()) {
-            sender.sendMessage(CC.RED + "Cannot use ProfileParameter on primary thread. Please inform server" +
-                    " administration to mark issued command as async.");
+            sender.sendMessage(CC.errorMsg("Cannot use ProfileParameter on primary thread. Please inform server" +
+                    " administration to mark issued command as async."));
             return null;
         }
 

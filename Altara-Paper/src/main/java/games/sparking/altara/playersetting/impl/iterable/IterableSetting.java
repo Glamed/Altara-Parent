@@ -4,6 +4,7 @@ import games.sparking.altara.playersetting.PlayerSetting;
 import games.sparking.altara.utils.CC;
 import games.sparking.altara.utils.ItemBuilder;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -15,7 +16,7 @@ import java.util.List;
 
 public abstract class IterableSetting<E extends ISettingIterable> extends PlayerSetting<E> {
 
-    private static final Component ENABLED_ARROW = Component.text("  ► ", CC.YELLOW, TextDecoration.BOLD);
+    private static final Component ENABLED_ARROW = Component.text("  ► ", NamedTextColor.YELLOW, TextDecoration.BOLD);
     private static final Component DISABLED_SPACER = Component.text("    ");
 
     public IterableSetting(String parent, String key) {

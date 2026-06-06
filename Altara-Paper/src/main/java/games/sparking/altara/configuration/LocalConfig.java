@@ -19,7 +19,7 @@ public class LocalConfig extends MainConfig {
     private boolean staffVisible = true;
     private boolean antiVPN = true;
 
-    private boolean queueEnabled = false;
+    private boolean queueEnabled = true;
     private boolean queuePaused = false;
     private int queueRate = 2;
 

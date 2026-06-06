@@ -25,7 +25,7 @@ public class QueueSendPlayerPacket extends Packet {
         if (player == null)
             return;
 
-        player.sendMessage(CC.GOLD + "Connecting you to " + CC.WHITE + queueName + CC.GOLD + "...");
+        player.sendMessage(CC.successMsg("Connecting you to " + queueName + "."));
         ByteArrayDataOutput out = ByteStreams.newDataOutput();
         out.writeUTF("Connect");
         out.writeUTF(this.queueName);

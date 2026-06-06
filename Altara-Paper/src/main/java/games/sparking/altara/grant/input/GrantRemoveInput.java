@@ -14,8 +14,11 @@ public class GrantRemoveInput extends ChatInput<String> {
 
     public GrantRemoveInput(Profile target, Grant grant) {
         super(String.class);
-        text("<yellow>Please enter the reason for the removal of this grant, or say <red>cancel</red> to cancel.");
-        escapeMessage("<red>You cancelled the grant removal.");
+        text(
+                CC.noticeMsg("", "Please enter the reason for removing this grant."),
+                CC.noticeMsg("", "You can type *cancel* at any time to exit this process.")
+        );
+        escapeMessage(CC.errorMsg("You cancelled the grant removal."));
 
         accept((player, input) -> {
             grant.setRemovedAt(System.currentTimeMillis());

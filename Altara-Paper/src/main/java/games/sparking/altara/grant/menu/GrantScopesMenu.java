@@ -14,6 +14,7 @@ import games.sparking.altara.utils.ItemBuilder;
 import games.sparking.altara.utils.Time;
 import lombok.RequiredArgsConstructor;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.text.WordUtils;
@@ -64,14 +65,14 @@ public class GrantScopesMenu extends Menu {
                             ).build();
                 }
                 return new ItemBuilder(Material.DIAMOND_SWORD)
-                        .setDisplayName(Component.text("Confirm and grant", CC.GREEN, TextDecoration.BOLD))
+                        .setDisplayName(Component.text("Confirm and grant", NamedTextColor.GREEN, TextDecoration.BOLD))
                         .setLore(
                                 CC.MENU_BAR,
                                 CC.format("<yellow>Click to grant %s the %s rank",
                                         procedure.getTarget().getName(), procedure.getRank().getName()),
                                 Component.text()
                                         .append(Component.text(scopes.contains("GLOBAL")
-                                                ? "This grant will be " : "This grant will apply on: ", CC.YELLOW))
+                                                ? "This grant will be " : "This grant will apply on: ", NamedTextColor.YELLOW))
                                         .append(Component.text(scopes.contains("GLOBAL") ? "Global"
                                                 : StringUtils.join(scopes, ", "), CC.RED))
                                         .build(),
@@ -150,7 +151,7 @@ public class GrantScopesMenu extends Menu {
             return new ItemBuilder(selected ? Material.LIME_WOOL : Material.GRAY_WOOL)
                     .setDisplayName(Component.text(
                             WordUtils.capitalizeFully(server),
-                            selected ? CC.GREEN : CC.GRAY,
+                            selected ? NamedTextColor.GREEN : NamedTextColor.GRAY,
                             TextDecoration.BOLD))
                     .build();
         }

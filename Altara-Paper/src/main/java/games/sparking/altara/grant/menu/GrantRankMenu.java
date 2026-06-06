@@ -10,6 +10,7 @@ import games.sparking.altara.utils.CC;
 import games.sparking.altara.utils.ItemBuilder;
 import lombok.RequiredArgsConstructor;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.ClickType;
 import org.bukkit.inventory.ItemStack;
@@ -42,7 +43,7 @@ public class GrantRankMenu extends Menu {
         if (!clicked) {
             Profile profile = Altara.getSharedInstance().getProfileService().getProfile(player);
             profile.setGrantProcedure(null);
-            player.sendMessage(Component.text("You cancelled the grant procedure.", CC.RED));
+            player.sendMessage(CC.errorMsg("You cancelled the grant procedure."));
         }
     }
 
@@ -54,7 +55,7 @@ public class GrantRankMenu extends Menu {
             return true;
         }
         return profile.getRealCurrentGrant().asRank().getWeight() > rank.getWeight()
-                && player.hasPermission("zircon.grant." + rank.getName());
+                && player.hasPermission("altara.grant." + rank.getName());
     }
 
     @RequiredArgsConstructor
@@ -70,16 +71,16 @@ public class GrantRankMenu extends Menu {
 
             if (canGrant(player, rank))
                 lore.add(Component.text()
-                        .append(Component.text("Click to grant ", CC.YELLOW))
-                        .append(Component.text(procedure.getTarget().getName(), CC.WHITE))
-                        .append(Component.text(" the ", CC.YELLOW))
-                        .append(Component.text(rank.getName(), CC.WHITE))
-                        .append(Component.text(" rank.", CC.YELLOW))
+                        .append(Component.text("Click to grant ", NamedTextColor.YELLOW))
+                        .append(Component.text(procedure.getTarget().getName(), NamedTextColor.WHITE))
+                        .append(Component.text(" the ", NamedTextColor.YELLOW))
+                        .append(Component.text(rank.getName(), NamedTextColor.WHITE))
+                        .append(Component.text(" rank.", NamedTextColor.YELLOW))
                         .build());
             else if (rank.isDefaultRank())
-                lore.add(Component.text("You cannot grant the default rank.", CC.RED));
+                lore.add(CC.errorMsg("Invalid rank.", "You are unable to grant the default rank."));
             else
-                lore.add(Component.text("You are not allowed to grant this rank.", CC.RED));
+                lore.add(CC.errorMsg("Invalid rank.", "You are unable to grant this rank."));
 
             lore.add(CC.MENU_BAR);
             return new ItemBuilder(rank.getMaterial())
@@ -90,7 +91,7 @@ public class GrantRankMenu extends Menu {
         @Override
         public void click(Player player, int slot, ClickType clickType, int hotbarButton) {
             if (!canGrant(player, rank)) {
-                player.sendMessage(Component.text("You are not allowed to grant this rank.", CC.RED));
+                player.sendMessage(CC.errorMsg("Invalid rank.", "You are unable to grant this rank."));
                 return;
             }
             clicked = true;

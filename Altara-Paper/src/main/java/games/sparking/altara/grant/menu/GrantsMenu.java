@@ -15,6 +15,7 @@ import games.sparking.altara.uuid.UUIDCache;
 import games.sparking.altara.uuid.UUIDUtils;
 import lombok.RequiredArgsConstructor;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.text.WordUtils;
@@ -70,39 +71,39 @@ public class GrantsMenu extends PagedMenu {
         public ItemStack getItem(Player player) {
             List<Component> lore = new ArrayList<>();
             lore.add(CC.MENU_BAR);
-            lore.add(Component.text("By: ", CC.YELLOW)
+            lore.add(Component.text("By: ", NamedTextColor.YELLOW)
                     .append(Component.text(UUIDUtils.isUUID(grant.getGrantedBy())
                             ? UUIDCache.getName(UUID.fromString(grant.getGrantedBy()))
                             : grant.getGrantedBy(), CC.RED)));
-            lore.add(Component.text("Reason: ", CC.YELLOW).append(Component.text(grant.getGrantedReason(), CC.RED)));
+            lore.add(Component.text("Reason: ", NamedTextColor.YELLOW).append(Component.text(grant.getGrantedReason(), CC.RED)));
 
             List<String> scopeNames = new ArrayList<>();
             grant.getScopes().forEach(scope -> scopeNames.add(WordUtils.capitalizeFully(scope)));
-            lore.add(Component.text("Scopes: ", CC.YELLOW).append(Component.text(StringUtils.join(scopeNames, ", "), CC.RED)));
-            lore.add(Component.text("Rank: ", CC.YELLOW).append(Component.text(grant.asRank().getName(), CC.RED)));
+            lore.add(Component.text("Scopes: ", NamedTextColor.YELLOW).append(Component.text(StringUtils.join(scopeNames, ", "), CC.RED)));
+            lore.add(Component.text("Rank: ", NamedTextColor.YELLOW).append(Component.text(grant.asRank().getName(), CC.RED)));
 
             if (grant.isRemoved()) {
                 lore.add(CC.MENU_BAR);
                 lore.add(Component.text("Removed:", CC.RED));
                 lore.add(Component.text((UUIDUtils.isUUID(grant.getRemovedBy())
                                 ? UUIDCache.getName(UUID.fromString(grant.getRemovedBy()))
-                                : grant.getRemovedBy()) + ": ", CC.YELLOW)
+                                : grant.getRemovedBy()) + ": ", NamedTextColor.YELLOW)
                         .append(Component.text(grant.getRemovedReason(), CC.RED)));
                 lore.add(Component.text("at ", CC.RED)
-                        .append(Component.text(Time.formatDate(grant.getRemovedAt(), AltaraSettings.TIME_ZONE.get(player)), CC.YELLOW)));
+                        .append(Component.text(Time.formatDate(grant.getRemovedAt(), AltaraSettings.TIME_ZONE.get(player)), NamedTextColor.YELLOW)));
                 lore.add(Component.empty());
-                lore.add(Component.text("Duration: ", CC.YELLOW)
+                lore.add(Component.text("Duration: ", NamedTextColor.YELLOW)
                         .append(Component.text(Time.formatTimeShort(grant.getDuration()))));
             } else if (!grant.isActive()) {
-                lore.add(Component.text("Duration: ", CC.YELLOW)
+                lore.add(Component.text("Duration: ", NamedTextColor.YELLOW)
                         .append(Component.text(Time.formatTimeShort(grant.getDuration()))));
-                lore.add(Component.text("Expired", CC.GREEN));
+                lore.add(Component.text("Expired", NamedTextColor.GREEN));
             } else {
                 lore.add(CC.MENU_BAR);
                 if (grant.getDuration() == -1)
-                    lore.add(Component.text("This is a permanent grant.", CC.YELLOW));
+                    lore.add(Component.text("This is a permanent grant.", NamedTextColor.YELLOW));
                 else
-                    lore.add(Component.text("Time remaining: ", CC.YELLOW)
+                    lore.add(Component.text("Time remaining: ", NamedTextColor.YELLOW)
                             .append(Component.text(Time.formatTimeShort(grant.getRemainingTime()), CC.RED)));
                 if (canGrant(player, grant.asRank())) {
                     lore.add(Component.empty());
@@ -115,7 +116,7 @@ public class GrantsMenu extends PagedMenu {
             return new ItemBuilder(active ? Material.LIME_WOOL : Material.RED_WOOL)
                     .setDisplayName(Component.text(
                             Time.formatDate(grant.getGrantedAt(), AltaraSettings.TIME_ZONE.get(player)),
-                            active ? CC.GREEN : CC.RED,
+                            active ? NamedTextColor.GREEN : CC.RED,
                             TextDecoration.BOLD))
                     .setLore(lore)
                     .build();

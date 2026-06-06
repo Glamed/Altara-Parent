@@ -2,6 +2,7 @@ package games.sparking.altara.playersetting;
 
 import games.sparking.altara.playersetting.impl.BooleanSetting;
 import games.sparking.altara.utils.CC;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.ClickType;
@@ -30,7 +31,7 @@ public class LobbySettings implements PlayerSettingProvider {
 
         @Override
         public List<String> getDescription() {
-            return Collections.singletonList(CC.YELLOW + "If enabled, you are able to fly around.");
+            return Collections.singletonList(NamedTextColor.YELLOW + "If enabled, you are able to fly around.");
         }
 
         @Override

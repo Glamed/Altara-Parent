@@ -6,6 +6,7 @@ import games.sparking.altara.profile.Profile;
 import games.sparking.altara.task.Tasks;
 import games.sparking.altara.utils.CC;
 import lombok.RequiredArgsConstructor;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.ClickType;
@@ -46,7 +47,7 @@ public abstract class PlayerSetting<T> {
             if (i < split.size() - 1 && !s.endsWith(" ") && !split.get(i + 1).startsWith(" ")) {
                 s = s + "-";
             }
-            list.add(CC.YELLOW + s.trim());
+            list.add(NamedTextColor.YELLOW + s.trim());
         }
         return list;
     }

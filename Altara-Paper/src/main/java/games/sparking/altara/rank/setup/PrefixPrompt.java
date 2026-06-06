@@ -16,9 +16,13 @@ public class PrefixPrompt extends ChatInput<String> {
 
     public PrefixPrompt() {
         super(String.class);
+        
+        text(
+                CC.noticeMsg("", "Please enter the prefix for the rank"),
+                CC.noticeMsg("", "You can type *cancel* at any time to exit this process.")
+        );
+        escapeMessage(CC.errorMsg("You cancelled further rank setup."));
 
-        text("<yellow>Please enter the prefix for this rank, or type <red>cancel</red> to cancel.");
-        escapeMessage("<red>You cancelled the further rank setup.");
         onCancel(player -> RankEditingMenu.RANK_SETUPS.remove(player.getUniqueId()));
 
         accept((player, input) -> {

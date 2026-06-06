@@ -18,39 +18,12 @@ public class CC {
     // -------------------------------------------------------------------------
     // Color Constants
     // -------------------------------------------------------------------------
-    public static final TextColor BLUE        = NamedTextColor.BLUE;
-    public static final TextColor AQUA        = NamedTextColor.AQUA;
-    public static final TextColor YELLOW      = NamedTextColor.YELLOW;
     public static final TextColor RED         = NamedTextColor.RED;
     public static final TextColor GRAY        = NamedTextColor.GRAY;
-    public static final TextColor GOLD        = NamedTextColor.GOLD;
-    public static final TextColor GREEN       = NamedTextColor.GREEN;
-    public static final TextColor WHITE       = NamedTextColor.WHITE;
-    public static final TextColor BLACK       = NamedTextColor.BLACK;
-    public static final TextColor DBLUE       = NamedTextColor.DARK_BLUE;
-    public static final TextColor DAQUA       = NamedTextColor.DARK_AQUA;
-    public static final TextColor DGRAY       = NamedTextColor.DARK_GRAY;
-    public static final TextColor DGREEN      = NamedTextColor.DARK_GREEN;
-    public static final TextColor DPURPLE     = NamedTextColor.DARK_PURPLE;
-    public static final TextColor DRED        = NamedTextColor.DARK_RED;
-    public static final TextColor PURPLE      = NamedTextColor.DARK_PURPLE;
-    public static final TextColor PINK        = NamedTextColor.LIGHT_PURPLE;
 
-    // -------------------------------------------------------------------------
-    // Predefined Bars and Symbols
-    // -------------------------------------------------------------------------
-    public static final Component MENU_BAR       = Component.text("------------------------", GRAY, TextDecoration.STRIKETHROUGH);
-    public static final Component CHAT_BAR       = Component.text("------------------------------------------------", GRAY, TextDecoration.STRIKETHROUGH);
-    public static final Component SMALL_CHAT_BAR = Component.text("-----------------", GRAY, TextDecoration.STRIKETHROUGH);
-    public static final Component SB_BAR         = Component.text("----------------------", GRAY, TextDecoration.STRIKETHROUGH);
-    public static final Component VERTICAL_BAR   = Component.text("\u2503", GRAY);
-    public static final Component HEART          = Component.text("\u2764", DRED);
-    public static final Component LEFT_ARROW     = Component.text("\u00ab", GRAY);
-    public static final Component RIGHT_ARROW    = Component.text("\u00bb", GRAY);
-
-    // -------------------------------------------------------------------------
-    // Format (MiniMessage + TagResolver placeholders)
-    // -------------------------------------------------------------------------
+    public static final Component MENU_BAR       = Component.text("------------------------", NamedTextColor.GRAY, TextDecoration.STRIKETHROUGH);
+    public static final Component CHAT_BAR       = Component.text("------------------------------------------------", NamedTextColor.GRAY, TextDecoration.STRIKETHROUGH);
+    public static final Component SMALL_CHAT_BAR = Component.text("-----------------", NamedTextColor.GRAY, TextDecoration.STRIKETHROUGH);
 
     // Adventure Resolvers
 
@@ -90,6 +63,10 @@ public class CC {
     // Boolean Helpers
     // -------------------------------------------------------------------------
 
+    public static String plural(int count, String singular) {
+        return singular + (count == 1 ? "" : "s");
+    }
+
     public static Component colorBoolean(boolean value) {
         return colorBoolean(value, false);
     }
@@ -102,8 +79,8 @@ public class CC {
 
     public static Component colorBoolean(boolean value, String enabled, String disabled) {
         return value
-                ? Component.text(enabled, GREEN)
-                : Component.text(disabled, RED);
+                ? Component.text(enabled, NamedTextColor.GREEN)
+                : Component.text(disabled, NamedTextColor.RED);
     }
 
     // -------------------------------------------------------------------------
@@ -143,13 +120,13 @@ public class CC {
         }
 
         TextComponent.Builder center = Component.text();
-        center.append(Component.text("[", DGRAY));
+        center.append(Component.text("[", NamedTextColor.DARK_GRAY));
         center.append(Component.text().color(headerColor).decorate(TextDecoration.BOLD).append(header).build());
         if (!subHeaderPlain.isEmpty()) {
-            center.append(Component.text(" > ", GRAY));
+            center.append(Component.text(" > ", NamedTextColor.DARK_GRAY));
             center.append(Component.text().color(subHeaderColor).append(subHeader).build());
         }
-        center.append(Component.text("]", DGRAY));
+        center.append(Component.text("]", NamedTextColor.DARK_GRAY));
 
         return Component.text()
                 .append(dashSegment)
@@ -181,16 +158,16 @@ public class CC {
 
     public static Component list(String reason) {
         return Component.text()
-                .append(Component.text("❱ ", DAQUA, TextDecoration.BOLD))
-                .append(Component.text(reason + ":", AQUA))
+                .append(Component.text("❱ ", NamedTextColor.DARK_AQUA, TextDecoration.BOLD))
+                .append(Component.text(reason + ":", NamedTextColor.AQUA))
                 .build();
     }
 
     public static Component list(String reason, String main) {
         return Component.text()
-                .append(Component.text("❱ ", DAQUA, TextDecoration.BOLD))
-                .append(Component.text(reason + ": ", AQUA))
-                .append(Component.text("(" + main + ")", GRAY))
+                .append(Component.text("❱ ", NamedTextColor.DARK_AQUA, TextDecoration.BOLD))
+                .append(Component.text(reason + ": ", NamedTextColor.AQUA))
+                .append(Component.text("(" + main + ")", NamedTextColor.GRAY))
                 .build();
     }
 
@@ -198,12 +175,16 @@ public class CC {
         return errorMsg(messages.getReason(), messages.getMain());
     }
 
+    public static Component errorMsg(Messages messages, Object... args) {
+        return errorMsg(messages.getReason(), messages.getMain().formatted(args));
+    }
+
     public static Component errorMsg(String reason) {
         return errorMsg(reason, null);
     }
 
     public static Component errorMsg(String reason, String main) {
-        return buildStatusMsg("\u2715", DRED, RED, GRAY, reason, main);
+        return buildStatusMsg("✕", NamedTextColor.DARK_RED, NamedTextColor.RED, NamedTextColor.GRAY, reason, main);
     }
 
     public static Component noticeMsg(Messages messages) {
@@ -215,7 +196,7 @@ public class CC {
     }
 
     public static Component noticeMsg(String reason, String main) {
-        return buildStatusMsg("\u2503", DAQUA, AQUA, GRAY, reason, main);
+        return buildStatusMsg("┃", NamedTextColor.DARK_AQUA, NamedTextColor.AQUA, NamedTextColor.GRAY, reason, main);
     }
 
     public static Component successMsg(Messages messages) {
@@ -227,7 +208,7 @@ public class CC {
     }
 
     public static Component successMsg(String reason, String main) {
-        return buildStatusMsg("\u2714", DGREEN, GREEN, GRAY, reason, main);
+        return buildStatusMsg("✔", NamedTextColor.DARK_GREEN, NamedTextColor.GREEN, NamedTextColor.GRAY, reason, main);
     }
 
     // -------------------------------------------------------------------------
@@ -258,10 +239,10 @@ public class CC {
         boolean hasReason = reason != null && !reason.isEmpty();
         boolean hasMain   = main   != null && !main.isEmpty();
 
-        if (hasReason) builder.append(buildInlineFormatted(reason, reasonColor, WHITE));
+        if (hasReason) builder.append(buildInlineFormatted(reason, reasonColor, NamedTextColor.WHITE));
         if (hasMain) {
             if (hasReason) builder.append(Component.text(" ", mainColor));
-            builder.append(buildInlineFormatted(main, mainColor, WHITE));
+            builder.append(buildInlineFormatted(main, mainColor, NamedTextColor.WHITE));
         }
 
         return builder.build();

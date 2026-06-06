@@ -16,6 +16,7 @@ import games.sparking.altara.utils.CC;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.HoverEvent;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
 import org.bukkit.Sound;
 import org.bukkit.command.CommandSender;
@@ -51,7 +52,7 @@ public class HologramCommands {
                 ))
                 .clickHandler((player, holo, line, clickType) -> {
                     if (line == 0) {
-                        player.sendMessage(CC.GREEN + "There are currently " + Bukkit.getOnlinePlayers().size() + " players online.");
+                        player.sendMessage(CC.noticeMsg("", "There are currently *" + Bukkit.getOnlinePlayers().size() + "* players online."));
                     }
                 })
                 .build();
@@ -116,8 +117,8 @@ public class HologramCommands {
                     hologram.getLocation().getZ());
 
             List<String> hover = new ArrayList<>();
-            hover.add(CC.GREEN + "Location: " + loc);
-            hover.add(CC.YELLOW + "Click to teleport");
+            hover.add(NamedTextColor.GREEN + "Location: " + loc);
+            hover.add(NamedTextColor.YELLOW + "Click to teleport");
             hover.add(" ");
 
             int i = 0;
@@ -312,7 +313,7 @@ public class HologramCommands {
 
         lb.spawn();
         lb.start();
-        sender.sendMessage(CC.GREEN + "Leaderboard hologram spawned — only you can see it.");
+        sender.sendMessage(NamedTextColor.GREEN + "Leaderboard hologram spawned — only you can see it.");
         return true;
     }
 

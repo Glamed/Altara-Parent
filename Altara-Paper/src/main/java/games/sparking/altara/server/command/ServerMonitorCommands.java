@@ -7,6 +7,7 @@ import games.sparking.altara.server.menu.ServerListMenu;
 import games.sparking.altara.server.packet.ExecuteCommandPacket;
 import games.sparking.altara.utils.CC;
 import lombok.RequiredArgsConstructor;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
@@ -44,8 +45,8 @@ public class ServerMonitorCommands {
              description = "Toggle if the update packet of this server gets send (DEBUG ONLY!)")
     public boolean smToggleUpdate(CommandSender sender) {
         ServerMonitorCommands.SEND_PACKET = !ServerMonitorCommands.SEND_PACKET;
-        sender.sendMessage(CC.YELLOW + "You have " + CC.colorBoolean(ServerMonitorCommands.SEND_PACKET)
-                + CC.YELLOW + " the sending of the update packet for this server.");
+        sender.sendMessage(NamedTextColor.YELLOW + "You have " + CC.colorBoolean(ServerMonitorCommands.SEND_PACKET)
+                + NamedTextColor.YELLOW + " the sending of the update packet for this server.");
         return true;
     }
 

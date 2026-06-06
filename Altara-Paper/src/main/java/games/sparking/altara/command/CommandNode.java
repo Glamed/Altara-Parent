@@ -188,8 +188,8 @@ public class CommandNode {
                             .append(Component.text(prefix + listText, tertiary))
                             .append(desc.isEmpty() || desc.equalsIgnoreCase("N/A")
                                     ? Component.empty()
-                                    : Component.text(" - ", CC.GRAY)
-                                            .append(Component.text(desc, CC.WHITE)))
+                                    : Component.text(" - ", NamedTextColor.GRAY)
+                                            .append(Component.text(desc, NamedTextColor.WHITE)))
                             .build();
                     sender.sendMessage(line);
                 });
@@ -244,8 +244,8 @@ public class CommandNode {
                     argument = StringUtils.join(args.toArray(new String[0]), " ", index, args.size());
                 }
                 if (data.getParameterType() == null) {
-                    sender.sendMessage(CC.RED + "Could not find a ParameterType to parse " + data.getType().getName() + "." +
-                            " Please contact the server administration if this continues to happen.");
+                    sender.sendMessage(CC.errorMsg("Could not find a ParameterType to parse " + data.getType().getName() + "." +
+                            " Please contact the server administration if this continues to happen."));
                     return true;
                 }
                 Object parsed = data.getParameterType().parse(sender, argument);

@@ -4,6 +4,7 @@ import games.sparking.altara.AltaraPaper;
 import games.sparking.altara.utils.CC;
 import lombok.Getter;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Bukkit;
 
@@ -12,9 +13,9 @@ import java.util.concurrent.TimeUnit;
 public class RebootService {
 
     public static final Component CHAT_BAR = Component.text()
-            .append(Component.text("⚠ ", CC.RED))
-            .append(Component.text("------------------------", CC.DRED, TextDecoration.STRIKETHROUGH))
-            .append(Component.text(" ⚠", CC.RED))
+            .append(Component.text("⚠ ", NamedTextColor.RED))
+            .append(Component.text("------------------------", NamedTextColor.DARK_RED, TextDecoration.STRIKETHROUGH))
+            .append(Component.text(" ⚠", NamedTextColor.RED))
             .build();
 
     @Getter

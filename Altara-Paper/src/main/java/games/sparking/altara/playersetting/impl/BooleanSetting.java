@@ -4,6 +4,7 @@ import games.sparking.altara.playersetting.PlayerSetting;
 import games.sparking.altara.utils.CC;
 import games.sparking.altara.utils.ItemBuilder;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -15,7 +16,7 @@ import java.util.List;
 
 public abstract class BooleanSetting extends PlayerSetting<Boolean> {
 
-    private static final Component ENABLED_ARROW = Component.text("  ► ", CC.YELLOW, TextDecoration.BOLD);
+    private static final Component ENABLED_ARROW = Component.text("  ► ", NamedTextColor.YELLOW, TextDecoration.BOLD);
     private static final Component DISABLED_SPACER = Component.text("    ");
 
     public BooleanSetting(String parent, String key) {
@@ -46,7 +47,7 @@ public abstract class BooleanSetting extends PlayerSetting<Boolean> {
         lore.add((state ? DISABLED_SPACER : ENABLED_ARROW).append(Component.text(getDisabledText(), CC.RED)));
 
         return new ItemBuilder(getMaterial())
-                .setDisplayName(Component.text(getDisplayName(), state ? CC.GREEN : CC.RED, TextDecoration.BOLD))
+                .setDisplayName(Component.text(getDisplayName(), state ? NamedTextColor.GREEN : CC.RED, TextDecoration.BOLD))
                 .setLore(lore)
                 .build();
     }

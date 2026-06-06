@@ -11,6 +11,7 @@ import games.sparking.altara.grant.Grant;
 import games.sparking.altara.grant.GrantProcedure;
 import games.sparking.altara.profile.packet.ProfileUpdatePacket;
 import games.sparking.altara.punishment.Punishment;
+import games.sparking.altara.punishment.PunishmentType;
 import games.sparking.altara.rank.Rank;
 import games.sparking.altara.task.Tasks;
 import games.sparking.altara.utils.IllegalSystemTypeException;
@@ -352,22 +353,42 @@ public class Profile {
         return (grant == null ? 0 : grant.asRank().getQueuePriority()) + (hasPrimeStatus() ? 1 : 0);
     }
 
-    public List<Punishment> getPunishments(Punishment.LegacyType type) {
+    /** Returns all punishments that contain at least one action of the given type. */
+    public List<Punishment> getPunishments(PunishmentType type) {
         List<Punishment> list = new ArrayList<>();
         for (Punishment punishment : punishments) {
-            if (type.name().equals(punishment.getInfractionType()))
+            if (punishment.getActions() != null &&
+                    punishment.getActions().stream().anyMatch(a -> a.getType() == type)) {
                 list.add(punishment);
+            }
         }
         return list;
     }
 
-    public Punishment getActivePunishment(Punishment.LegacyType type) {
+    /**
+     * Returns the first active punishment that has a non-expired restriction of the
+     * given type, or {@code null} if none exist.
+     */
+    public Punishment getActivePunishment(PunishmentType type) {
         for (Punishment punishment : punishments) {
-            if (punishment.isActive() && !punishment.isRemoved()
-                    && type.name().equals(punishment.getInfractionType()))
+            if (punishment.hasActiveRestriction(type)) {
                 return punishment;
+            }
         }
         return null;
+    }
+
+    /**
+     * Returns all active punishments that have a non-expired restriction of the given type.
+     */
+    public List<Punishment> getActivePunishments(PunishmentType type) {
+        List<Punishment> list = new ArrayList<>();
+        for (Punishment punishment : punishments) {
+            if (punishment.hasActiveRestriction(type)) {
+                list.add(punishment);
+            }
+        }
+        return list;
     }
 
     public String getCurrentName() {

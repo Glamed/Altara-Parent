@@ -79,6 +79,38 @@ public class PunishmentRepository {
         return findById(id);
     }
 
+    /**
+     * Partial update (PATCH) — only the allowed mutable fields are written.
+     * Allowed: {@code infractionType}, {@code message}, {@code notes}, {@code actions}.
+     */
+    public Optional<JsonObject> patch(String id, JsonObject updates) {
+        Update update = new Update();
+        boolean any = false;
+
+        if (updates.has("infractionType") && !updates.get("infractionType").isJsonNull()) {
+            update.set("infractionType", updates.get("infractionType").getAsString());
+            any = true;
+        }
+        if (updates.has("message")) {
+            update.set("message", updates.get("message").isJsonNull() ? null : updates.get("message").getAsString());
+            any = true;
+        }
+        if (updates.has("notes")) {
+            update.set("notes", updates.get("notes").isJsonNull() ? null : updates.get("notes").getAsString());
+            any = true;
+        }
+        if (updates.has("actions") && updates.get("actions").isJsonArray()) {
+            update.set("actions", Document.parse("{\"v\":" + updates.get("actions").toString() + "}").get("v"));
+            any = true;
+        }
+
+        if (!any) return findById(id);
+
+        long matched = mongoTemplate.updateFirst(byId(id), update, COLLECTION).getMatchedCount();
+        if (matched == 0) return Optional.empty();
+        return findById(id);
+    }
+
     // ── Player queries ─────────────────────────────────────────────────────────
 
     /** All punishment records for a player (newest first). */

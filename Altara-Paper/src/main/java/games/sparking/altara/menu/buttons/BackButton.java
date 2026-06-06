@@ -20,9 +20,9 @@ public class BackButton extends Button {
     public ItemStack getItem(Player player) {
         /*List<String> lore = new ArrayList<>();
         if (menu instanceof PagedMenu) {
-            lore.add(CC.GRAY + "To: " + ((PagedMenu) menu).getRawTitle(player));
+            lore.add(NamedTextColor.GRAY + "To: " + ((PagedMenu) menu).getRawTitle(player));
         } else {
-            lore.add(CC.GRAY + "To: " + menu.getTitle(player));
+            lore.add(NamedTextColor.GRAY + "To: " + menu.getTitle(player));
         }*/
         return new ItemBuilder(Material.RED_BED).setDisplayName("<red><b>Go Back").build();
     }

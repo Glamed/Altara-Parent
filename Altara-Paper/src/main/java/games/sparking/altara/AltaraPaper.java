@@ -44,8 +44,7 @@ import games.sparking.altara.profile.parameters.UnloadedProfileParameter;
 import games.sparking.altara.profiler.ProfilerListener;
 import games.sparking.altara.profiler.command.ProfilerCommand;
 import games.sparking.altara.punishment.commands.PunishCommand;
-import games.sparking.altara.punishment.listener.PunishmentChatListener;
-import games.sparking.altara.punishment.listener.PunishmentLoginListener;
+import games.sparking.altara.punishment.listeners.PunishmentListener;
 import games.sparking.altara.queue.Queue;
 import games.sparking.altara.queue.QueueService;
 import games.sparking.altara.queue.commands.QueueCommands;
@@ -186,8 +185,7 @@ public class AltaraPaper extends Altara {
         Arrays.asList(
                 new ChatListener(),
                 new MenuListener(),
-                new PunishmentLoginListener(),
-                new PunishmentChatListener(),
+                new PunishmentListener(),
                 new ProfilerListener(),
                 new ScoreboardListener(),
                 new HologramListener(),

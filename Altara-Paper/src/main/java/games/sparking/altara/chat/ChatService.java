@@ -2,6 +2,8 @@ package games.sparking.altara.chat;
 
 import games.sparking.altara.chat.impl.GlobalChannel;
 import games.sparking.altara.playersetting.AltaraSettings;
+import games.sparking.altara.utils.CC;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.entity.Player;
 
 import java.util.HashMap;
@@ -41,9 +43,9 @@ public final class ChatService {
         }
 
         if (!silent) {
-            player.sendMessage(net.kyori.adventure.text.Component.text(
+            player.sendMessage(CC.text(
                     "You are now in the " + channel.getName() + " channel.",
-                    games.sparking.altara.utils.CC.YELLOW));
+                    NamedTextColor.YELLOW));
         }
     }
 

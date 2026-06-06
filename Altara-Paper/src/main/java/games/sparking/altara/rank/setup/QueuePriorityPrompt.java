@@ -16,8 +16,11 @@ public class QueuePriorityPrompt extends ChatInput<Integer> {
     public QueuePriorityPrompt() {
         super(Integer.class);
 
-        text("<yellow>Please enter the queue priority for this rank, or type <red>cancel</red> to cancel.");
-        escapeMessage("<red>You cancelled the further rank setup.");
+        text(
+                CC.noticeMsg("", "Please enter the queue priority for the rank"),
+                CC.noticeMsg("", "You can type *cancel* at any time to exit this process.")
+        );
+        escapeMessage(CC.errorMsg("You cancelled further rank setup."));
         onCancel(player -> RankEditingMenu.RANK_SETUPS.remove(player.getUniqueId()));
 
         accept((player, input) -> {

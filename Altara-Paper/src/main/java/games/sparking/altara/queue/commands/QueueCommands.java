@@ -11,6 +11,7 @@ import games.sparking.altara.queue.packet.update.QueuePausePacket;
 import games.sparking.altara.queue.packet.update.QueueRatePacket;
 import games.sparking.altara.server.ServerInfo;
 import games.sparking.altara.utils.CC;
+import games.sparking.altara.utils.Messages;
 import games.sparking.altara.uuid.UUIDCache;
 import lombok.RequiredArgsConstructor;
 import org.bukkit.command.CommandSender;
@@ -28,18 +29,12 @@ public class QueueCommands {
     @CommandCooldown(time = 5)
     public boolean joinQueue(Player sender, @Param(name = "server", completionFlags = {"accessible"}) ServerInfo server) {
         if (!server.isOnline()) {
-            sender.sendMessage(CC.RED + "You cannot queue for " + CC.YELLOW + server.getName() + CC.RED
-                    + " while the server is offline.");
+            sender.sendMessage(CC.errorMsg(Messages.PLAYER_OFFLINE, server.getName()));
             return false;
         }
 
-        if (server.isProxy()) {
-            sender.sendMessage(CC.RED + "Cannot queue for a proxy.");
-            return false;
-        }
-
-        if (!server.isQueueEnabled()) {
-            sender.sendMessage(CC.RED + "You cannot queue for " + CC.YELLOW + server.getName() + CC.RED + ".");
+        if (!server.isQueueEnabled() || server.isProxy()) {
+            sender.sendMessage(CC.errorMsg(Messages.SERVER_UNAVAILABLE, server.getName()));
             return false;
         }
 
@@ -49,18 +44,17 @@ public class QueueCommands {
         }
 
         if (AltaraPaper.getPaperInstance().getQueueService().isQueueingFor(sender.getUniqueId(), server.getName())) {
-            sender.sendMessage(CC.RED + "You are already queueing for " + CC.YELLOW + server.getName() + CC.RED + ".");
+            sender.sendMessage(CC.errorMsg("Invalid Server.", "You are already queued for *" + server.getName() +  "*."));
             return false;
         }
 
-        if (!sender.hasPermission("invictus.server." + server.getGroup())) {
-            sender.sendMessage(CC.RED + "You do not have permission to queue for " + CC.YELLOW + server.getName() + CC.RED + ".");
+        if (!sender.hasPermission("altara.server." + server.getGroup())) {
+            sender.sendMessage(CC.errorMsg("Invalid Server.", "You do not have access to *" + server.getName() +  "*."));
             return false;
         }
 
         new QueueJoinPacket(server.getName(), sender.getUniqueId()).publish();
-        sender.sendMessage(CC.GREEN + "You have been added to the " + CC.YELLOW + server.getName() + CC.GREEN + " " +
-                "queue.");
+        sender.sendMessage(CC.successMsg("","You have joined the queue for *" + server.getName() + "*."));
         return true;
     }
 
@@ -70,18 +64,17 @@ public class QueueCommands {
              async = true)
     public boolean leaveQueue(Player sender, @Param(name = "server") ServerInfo server) {
         if (!server.isQueueEnabled()) {
-            sender.sendMessage(CC.YELLOW + server.getName() + CC.RED + " does not have queue enabled.");
+            sender.sendMessage(CC.errorMsg(Messages.SERVER_UNAVAILABLE, server.getName()));
             return false;
         }
 
         if (!AltaraPaper.getPaperInstance().getQueueService().isQueueingFor(sender.getUniqueId(), server.getName())) {
-            sender.sendMessage(CC.RED + "You are not queueing for " + CC.YELLOW + server.getName() + CC.RED + ".");
+            sender.sendMessage(CC.errorMsg("Invalid Server.", "You are not queueing for *" + server.getName() + "*."));
             return false;
         }
 
         new QueueLeavePacket(server.getName(), sender.getUniqueId()).publish();
-        sender.sendMessage(CC.GREEN + "You have been removed from the " + CC.YELLOW + server.getName() + CC.GREEN +
-                " queue.");
+        sender.sendMessage(CC.successMsg("", "You have been removed from the *" + server.getName() + "* queue."));
         return true;
     }
 
@@ -91,19 +84,18 @@ public class QueueCommands {
              async = true)
     public boolean queuePause(CommandSender sender, @Param(name = "server") ServerInfo server) {
         if (!server.isQueueEnabled()) {
-            sender.sendMessage(CC.YELLOW + server.getName() + CC.RED + " does not have queue enabled.");
+            sender.sendMessage(CC.errorMsg(Messages.SERVER_UNAVAILABLE, server.getName()));
             return false;
         }
 
         if (!server.isOnline()) {
-            sender.sendMessage(CC.YELLOW + server.getName() + CC.RED + " is offline.");
+            sender.sendMessage(CC.errorMsg(Messages.SERVER_OFFLINE, server.getName()));
             return false;
         }
 
         boolean paused = !server.isQueuePaused();
         new QueuePausePacket(server.getName(), paused).publish();
-        sender.sendMessage(CC.GREEN + "Queue of " + CC.YELLOW + server.getName() + CC.GREEN + " has been "
-                + CC.colorBoolean(!paused, "unpaused", "paused"));
+        sender.sendMessage(CC.noticeMsg("Queue Updated.", "Queue of " + server.getName() + " has been " + CC.colorBoolean(!paused, "unpaused", "paused")));
         return true;
     }
 
@@ -114,17 +106,17 @@ public class QueueCommands {
     public boolean queueRate(CommandSender sender, @Param(name = "server") ServerInfo server,
                              @Param(name = "rate") int rate) {
         if (!server.isQueueEnabled()) {
-            sender.sendMessage(CC.YELLOW + server.getName() + CC.RED + " does not have queue enabled.");
+            sender.sendMessage(CC.errorMsg(Messages.SERVER_UNAVAILABLE, server.getName()));
             return false;
         }
 
         if (!server.isOnline()) {
-            sender.sendMessage(CC.YELLOW + server.getName() + CC.RED + " is offline.");
+            sender.sendMessage(CC.errorMsg(Messages.SERVER_OFFLINE, server.getName()));
             return false;
         }
 
         new QueueRatePacket(server.getName(), rate).publish();
-        sender.sendMessage(CC.format("<green>Rate of <yellow>%s <green>was set to <yellow>%d<green>.", server.getName(), rate));
+        sender.sendMessage(CC.noticeMsg("Queue Updated.", server.getName() + " queue rate has been set to *" + rate + "*."));
         return true;
     }
 
@@ -134,7 +126,7 @@ public class QueueCommands {
              async = true)
     public boolean queueInfo(CommandSender sender, @Param(name = "server") ServerInfo server) {
         if (!server.isQueueEnabled()) {
-            sender.sendMessage(CC.YELLOW + server.getName() + CC.RED + " does not have queue enabled.");
+            sender.sendMessage(CC.errorMsg(Messages.SERVER_UNAVAILABLE, server.getName()));
             return false;
         }
 

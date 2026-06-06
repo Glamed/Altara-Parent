@@ -52,6 +52,18 @@ public class PunishmentWebService {
     })
     public Optional<JsonObject> issuePunishment(JsonObject punishment) {
         try {
+            // Ensure server-side fields are set regardless of what the caller sent.
+            if (!punishment.has("id") || punishment.get("id").isJsonNull()) {
+                punishment.addProperty("id", UUID.randomUUID().toString());
+            }
+            if (!punishment.has("issuedAt") || punishment.get("issuedAt").isJsonNull()) {
+                punishment.addProperty("issuedAt", System.currentTimeMillis());
+            }
+            if (!punishment.has("removed")) {
+                punishment.addProperty("removed",   false);
+                punishment.addProperty("removedAt", -1L);
+            }
+
             JsonObject saved = punishmentRepository.insert(punishment);
             Punishment p = Punishment.fromJson(saved);
             publishIssuedPacket(p);
@@ -91,11 +103,38 @@ public class PunishmentWebService {
     public Optional<JsonObject> revokePunishment(String id, String removedBy) {
         Optional<JsonObject> result = punishmentRepository.revoke(id, removedBy);
         result.ifPresent(p -> {
-            // Evict all player-level caches now that we have the playerUuid from the doc
             String playerUuid = p.has("playerUuid") ? p.get("playerUuid").getAsString() : null;
             if (playerUuid != null) {
                 evictPlayerCaches(playerUuid);
                 publishRevokedPacket(id, playerUuid, removedBy);
+            }
+        });
+        return result;
+    }
+
+    // ── Update (PATCH) ─────────────────────────────────────────────────────────
+
+    /**
+     * Applies a partial update to an existing punishment document.
+     *
+     * <p>Only {@code infractionType}, {@code message}, {@code notes}, and {@code actions}
+     * are accepted; all other fields are ignored for safety.
+     *
+     * @param id      the punishment ID
+     * @param updates partial JSON body from the caller
+     */
+    @CacheEvict(value = CacheConfig.PUNISHMENTS, key = "#id")
+    public Optional<JsonObject> updatePunishment(String id, JsonObject updates) {
+        Optional<JsonObject> result = punishmentRepository.patch(id, updates);
+        result.ifPresent(p -> {
+            String playerUuid = p.has("playerUuid") ? p.get("playerUuid").getAsString() : null;
+            if (playerUuid != null) {
+                evictPlayerCaches(playerUuid);
+                try {
+                    publishIssuedPacket(Punishment.fromJson(p));
+                } catch (Exception e) {
+                    log.warn("Could not re-publish updated punishment {}: {}", id, e.getMessage());
+                }
             }
         });
         return result;
@@ -129,8 +168,4 @@ public class PunishmentWebService {
         }
     }
 }
-
-
-
-
 

@@ -13,20 +13,23 @@ public class ColorPrompt extends ChatInput<String> {
 
     public ColorPrompt() {
         super(String.class);
-        text("<yellow>Please enter the color for this rank, or type <red>cancel</red> to cancel.");
-        escapeMessage("<red>You cancelled the further rank setup.");
+        text(
+                CC.noticeMsg("", "Please enter the color for this rank"),
+                CC.noticeMsg("", "You can type *cancel* at any time to exit this process.")
+        );
+        escapeMessage(CC.errorMsg("You cancelled the further rank setup."));
         onCancel(player -> RankEditingMenu.RANK_SETUPS.remove(player.getUniqueId()));
 
         accept((player, input) -> {
             if (input.contains(" ")) {
-                player.sendMessage(CC.RED + "The color cannot contain a white space.");
+                player.sendMessage(CC.errorMsg("Invalid color.", "The color cannot contain a white space."));
                 return false;
             }
 
             UUID rankId = RankEditingMenu.RANK_SETUPS.get(player.getUniqueId());
             Rank rank = rankId == null ? null : Altara.getSharedInstance().getRankService().getRank(rankId);
             if (rank == null) {
-                player.sendMessage(CC.RED + "The rank you were setting up no longer exists.");
+                player.sendMessage(CC.errorMsg("Invalid rank.", "The rank you were setting up no longer exists."));
                 return true;
             }
 
