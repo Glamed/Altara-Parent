@@ -40,6 +40,7 @@ import games.sparking.altara.playersetting.command.SettingsCommands;
 import games.sparking.altara.playersetting.listener.PlayerSettingListener;
 import games.sparking.altara.profile.BukkitProfileService;
 import games.sparking.altara.profile.Profile;
+import games.sparking.altara.profile.ProfileListener;
 import games.sparking.altara.profile.UnloadedProfile;
 import games.sparking.altara.profile.parameters.ProfileParameter;
 import games.sparking.altara.profile.parameters.UnloadedProfileParameter;
@@ -126,6 +127,9 @@ public class AltaraPaper extends Altara {
 
         UpdateTask.start();
 
+        this.permissionService = new PermissionService();
+        this.bukkitProfileService = new BukkitProfileService();
+
         this.queue = new Queue();
         this.queueService = new QueueService();
         queueService.startTask();
@@ -188,6 +192,7 @@ public class AltaraPaper extends Altara {
     @Override
     public void registerListeners() {
         Arrays.asList(
+                new ProfileListener(),
                 new ChatListener(),
                 new ChatInputListener(),
                 new MenuListener(),
