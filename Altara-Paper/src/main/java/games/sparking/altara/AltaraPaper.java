@@ -77,7 +77,9 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 public class AltaraPaper extends Altara {
@@ -95,6 +97,16 @@ public class AltaraPaper extends Altara {
 
     @Getter private Queue queue;
     @Getter private QueueService queueService;
+
+    /** UUIDs of players who are switching servers (not truly disconnecting from the network).
+     *  Add a UUID here before sending a player to another server so the quit handler knows
+     *  not to broadcast a "staff has left" message or remove them from queues. */
+    private final Set<UUID> confirmedSwitch = Collections.synchronizedSet(new java.util.HashSet<>());
+
+    public Set<UUID> getConfirmedSwitch() { return confirmedSwitch; }
+
+    public void markServerSwitch(UUID uuid) { confirmedSwitch.add(uuid); }
+    public boolean removeServerSwitch(UUID uuid) { return confirmedSwitch.remove(uuid); }
 
     @Getter private HologramService hologramService;
     @Getter private HologramClickListener hologramClickListener;

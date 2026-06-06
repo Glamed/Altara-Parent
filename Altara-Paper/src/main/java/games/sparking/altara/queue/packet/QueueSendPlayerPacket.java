@@ -26,6 +26,10 @@ public class QueueSendPlayerPacket extends Packet {
             return;
 
         player.sendMessage(CC.successMsg("Connecting you to " + queueName + "."));
+
+        // Mark as confirmed switch so the quit handler won't broadcast a "staff left network" message.
+        AltaraPaper.getPaperInstance().markServerSwitch(playerUuid);
+
         ByteArrayDataOutput out = ByteStreams.newDataOutput();
         out.writeUTF("Connect");
         out.writeUTF(this.queueName);

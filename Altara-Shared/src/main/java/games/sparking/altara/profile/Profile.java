@@ -168,7 +168,7 @@ public class Profile {
             this.disguiseData = Altara.getSharedInstance().getDisguiseService().getDisguiseData(this.uuid);
             this.isDisguised = !disguiseData.getDisguiseName().equals("N/A");
             this.disguiseName = disguiseData.getDisguiseName();
-            
+
             this.firstLogin = object.get("firstLogin").getAsLong();
             this.lastSeen = object.get("lastSeen").getAsLong();
             this.playTime = object.get("playTime").getAsLong();
