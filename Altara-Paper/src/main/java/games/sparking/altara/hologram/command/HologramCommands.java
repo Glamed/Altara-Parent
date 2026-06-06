@@ -125,7 +125,7 @@ public class HologramCommands {
                 hover.add(String.format("%d. %s", ++i, line.getText()));
 
             Component msg = Component.text(hologram.getName() + " - #" + hologram.getId(), CC.RED)
-                    .hoverEvent(HoverEvent.showText(CC.translate(String.join("\n", hover))))
+                    .hoverEvent(HoverEvent.showText(CC.format(String.join("\n", hover))))
                     .clickEvent(ClickEvent.runCommand("/hologram tpto " + hologram.getId()));
             sender.sendMessage(msg);
         }

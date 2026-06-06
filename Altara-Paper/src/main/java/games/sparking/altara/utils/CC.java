@@ -49,33 +49,6 @@ public class CC {
     public static final Component RIGHT_ARROW    = Component.text("\u00bb", GRAY);
 
     // -------------------------------------------------------------------------
-    // MiniMessage Translation
-    // -------------------------------------------------------------------------
-
-    public static Component translate(String miniMessage) {
-        return MM.deserialize(miniMessage);
-    }
-
-    /** Alias for {@link #translate(String)} — used by legacy call sites. */
-    public static Component translateToComponent(String miniMessage) {
-        return MM.deserialize(miniMessage);
-    }
-
-    public static List<Component> translate(List<String> lines) {
-        List<Component> result = new ArrayList<>();
-        for (String line : lines) result.add(translate(line));
-        return result;
-    }
-
-    public static List<Component> translate(String[] lines) {
-        List<Component> result = new ArrayList<>();
-        for (String line : lines) {
-            if (line != null) result.add(translate(line));
-        }
-        return result;
-    }
-
-    // -------------------------------------------------------------------------
     // Format (MiniMessage + TagResolver placeholders)
     // -------------------------------------------------------------------------
 

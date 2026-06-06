@@ -39,7 +39,7 @@ public class ItemBuilder {
      * Legacy fallback — translates & color codes
      */
     public ItemBuilder setDisplayName(String name) {
-        this.itemMeta.displayName(CC.translateToComponent(name));
+        this.itemMeta.displayName(CC.format(name));
         return this;
     }
 
@@ -65,7 +65,7 @@ public class ItemBuilder {
         } else {
             List<Component> components = new ArrayList<>();
             for (Object line : lore) {
-                components.add(CC.translateToComponent(line.toString()));
+                components.add(CC.format(line.toString()));
             }
             this.itemMeta.lore(components);
         }
@@ -83,7 +83,7 @@ public class ItemBuilder {
     public ItemBuilder setLore(String... lore) {
         List<Component> components = new ArrayList<>();
         for (String line : lore) {
-            components.add(CC.translateToComponent(line));
+            components.add(CC.format(line));
         }
         this.itemMeta.lore(components);
         return this;

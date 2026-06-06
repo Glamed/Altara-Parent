@@ -55,7 +55,7 @@ public class ProfilerCommand {
             return;
         }
 
-        sender.sendMessage(CC.translate(
+        sender.sendMessage(CC.format(
                 "<gold><bold>[PROFILER] <yellow>Currently flagged online players <gray>(" + records.size() + ")<yellow>:"));
 
         for (ProfilerRecord record : records) {
@@ -125,7 +125,7 @@ public class ProfilerCommand {
                     // Kick the player
                     Bukkit.getScheduler().runTask(
                             games.sparking.altara.AltaraPaper.getPlugin(),
-                            () -> target.kick(CC.translate(
+                            () -> target.kick(CC.format(
                                     "<dark_purple>Your account has been suspended\n<gray>Compromised Account [Change Password & Appeal]"
                             ))
                     );

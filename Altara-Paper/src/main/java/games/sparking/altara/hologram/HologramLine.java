@@ -11,7 +11,7 @@ import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
  * <p>Text may be stored in one of three formats and is automatically converted
  * to an Adventure {@link Component} by {@link #toComponent(String)}:
  * <ol>
- *   <li>Legacy <em>section-sign</em> ({@code §}) — produced by {@code CC.translate()}</li>
+ *   <li>Legacy <em>section-sign</em> ({@code §}) — produced by {@code CC.format()}</li>
  *   <li>Legacy <em>ampersand</em> ({@code &}) — raw config strings</li>
  *   <li>MiniMessage — {@code <red>}, {@code <bold>}, etc.</li>
  * </ol>
@@ -46,7 +46,7 @@ public class HologramLine {
      */
     public static Component toComponent(String text) {
         if (text == null || text.isEmpty()) return Component.empty();
-        if (text.contains("\u00A7")) {                        // § — from CC.translate() / ChatColor
+        if (text.contains("\u00A7")) {                        // § — from CC.format() / ChatColor
             return LegacyComponentSerializer.legacySection().deserialize(text);
         }
         if (containsLegacyAmpersand(text)) {                 // & colour codes

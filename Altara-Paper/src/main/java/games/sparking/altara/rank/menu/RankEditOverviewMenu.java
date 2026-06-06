@@ -58,22 +58,22 @@ public class RankEditOverviewMenu extends Menu {
             lore.add(CC.MENU_BAR);
             lore.add(CC.format("<yellow>Color: %sExample", rank.getColor()));
             lore.add(CC.format("<yellow>Chat Color: %sExample", rank.getChatColor()));
-            lore.add(CC.translate(" "));
+            lore.add(CC.format(" "));
             lore.add(CC.format("<yellow>Prefix: %sExample", rank.getPrefix()));
             lore.add(CC.format("<yellow>Suffix: <white>Example%s", rank.getSuffix()));
-            lore.add(CC.translate(" "));
+            lore.add(CC.format(" "));
             lore.add(CC.format("<yellow>Weight: <red>%d", rank.getWeight()));
             lore.add(CC.format("<yellow>Queue Priority: <red>%d", rank.getQueuePriority()));
-            lore.add(CC.translate(" "));
-            lore.add(CC.translate("<yellow>Default: " + (rank.isDefaultRank() ? "<green>true" : "<red>false")));
-            lore.add(CC.translate("<yellow>Disguisable: " + (rank.isDisguisable() ? "<green>true" : "<red>false")));
-            lore.add(CC.translate(" "));
+            lore.add(CC.format(" "));
+            lore.add(CC.format("<yellow>Default: " + (rank.isDefaultRank() ? "<green>true" : "<red>false")));
+            lore.add(CC.format("<yellow>Disguisable: " + (rank.isDisguisable() ? "<green>true" : "<red>false")));
+            lore.add(CC.format(" "));
             lore.add(CC.format("<yellow>Inherits: %s", rank.getInherits().isEmpty() ? "None" : ""));
             if (!rank.getInherits().isEmpty()) {
                 rank.getInherits().forEach(inherit -> lore.add(
-                        CC.translate("<gray> - " + Altara.getSharedInstance().getRankService().getRank(inherit.getUuid()).getName())));
+                        CC.format("<gray> - " + Altara.getSharedInstance().getRankService().getRank(inherit.getUuid()).getName())));
             }
-            lore.add(CC.translate(" "));
+            lore.add(CC.format(" "));
             lore.add(CC.format("<yellow>Permissions: <red>%d", rank.getPermissions().size()));
             lore.add(CC.format("<yellow>Local Permissions: <red>%d", rank.getLocalPermissions().size()));
             lore.add(CC.format("<yellow>Inherited Permissions: <red>%d", rank.getInheritPermissions().size()));

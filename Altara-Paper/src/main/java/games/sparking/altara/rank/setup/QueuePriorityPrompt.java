@@ -24,7 +24,7 @@ public class QueuePriorityPrompt extends ChatInput<Integer> {
             UUID rankId = RankEditingMenu.RANK_SETUPS.get(player.getUniqueId());
             Rank rank = rankId == null ? null : Altara.getSharedInstance().getRankService().getRank(rankId);
             if (rank == null) {
-                player.sendMessage(CC.translate("<red>The rank you were setting up no longer exists."));
+                player.sendMessage(CC.format("<red>The rank you were setting up no longer exists."));
                 return true;
             }
 

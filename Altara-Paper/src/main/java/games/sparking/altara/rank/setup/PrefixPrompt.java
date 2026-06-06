@@ -25,7 +25,7 @@ public class PrefixPrompt extends ChatInput<String> {
             UUID rankId = RankEditingMenu.RANK_SETUPS.get(player.getUniqueId());
             Rank rank = rankId == null ? null : Altara.getSharedInstance().getRankService().getRank(rankId);
             if (rank == null) {
-                player.sendMessage(CC.translate("<red>The rank you were setting up no longer exists."));
+                player.sendMessage(CC.format("<red>The rank you were setting up no longer exists."));
                 return true;
             }
 
@@ -45,7 +45,7 @@ public class PrefixPrompt extends ChatInput<String> {
             return;
 
         String suggested = "<gray>[" + rank.getName() + "<gray>] ";
-        player.sendMessage(CC.translate("<yellow>(Click to get the suggested prefix example)")
+        player.sendMessage(CC.format("<yellow>(Click to get the suggested prefix example)")
                 .clickEvent(ClickEvent.suggestCommand(suggested)));
     }
 }

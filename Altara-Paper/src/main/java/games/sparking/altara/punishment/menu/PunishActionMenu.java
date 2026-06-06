@@ -204,14 +204,14 @@ public class PunishActionMenu extends Menu {
             }
             return new ItemBuilder(Material.LIME_CONCRETE)
                     .setDisplayName("<green>Confirm Punishment")
-                    .setLore(CC.translate(lore))
+                    .setLore(CC.format(lore))
                     .build();
         }
 
         @Override
         public void click(Player player, int slot, ClickType clickType, int hotbarButton) {
             if (selectedActions.isEmpty()) {
-                player.sendMessage(CC.translate("<red>You need at least one restriction."));
+                player.sendMessage(CC.format("<red>You need at least one restriction."));
                 return;
             }
             new ConfirmationMenu(
@@ -220,7 +220,7 @@ public class PunishActionMenu extends Menu {
                         if (!confirmed) return;
                         new PunishmentManager(player, target, getSelectedActions(), infractionType, message).issue();
                         player.closeInventory();
-                        player.sendMessage(CC.translate("<green>Punishment issued for <light_purple>" + target.getName() + "<green>. It will be applied cross-server."));
+                        player.sendMessage(CC.format("<green>Punishment issued for <light_purple>" + target.getName() + "<green>. It will be applied cross-server."));
                     }
             ).openMenu(player);
         }

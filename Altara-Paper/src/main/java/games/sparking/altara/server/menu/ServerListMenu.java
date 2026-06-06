@@ -59,7 +59,7 @@ public class ServerListMenu extends Menu {
                 lore.add(CC.format("<yellow>Memory: <red>%dmb<yellow>/<red>%dmb",
                         server.getUsedMemory(), server.getAllocatedMemory()));
             }
-            lore.add(CC.translate(" "));
+            lore.add(CC.format(" "));
             lore.add(CC.format("<yellow>State: %s", server.getState().getInternalName()));
             if (server.getState() == ServerState.HEARTBEAT_TIMEOUT) {
                 lore.add(CC.format("<yellow>Last Heartbeat: <red>%s", Time.formatTimeAgo(server.getLastHeartbeat())));
@@ -67,8 +67,8 @@ public class ServerListMenu extends Menu {
                 lore.add(CC.format("<yellow>Last Online: <red>%s", Time.formatTimeAgo(server.getLastHeartbeat())));
             }
             if (!server.isProxy()) {
-                lore.add(CC.translate(" "));
-                lore.add(CC.translate("<gray><italic>Click to connect."));
+                lore.add(CC.format(" "));
+                lore.add(CC.format("<gray><italic>Click to connect."));
             }
             lore.add(CC.MENU_BAR);
 

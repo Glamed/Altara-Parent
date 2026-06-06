@@ -117,7 +117,7 @@ public class PunishMenu extends Menu {
             return new ItemBuilder(mat)
                     .addFlag(ItemFlag.HIDE_ADDITIONAL_TOOLTIP)
                     .setDisplayName("<dark_purple><bold>" + infractionType.getDisplayName())
-                    .setLore(CC.translate(lore))
+                    .setLore(CC.format(lore))
                     .build();
         }
 
@@ -125,7 +125,7 @@ public class PunishMenu extends Menu {
         public void click(Player whoClicked, int slot, ClickType clickType, int hotbarButton) {
             Player onlineTarget = target.getPlayer();
             if (onlineTarget == null) {
-                whoClicked.sendMessage(CC.translate("<red>That player is no longer online."));
+                whoClicked.sendMessage(CC.format("<red>That player is no longer online."));
                 return;
             }
             new PunishActionMenu()

@@ -101,7 +101,7 @@ public class QueueService {
                                     CC.format("<gold>You are position <white>%d <gold>out of <white>%d <gold>in the <white>%s <gold>queue.",
                                             position.incrementAndGet(), AltaraPaper.getPaperInstance().getQueue().getPlayers().size(),
                                             AltaraPaper.getSharedInstance().getLocalServerName()),
-                                    CC.translate("<gray><italic>You can purchase a rank at <gold><italic>"
+                                    CC.format("<gray><italic>You can purchase a rank at <gold><italic>"
                                             + AltaraPaper.getPaperInstance().getLocalConfig().getServerConfig().getWebsite()
                                             + " <gray><italic>to get a higher priority.")).publish()
                     );

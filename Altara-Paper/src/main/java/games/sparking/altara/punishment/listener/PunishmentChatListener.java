@@ -22,7 +22,7 @@ public class PunishmentChatListener implements Listener {
 
         if (muted) {
             event.setCancelled(true);
-            event.getPlayer().sendMessage(CC.translate("<red>You are currently chat-restricted and cannot send messages."));
+            event.getPlayer().sendMessage(CC.format("<red>You are currently chat-restricted and cannot send messages."));
         }
     }
 }

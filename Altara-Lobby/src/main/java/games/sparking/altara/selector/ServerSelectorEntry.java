@@ -70,7 +70,7 @@ public class ServerSelectorEntry implements StaticConfiguration {
         return new ItemBuilder(displayMaterial)
                 .setDisplayName(displayName)
                 .setLore(description.stream()
-                        .map(s -> CC.translate(s
+                        .map(s -> CC.format(s
                                 .replace("%status%", state)
                                 .replace("%online%", String.valueOf(onlineCount))
                                 .replace("%max%", String.valueOf(maxCount))

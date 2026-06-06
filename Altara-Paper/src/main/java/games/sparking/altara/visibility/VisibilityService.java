@@ -79,7 +79,7 @@ public class VisibilityService {
                     adapter.getName(), adapter.getPriority(), color, provided.name()));
         }
 
-        debugs.add(CC.translate("<blue>Result: <yellow>" + player.getName() + " " +
+        debugs.add(CC.format("<blue>Result: <yellow>" + player.getName() + " " +
                 (finalAction != VisibilityAction.HIDE ? "<green>can" : "<red>cannot") +
                 " <blue>see <yellow>" + target.getName() + "<blue>."));
         return debugs;

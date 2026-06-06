@@ -64,7 +64,7 @@ public class RankCommands {
     public boolean rankList(CommandSender sender,
                             @Flag(names = {"-priority"}, description = "Sort the ranks by queue priority") boolean priority) {
         sender.sendMessage(CC.SMALL_CHAT_BAR);
-        sender.sendMessage(CC.translate("<red><bold>Ranks"));
+        sender.sendMessage(CC.format("<red><bold>Ranks"));
         List<Rank> ranks = priority ? Altara.getSharedInstance().getRankService().getRanksSortedPriority()
                 : Altara.getSharedInstance().getRankService().getRanksSorted();
         for (Rank rank : ranks) {
@@ -83,7 +83,7 @@ public class RankCommands {
                             priority ? "Priority" : "Weight",
                             priority ? rank.getQueuePriority() : rank.getWeight(),
                             rank.isDefaultRank() ? " (Default)" : "")
-                    .hoverEvent(HoverEvent.showText(CC.translate(String.join("\n", hover))))
+                    .hoverEvent(HoverEvent.showText(CC.format(String.join("\n", hover))))
                     .clickEvent(ClickEvent.runCommand("/rank info " + rank.getName())));
         }
         sender.sendMessage(CC.SMALL_CHAT_BAR);
@@ -95,8 +95,8 @@ public class RankCommands {
             description = "View information about a specific rank")
     public boolean rankInfo(CommandSender sender, @Param(name = "rank") Rank rank) {
         sender.sendMessage(CC.genLine(NamedTextColor.DARK_GRAY, NamedTextColor.DARK_AQUA,
-                NamedTextColor.AQUA, CC.translate("Rank Information"),
-                NamedTextColor.WHITE, CC.translate(rank.getName())));
+                NamedTextColor.AQUA, CC.format("Rank Information"),
+                NamedTextColor.WHITE, CC.format(rank.getName())));
         sender.sendMessage(CC.format(" <aqua>Name: <white>%s", rank.getName()));
         sender.sendMessage(CC.format(" <aqua>Color: %sExample", rank.getColor()));
         sender.sendMessage(CC.format(" <aqua>Chat Color: %sExample", rank.getChatColor()));
@@ -104,7 +104,7 @@ public class RankCommands {
         sender.sendMessage(CC.format(" <aqua>Suffix: <white>Example%s", rank.getSuffix()));
         sender.sendMessage(CC.format(" <aqua>Weight: <white>%d", rank.getWeight()));
         sender.sendMessage(CC.format(" <aqua>Queue Priority: <white>%d", rank.getQueuePriority()));
-        sender.sendMessage(CC.translate(" <aqua>Default: " + (rank.isDefaultRank() ? "<green>true" : "<red>false")));
+        sender.sendMessage(CC.format(" <aqua>Default: " + (rank.isDefaultRank() ? "<green>true" : "<red>false")));
         sender.sendMessage(CC.format(" <aqua>Discord ID: <white>%s", rank.getDiscordId()));
         sender.sendMessage(CC.format(" <aqua>Inherits: <white>(%d)", rank.getInherits().size()));
         rank.getInherits().forEach(inherit -> sender.sendMessage(CC.format("<gray> - <white>%s", inherit)));

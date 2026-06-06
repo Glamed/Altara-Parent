@@ -78,7 +78,7 @@ public class PunishmentLoginListener implements Listener {
                         ? Time.formatDetailed(suspension.getDuration()) : "N/A") + "<gray>")
                 + ". Visit <light_purple><underlined>crystallwars.net/appeal<reset><gray> to submit an appeal";
 
-        return CC.translate(raw);
+        return CC.format(raw);
     }
 }
 

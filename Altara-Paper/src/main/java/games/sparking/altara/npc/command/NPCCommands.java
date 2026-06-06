@@ -93,7 +93,7 @@ public class NPCCommands {
             }
 
             Component msg = Component.text(npc.getName() + " - #" + npc.getId(), CC.RED)
-                    .hoverEvent(HoverEvent.showText(CC.translate(String.join("\n", hover))))
+                    .hoverEvent(HoverEvent.showText(CC.format(String.join("\n", hover))))
                     .clickEvent(ClickEvent.runCommand("/npc tpto " + npc.getId()));
             sender.sendMessage(msg);
         }

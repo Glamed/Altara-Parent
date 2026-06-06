@@ -68,7 +68,7 @@ public class HubBoardAdapter implements ScoreboardAdapter {
                 2
         ));
 
-        animation.whenTicked(s -> SCOREBOARD_TITLE.set(CC.translate(s)));
+        animation.whenTicked(s -> SCOREBOARD_TITLE.set(CC.format(s)));
         animation.start(4L);
 
         // Rotation updater (every 3 seconds swap)

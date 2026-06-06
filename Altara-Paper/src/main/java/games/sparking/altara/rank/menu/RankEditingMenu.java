@@ -180,7 +180,7 @@ public class RankEditingMenu extends Menu {
         public ItemStack getItem(Player player) {
             return new ItemBuilder(rank.isDisguisable() ? Material.LIME_DYE : Material.GRAY_DYE)
                     .setDisplayName("<yellow><bold>Toggle Disguisable")
-                    .setLore(CC.translate("<yellow>Disguisable: " + (rank.isDisguisable() ? "<green>true" : "<red>false")))
+                    .setLore(CC.format("<yellow>Disguisable: " + (rank.isDisguisable() ? "<green>true" : "<red>false")))
                     .build();
         }
 
@@ -188,7 +188,7 @@ public class RankEditingMenu extends Menu {
         public void click(Player player, int slot, ClickType clickType, int hotbarButton) {
             rank.setDisguisable(!rank.isDisguisable());
             save = true;
-            player.sendMessage(CC.translate("<yellow>You set the disguisable status of " + rank.getName() +
+            player.sendMessage(CC.format("<yellow>You set the disguisable status of " + rank.getName() +
                     " to " + (rank.isDisguisable() ? "<green>true" : "<red>false") + "<yellow>."));
         }
     }
@@ -268,7 +268,7 @@ public class RankEditingMenu extends Menu {
                     .onCancel(RankEditingMenu.this::openMenu)
                     .accept((player, input) -> {
                         if (input.contains(" ")) {
-                            player.sendMessage(CC.translate("<red>The color cannot contain a white space."));
+                            player.sendMessage(CC.format("<red>The color cannot contain a white space."));
                             return false;
                         }
                         rank.setColor(input);
@@ -300,7 +300,7 @@ public class RankEditingMenu extends Menu {
                     .onCancel(RankEditingMenu.this::openMenu)
                     .accept((player, input) -> {
                         if (input.contains(" ")) {
-                            player.sendMessage(CC.translate("<red>The chat color cannot contain a white space."));
+                            player.sendMessage(CC.format("<red>The chat color cannot contain a white space."));
                             return false;
                         }
                         rank.setChatColor(input);
@@ -319,11 +319,11 @@ public class RankEditingMenu extends Menu {
         public ItemStack getItem(Player player) {
             List<Component> lore = new ArrayList<>();
             if (rank.getInherits().isEmpty()) {
-                lore.add(CC.translate("<yellow>Inherits: <red>None"));
+                lore.add(CC.format("<yellow>Inherits: <red>None"));
             } else {
-                lore.add(CC.translate("<yellow>Inherits:"));
+                lore.add(CC.format("<yellow>Inherits:"));
                 rank.getInherits().forEach(inherit -> lore.add(
-                        CC.translate("<gray> - " + AltaraPaper.getSharedInstance().getRankService().getRank(inherit.getUuid()).getName())));
+                        CC.format("<gray> - " + AltaraPaper.getSharedInstance().getRankService().getRank(inherit.getUuid()).getName())));
             }
 
             return new ItemBuilder(Material.BOOK)
