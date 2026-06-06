@@ -14,6 +14,9 @@ import games.sparking.altara.stringanimation.impl.StaticAnimation;
 import games.sparking.altara.utils.CC;
 import games.sparking.altara.utils.Time;
 import lombok.RequiredArgsConstructor;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
+import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
@@ -24,7 +27,7 @@ import java.util.concurrent.atomic.AtomicReference;
 @RequiredArgsConstructor
 public class HubBoardAdapter implements ScoreboardAdapter {
 
-    private static final AtomicReference<String> SCOREBOARD_TITLE = new AtomicReference<>("");
+    private static final AtomicReference<Component> SCOREBOARD_TITLE = new AtomicReference<>(Component.empty());
     private static int rotateTick = 0; // controls rotation timing
 
     static {
@@ -65,7 +68,7 @@ public class HubBoardAdapter implements ScoreboardAdapter {
                 2
         ));
 
-        animation.whenTicked(SCOREBOARD_TITLE::set);
+        animation.whenTicked(s -> SCOREBOARD_TITLE.set(CC.translate(s)));
         animation.start(4L);
 
         // Rotation updater (every 3 seconds swap)
@@ -78,32 +81,37 @@ public class HubBoardAdapter implements ScoreboardAdapter {
     }
 
     @Override
-    public String getTitle(Player player) {
+    public Component getTitle(Player player) {
         return SCOREBOARD_TITLE.get();
     }
 
     @Override
-    public List<String> getLines(Player player) {
+    public List<Component> getLines(Player player) {
 //        Profile profile = Altara.getSharedInstance().getProfileService().getProfile(player);
         Profile profile = new Profile(player.getUniqueId(), "GLamify");
 
         QueueService queueService = AltaraPaper.getPaperInstance().getQueueService();
         String primaryQueue = queueService.getPrimaryQueue(player.getUniqueId());
 
-        List<String> lines = new ArrayList<>();
+        TagResolver globalPlaceholders = TagResolver.builder()
+                .resolver(Placeholder.parsed("rank",
+                        profile.getCurrentGrant().asRank().getDisplayName() + (profile.isDisguised()
+                                ? " &7(" + profile.getRealCurrentGrant().asRank().getDisplayName() + "&7)" : "")))
+                .resolver(Placeholder.unparsed("onlinecount",
+                        String.valueOf(ServerInfo.getGlobalPlayerCount())))
+                .resolver(Placeholder.unparsed("maxcount",
+                        String.valueOf(ServerInfo.getGlobalPlayerCount() + 1)))
+                .resolver(Placeholder.unparsed("connection_address",
+                        AltaraLobby.getLobbyInstance().getLobbyConfig().getServerConfig().getIp()))
+                .resolver(Placeholder.unparsed("store_address",
+                        AltaraLobby.getLobbyInstance().getLobbyConfig().getServerConfig().getStore()))
+                .resolver(Placeholder.unparsed("web_address",
+                        AltaraLobby.getLobbyInstance().getLobbyConfig().getServerConfig().getWebsite()))
+                .build();
+
+        List<Component> lines = new ArrayList<>();
 
         for (String s : AltaraLobby.getLobbyInstance().getLobbyConfig().getScoreBoardLines()) {
-            s = s.replaceAll("%rank%",
-                            profile.getCurrentGrant().asRank().getDisplayName() + (profile.isDisguised()
-                                    ? " <gray>(" + profile.getRealCurrentGrant().asRank().getDisplayName() + "<gray>)" : ""))
-                    .replaceAll("%onlinecount%",
-                            String.valueOf(ServerInfo.getGlobalPlayerCount()))
-                    .replaceAll("%maxcount%",
-                            String.valueOf(ServerInfo.getGlobalPlayerCount() + 1))
-                    .replaceAll("%connnection_address%", AltaraLobby.getLobbyInstance().getLobbyConfig().getServerConfig().getIp())
-                    .replaceAll("%store_address%", AltaraLobby.getLobbyInstance().getLobbyConfig().getServerConfig().getStore())
-                    .replaceAll("%web_address%", AltaraLobby.getLobbyInstance().getLobbyConfig().getServerConfig().getWebsite());
-
             switch (s) {
                 case "%rotate%": {
                     boolean hasQueue = primaryQueue != null && !AltaraLobby.getLobbyInstance().getLobbyConfig().getScoreBoardQueueLines().isEmpty();
@@ -129,7 +137,7 @@ public class HubBoardAdapter implements ScoreboardAdapter {
                     lines.addAll(getRebootLines());
                     break;
                 default:
-                    lines.add(s);
+                    lines.add(CC.format(s, globalPlaceholders));
                     break;
             }
         }
@@ -137,30 +145,36 @@ public class HubBoardAdapter implements ScoreboardAdapter {
         return lines;
     }
 
-    private List<String> getQueueLines(Player player, QueueService queueService, String primaryQueue) {
-        List<String> queueLines = new ArrayList<>();
+    private List<Component> getQueueLines(Player player, QueueService queueService, String primaryQueue) {
+        List<Component> queueLines = new ArrayList<>();
         if (primaryQueue == null) return queueLines;
 
+        TagResolver queuePlaceholders = TagResolver.builder()
+                .resolver(Placeholder.unparsed("queue_position",
+                        String.valueOf(queueService.getPosition(player.getUniqueId(), primaryQueue) + 1)))
+                .resolver(Placeholder.unparsed("queue_total",
+                        String.valueOf(queueService.getQueueing(primaryQueue).size())))
+                .resolver(Placeholder.unparsed("queue_name", primaryQueue))
+                .build();
+
         for (String queueLine : AltaraLobby.getLobbyInstance().getLobbyConfig().getScoreBoardQueueLines()) {
-            queueLine = queueLine.replaceAll("%queue_position%",
-                            String.valueOf(queueService.getPosition(player.getUniqueId(), primaryQueue) + 1))
-                    .replaceAll("%queue_total%",
-                            String.valueOf(queueService.getQueueing(primaryQueue).size()))
-                    .replaceAll("%queue_name%", primaryQueue);
-            queueLines.add(queueLine);
+            queueLines.add(CC.format(queueLine, queuePlaceholders));
         }
         return queueLines;
     }
 
-    private List<String> getRebootLines() {
-        List<String> rebootLines = new ArrayList<>();
+    private List<Component> getRebootLines() {
+        List<Component> rebootLines = new ArrayList<>();
         RebootTask rebootTask = RebootService.getRebootTask();
         if (rebootTask == null) return rebootLines;
 
+        TagResolver rebootPlaceholders = TagResolver.builder()
+                .resolver(Placeholder.unparsed("time_remaining",
+                        Time.formatHHMMSS(rebootTask.getSecondsRemaining(), TimeUnit.SECONDS)))
+                .build();
+
         for (String rebootLine : AltaraLobby.getLobbyInstance().getLobbyConfig().getScoreBoardRebootLines()) {
-            rebootLine = rebootLine.replaceAll("%time_remaining%",
-                    Time.formatHHMMSS(rebootTask.getSecondsRemaining(), TimeUnit.SECONDS));
-            rebootLines.add(rebootLine);
+            rebootLines.add(CC.format(rebootLine, rebootPlaceholders));
         }
         return rebootLines;
     }

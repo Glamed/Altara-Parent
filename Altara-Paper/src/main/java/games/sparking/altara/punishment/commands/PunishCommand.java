@@ -9,7 +9,7 @@ import org.bukkit.entity.Player;
 public class PunishCommand {
 
     @Command(
-            names       = {"punish"},
+            names       = {"punish", "p"},
             permission  = "altara.punish",
             playerOnly  = true,
             description = "Open the punishment builder for a player"

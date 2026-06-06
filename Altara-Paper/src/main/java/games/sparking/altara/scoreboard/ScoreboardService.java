@@ -1,8 +1,8 @@
 package games.sparking.altara.scoreboard;
 
 import games.sparking.altara.task.Tasks;
-import games.sparking.altara.utils.CC;
 import lombok.Getter;
+import net.kyori.adventure.text.Component;
 
 import java.util.HashMap;
 import java.util.List;
@@ -32,9 +32,9 @@ public class ScoreboardService {
         }, 0, 3);
         Tasks.runTimer(() -> {
             for (Scoreboard scoreboard : scoreboards.values()) {
-                List<String> lines = getAdapter().getLines(scoreboard.getPlayer());
+                List<Component> lines = getAdapter().getLines(scoreboard.getPlayer());
 
-                int maxLines = 15; // your scoreboard array size
+                int maxLines = 15;
 
                 while (lines.size() > maxLines) {
                     lines.remove(lines.size() - 1);
@@ -43,8 +43,8 @@ public class ScoreboardService {
                 int currentLine = 0;
                 boolean lastWasBlank = false;
 
-                for (String line : lines) {
-                    boolean isBlank = line.trim().isEmpty();
+                for (Component line : lines) {
+                    boolean isBlank = line.equals(Component.empty());
 
                     if (isBlank) {
                         if (lastWasBlank) {
@@ -55,7 +55,6 @@ public class ScoreboardService {
                         lastWasBlank = false;
                     }
 
-                    // avoid writing beyond scoreboard capacity
                     if (currentLine >= maxLines) {
                         break;
                     }

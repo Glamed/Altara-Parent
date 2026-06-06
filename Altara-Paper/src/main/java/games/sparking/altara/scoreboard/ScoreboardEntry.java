@@ -1,9 +1,8 @@
 package games.sparking.altara.scoreboard;
 
-import com.github.retrooper.packetevents.PacketEvents;
-import com.github.retrooper.packetevents.manager.server.ServerVersion;
 import lombok.Getter;
 import lombok.Setter;
+import net.kyori.adventure.text.Component;
 
 public class ScoreboardEntry {
 
@@ -30,13 +29,13 @@ public class ScoreboardEntry {
      *  Return the current assigned left-aligned display text for this line.
      */
     @Getter
-    private String leftDisplayName = null;
+    private Component leftDisplayName = null;
     /**
      * -- GETTER --
      *  Return the current assigned right-aligned display text for this line.
      */
     @Getter
-    private String rightDisplayName = null;
+    private Component rightDisplayName = null;
 
     /**
      * Initialize the ScoreBoardEntry object.
@@ -75,17 +74,8 @@ public class ScoreboardEntry {
     /**
      * This method update this line's left-aligned text to the given text.
      */
-    public void updateLeftAlignedText(String text) {
+    public void updateLeftAlignedText(Component text) {
         if (leftDisplayName != null && leftDisplayName.equals(text)) return;
-
-        /*
-         * In 1.20.3+, the identifyingName string permanently directs us to this line.
-         * In older versions, the previous display text directs us to this line.
-         */
-        if (!PacketEvents.getAPI().getServerManager().getVersion().isNewerThanOrEquals(ServerVersion.V_1_20_3)) {
-            if (!nameChanged) identifyingName = leftDisplayName;
-        }
-
         leftDisplayName = text;
         nameChanged = true;
     }
@@ -94,12 +84,8 @@ public class ScoreboardEntry {
      * This method update this line's right-aligned text to the given text.
      * This is only available in 1.20.3+.
      */
-    public void updateRightAlignedText(String text) {
-        /*
-         * Because this is a 1.20.3+ feature we don't need all the extra legacy code.
-         */
+    public void updateRightAlignedText(Component text) {
         if (rightDisplayName != null && rightDisplayName.equals(text)) return;
-
         rightDisplayName = text;
         nameChanged = true;
     }
