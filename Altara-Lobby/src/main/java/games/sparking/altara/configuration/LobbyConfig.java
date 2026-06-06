@@ -32,25 +32,25 @@ public class LobbyConfig extends LocalConfig {
             Arrays.asList(
                     "<dark_blue><gray><strikethrough>--------------------",
                     "<dark_red>Online:",
-                    " <white>%onlinecount% / %maxcount%",
+                    " <white><onlinecount> / <maxcount>",
                     " ",
                     "<dark_red>Rank:",
-                    " %rank%",
+                    " <rank>",
                     " ",
-                    "%rotate%",
-                    "<gray><italic>%connection_address%",
+                    "<rotate%",
+                    "<gray><italic><connection_address>",
                     "<gray><strikethrough>--------------------");
 
     private List<String> scoreBoardQueueLines =
             Arrays.asList(
                     "<dark_red>Queue:",
-                    " %queue_name% <gray>(#<queue_position> / %queue_total%)",
+                    " %queue_name% <gray>(#<queue_position> / <queue_total>)",
                     ""
             );
 
     private List<String> scoreBoardRebootLines =
             Arrays.asList(
-                    "<dark_red><bold>Rebooting<gray>: <red>%time_remaining%",
+                    "<dark_red><bold>Rebooting<gray>: <red><time_remaining>",
                     ""
             );
 
