@@ -53,10 +53,16 @@ public class ProfileRepository {
 
     /**
      * Insert a new profile.  The {@code _id} is set to the profile UUID string.
+     * {@code activeGrants} is always initialized to an empty list so subsequent reads
+     * never encounter a missing field.
      */
     public JsonObject insert(JsonObject profile) {
         Document doc = Document.parse(profile.toString());
         doc.put("_id", profile.get("uuid").getAsString());
+        // Ensure activeGrants always exists so clients can iterate it safely.
+        if (!doc.containsKey("activeGrants")) {
+            doc.put("activeGrants", List.of());
+        }
         mongoTemplate.insert(doc, COLLECTION);
         return findByUuid(profile.get("uuid").getAsString()).orElse(profile);
     }

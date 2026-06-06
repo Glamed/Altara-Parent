@@ -31,7 +31,15 @@ public class ProfileWebService {
 
     @Cacheable(value = CacheConfig.PROFILES, key = "#uuid.toString()")
     public Optional<JsonObject> getProfile(UUID uuid) {
-        return profileRepository.findByUuid(uuid.toString());
+        return profileRepository.findByUuid(uuid.toString())
+                .map(profile -> {
+                    // Guarantee that clients always receive an activeGrants array,
+                    // even for profiles that pre-date this field being initialized on insert.
+                    if (!profile.has("activeGrants") || profile.get("activeGrants").isJsonNull()) {
+                        profile.add("activeGrants", new JsonArray());
+                    }
+                    return profile;
+                });
     }
 
     @Caching(evict = {
