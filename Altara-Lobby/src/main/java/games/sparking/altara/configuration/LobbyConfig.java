@@ -36,7 +36,6 @@ public class LobbyConfig extends LocalConfig {
                     " ",
                     "<dark_red>Rank:",
                     " <rank>",
-                    " ",
                     "<rotate%",
                     "<gray><italic><connection_address>",
                     "<gray><strikethrough>--------------------");
