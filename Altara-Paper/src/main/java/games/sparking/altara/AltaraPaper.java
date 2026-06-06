@@ -6,6 +6,7 @@ import games.sparking.altara.chat.ChatChannelRegistry;
 import games.sparking.altara.chat.ChatListener;
 import games.sparking.altara.chat.command.ChatCommands;
 import games.sparking.altara.chat.impl.*;
+import games.sparking.altara.chatinput.ChatInputListener;
 import games.sparking.altara.command.BuildVersionCommand;
 import games.sparking.altara.command.CommandService;
 import games.sparking.altara.configuration.ConfigurationService;
@@ -188,6 +189,7 @@ public class AltaraPaper extends Altara {
     public void registerListeners() {
         Arrays.asList(
                 new ChatListener(),
+                new ChatInputListener(),
                 new MenuListener(),
                 new PunishmentListener(),
                 new ProfilerListener(),
