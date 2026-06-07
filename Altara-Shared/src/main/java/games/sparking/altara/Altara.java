@@ -17,6 +17,7 @@ import games.sparking.altara.server.ServerInfo;
 import games.sparking.altara.task.TaskImplementor;
 import games.sparking.altara.task.Tasks;
 import games.sparking.altara.task.impl.AsynchronousTaskChain;
+import games.sparking.altara.uuid.UUIDCache;
 import lombok.Getter;
 
 import java.util.List;
@@ -47,6 +48,8 @@ public abstract class Altara {
 
     @Getter private static MongoService mongoService;
     @Getter private static RedisService redisService;
+
+    @Getter private final UUIDCache uuidCache;
 
     @Getter private final RankService rankService;
     @Getter private final ProfileService profileService;
@@ -83,6 +86,8 @@ public abstract class Altara {
                 redisPass,
                 redisConfig.getDbId()
         ).subscribe();
+
+        this.uuidCache = new UUIDCache(redisService);
 
         this.profileService = new ProfileService();
         this.rankService = new RankService();
