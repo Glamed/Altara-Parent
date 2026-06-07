@@ -25,16 +25,20 @@ public class UUIDCache {
         this.redisService = redisService;
         instance = this;
         //Bukkit.getPluginManager().registerEvents(this, plugin);
-        this.redisService.executeCommand(redis -> {
-            for (Map.Entry<String, String> entry : redis.hgetAll("UUIDCache").entrySet()) {
+        Map<String, String> cacheData = this.redisService.executeCommand(redis -> redis.hgetAll("UUIDCache"));
+        
+        if (cacheData == null) {
+            System.out.println("[UUIDCache] Failed to load UUID cache from Redis - Redis may be down");
+        } else {
+            for (Map.Entry<String, String> entry : cacheData.entrySet()) {
                 UUID uuid = UUID.fromString(entry.getKey());
                 String name = entry.getValue();
 
                 nameUuidMap.put(name.toLowerCase(), uuid);
                 uuidNameMap.put(uuid, name);
             }
-            return null;
-        });
+            System.out.println("[UUIDCache] Loaded " + cacheData.size() + " UUID entries from Redis");
+        }
     }
 
     public static UUID getUuid(String name) {
@@ -68,11 +72,15 @@ public class UUIDCache {
         uuidNameMap.put(uuid, name);
 
         Runnable runnable;
-        runnable = () ->
-                this.redisService.executeCommand(redis -> {
-                    redis.hset("UUIDCache", uuid.toString(), name);
-                    return null;
-                });
+        runnable = () -> {
+            Object result = this.redisService.executeCommand(redis -> {
+                redis.hset("UUIDCache", uuid.toString(), name);
+                return true;
+            });
+            if (result == null) {
+                System.out.println("[UUIDCache] Failed to update UUID cache for " + uuid + " -> " + name);
+            }
+        };
 
         if (async)
             Altara.TASK_CHAIN.run(runnable);
@@ -89,10 +97,13 @@ public class UUIDCache {
     }
 
     public void saveAll() {
-        this.redisService.executeCommand(redis -> {
+        Object result = this.redisService.executeCommand(redis -> {
             uuidNameMap.forEach((uuid, s) -> redis.hset("UUIDCache", uuid.toString(), s));
-            return null;
+            return true;
         });
+        if (result == null) {
+            System.out.println("[UUIDCache] Failed to save all UUID cache entries to Redis");
+        }
     }
 
     public int getCachedAmount() {

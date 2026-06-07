@@ -2,8 +2,10 @@ package games.sparking.altara.chat.impl;
 
 import games.sparking.altara.chat.ChannelAudience;
 import games.sparking.altara.chat.ChatChannel;
+import games.sparking.altara.grant.Grant;
 import games.sparking.altara.playersetting.AltaraSettings;
 import games.sparking.altara.profile.Profile;
+import games.sparking.altara.rank.Rank;
 import games.sparking.altara.utils.CC;
 import net.kyori.adventure.text.Component;
 import org.bukkit.entity.Player;
@@ -21,14 +23,15 @@ public final class GlobalChannel extends ChatChannel {
     public static GlobalChannel getInstance() { return INSTANCE; }
 
     private GlobalChannel() {
-        super("Global", "!", true, true, true);
+        super("Global", null, true, true, true);
     }
 
     @Override
     public Component format(Profile sender, String message) {
+        Rank rank = sender.getCurrentGrant().asRank();
         return Component.empty()
-                .append(CC.format(sender.getCurrentGrant().asRank().getPrefix()))
-                .append(CC.format(sender.getCurrentName()))
+                .append(CC.format(rank.getPrefix()))
+                .append(CC.format(rank.getColor() + sender.getCurrentName()))
                 .append(CC.format(" <dark_gray>» "))
                 .append(CC.format(sender.getCurrentGrant().asRank().getChatColor() + message));
     }

@@ -166,10 +166,8 @@ public class AltaraPaper extends Altara {
     private void registerChatChannels() {
         // Registration order matters when channels share a prefix — higher
         // priority channels are checked first in ChatChannelRegistry.getByPrefix().
-        ChatChannelRegistry.register(GlobalChannel.getInstance());     // ! — default
-        ChatChannelRegistry.register(LocalChannel.getInstance());      // #
+        ChatChannelRegistry.register(GlobalChannel.getInstance());     //
         ChatChannelRegistry.register(StaffChannel.getInstance());      // @
-        ChatChannelRegistry.register(AdminChannel.getInstance());      // $
         ChatChannelRegistry.register(ShadowMuteChannel.getInstance()); // system-only, no prefix
     }
 

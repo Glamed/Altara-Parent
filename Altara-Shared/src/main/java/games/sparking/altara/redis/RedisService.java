@@ -33,10 +33,12 @@ public class RedisService {
     private static volatile boolean down = false;
 
     private final String channel;
-    private final JedisPooled pool;
+    private JedisPooled pool;  // Not final anymore to allow initialization handling
     private final String host;
     private final int port;
     private final String password;
+    private final int dbId;
+    private volatile boolean initialized = false;
 
     private final ExecutorService executor = Executors.newCachedThreadPool(runnable -> {
         Thread thread = new Thread(runnable);
@@ -52,20 +54,51 @@ public class RedisService {
     }
 
     public RedisService(String channel, String host, int port, String password) {
+        this(channel, host, port, password, 0);
+    }
+
+    public RedisService(String channel, String host, int port, String password, int dbId) {
         this.channel = channel;
         this.host = host;
         this.port = port;
+        this.dbId = dbId;
         this.password = (password != null && !password.isBlank()) ? password : null;
 
         ConnectionPoolConfig poolConfig = new ConnectionPoolConfig();
-        DefaultJedisClientConfig.Builder configBuilder = DefaultJedisClientConfig.builder();
+        DefaultJedisClientConfig.Builder configBuilder = DefaultJedisClientConfig.builder()
+                .database(dbId);
 
         if (this.password != null) {
             configBuilder.password(this.password);
         }
 
-        this.pool = new JedisPooled(new HostAndPort(host, port), configBuilder.build(), poolConfig);
-        services.add(this);
+        try {
+            this.pool = new JedisPooled(new HostAndPort(host, port), configBuilder.build(), poolConfig);
+            services.add(this);
+
+            // Test the connection immediately
+            testConnection();
+            initialized = true;
+            System.out.println("[Redis] Successfully initialized connection pool to " + host + ":" + port + " on database " + dbId);
+        } catch (Exception e) {
+            System.out.println("[Redis] FAILED to initialize connection pool: " + e.getMessage());
+            e.printStackTrace();
+            this.pool = null;
+            initialized = false;
+            down = true;
+            services.add(this);  // Still add to services so status can be monitored
+        }
+    }
+
+    private void testConnection() {
+        try {
+            String pong = this.pool.ping();
+            System.out.println("[Redis] Connection test successful: " + pong);
+        } catch (Exception e) {
+            System.out.println("[Redis] Connection test FAILED: " + e.getMessage());
+            e.printStackTrace();
+            throw e;
+        }
     }
 
     private Jedis openRawClient() {
@@ -73,6 +106,7 @@ public class RedisService {
         if (password != null) {
             jedis.auth(password);
         }
+        jedis.select(dbId);
         return jedis;
     }
 
@@ -152,10 +186,18 @@ public class RedisService {
         if (packet) lastPacket = System.currentTimeMillis();
         else lastExecution = System.currentTimeMillis();
 
+        if (pool == null) {
+            System.out.println("[Redis Error] Pool is null - Redis connection not initialized!");
+            lastError = System.currentTimeMillis();
+            down = true;
+            return null;
+        }
+
         try {
             down = false;
             return command.execute(pool);
         } catch (Exception e) {
+            System.out.println("[Redis Error] Command execution failed: " + e.getClass().getSimpleName() + " - " + e.getMessage());
             e.printStackTrace();
             lastError = System.currentTimeMillis();
             down = true;

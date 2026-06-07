@@ -80,7 +80,8 @@ public abstract class Altara {
                 redisConfig.getChannel(),
                 redisConfig.getHost(),
                 redisConfig.getPort(),
-                redisPass
+                redisPass,
+                redisConfig.getDbId()
         ).subscribe();
 
         this.profileService = new ProfileService();

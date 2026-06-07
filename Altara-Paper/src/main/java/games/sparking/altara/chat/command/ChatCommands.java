@@ -3,7 +3,6 @@ package games.sparking.altara.chat.command;
 import games.sparking.altara.chat.ChatChannel;
 import games.sparking.altara.chat.ChatChannelRegistry;
 import games.sparking.altara.chat.ChatService;
-import games.sparking.altara.chat.impl.AdminChannel;
 import games.sparking.altara.chat.impl.StaffChannel;
 import games.sparking.altara.command.annotation.Command;
 import games.sparking.altara.command.annotation.Param;
@@ -17,7 +16,6 @@ import org.bukkit.entity.Player;
  *   <li>{@code /channel [name]} / {@code /ch [name]} — switch active channel or list
  *       available channels.</li>
  *   <li>{@code /sc <message>} — quick-send to {@link StaffChannel} without switching.</li>
- *   <li>{@code /ac <message>} — quick-send to {@link AdminChannel} without switching.</li>
  * </ul>
  */
 public class ChatCommands {
@@ -68,17 +66,6 @@ public class ChatCommands {
     public boolean staffChat(Player sender,
                              @Param(name = "message", wildcard = true) String message) {
         StaffChannel.getInstance().dispatch(sender, message);
-        return true;
-    }
-
-    // ── /ac ────────────────────────────────────────────────────────────────────
-
-    @Command(names = {"ac", "adminchat"},
-            description = "Send a message to admin chat",
-            permission = "altara.admin")
-    public boolean adminChat(Player sender,
-                             @Param(name = "message", wildcard = true) String message) {
-        AdminChannel.getInstance().dispatch(sender, message);
         return true;
     }
 }

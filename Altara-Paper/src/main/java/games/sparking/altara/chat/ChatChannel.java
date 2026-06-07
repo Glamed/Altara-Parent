@@ -1,16 +1,19 @@
 package games.sparking.altara.chat;
 
 import games.sparking.altara.Altara;
+import games.sparking.altara.chat.log.ChatLogEntry;
 import games.sparking.altara.chat.packet.ChatMessagePacket;
 import games.sparking.altara.profile.Profile;
 import lombok.Getter;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Base class for every chat channel in Altara.
@@ -23,7 +26,10 @@ import java.util.List;
  * <h3>Options</h3>
  * <ul>
  *   <li>{@code log}    — when {@code true} every message is printed to the
- *       server console along with the list of online recipients.</li>
+ *       server console, its recipients are recorded, and the full delivery
+ *       record is persisted to Redis for {@value ChatLogEntry#TTL_SECONDS}
+ *       seconds (15 minutes).  Remote servers append their own viewer lists
+ *       to the same Redis key via {@link ChatMessagePacket}.</li>
  *   <li>{@code global} — when {@code true} a {@link ChatMessagePacket} is
  *       published over Redis so other servers on the network receive the
  *       formatted message.  Remote delivery uses
@@ -45,7 +51,8 @@ public abstract class ChatChannel {
      */
     private final String prefix;
 
-    /** If {@code true}, messages are echoed to the server console with recipients. */
+    /** If {@code true}, messages are echoed to the server console, recipients
+     *  are tracked, and a Redis log entry is persisted for 15 minutes. */
     private final boolean log;
 
     /** If {@code true}, a cross-server Redis packet is published after local delivery. */
@@ -58,10 +65,10 @@ public abstract class ChatChannel {
     private final boolean persistable;
 
     protected ChatChannel(String name, String prefix, boolean log, boolean global, boolean persistable) {
-        this.name       = name;
-        this.prefix     = prefix;
-        this.log        = log;
-        this.global     = global;
+        this.name        = name;
+        this.prefix      = prefix;
+        this.log         = log;
+        this.global      = global;
         this.persistable = persistable;
     }
 
@@ -84,12 +91,20 @@ public abstract class ChatChannel {
      * Formats and delivers {@code rawMessage} from {@code sender} through this
      * channel, then publishes a cross-server packet if {@link #isGlobal()}.
      *
+     * <p>When {@link #isLog()} is {@code true} a {@link ChatLogEntry} is written
+     * to Redis under key {@code altara:chatlog:{messageId}} with a 15-minute TTL.
+     * The message ID is forwarded inside {@link ChatMessagePacket} so remote
+     * servers can append their own viewer lists to the same key.
+     *
      * @param sender     the player sending the message
      * @param rawMessage message text (channel prefix already removed)
      */
     public void dispatch(Player sender, String rawMessage) {
         Profile profile = Altara.getSharedInstance().getProfileService().getProfile(sender.getUniqueId());
         Component formatted = format(profile != null ? profile : fallbackProfile(sender), rawMessage);
+
+        // Generate a stable ID shared with any cross-server packet for this message.
+        String messageId = UUID.randomUUID().toString();
 
         List<String> recipientNames = new ArrayList<>();
 
@@ -107,31 +122,35 @@ public abstract class ChatChannel {
         if (log) {
             Altara.getSharedInstance().getLogger().info(
                     "[" + name + "] " + sender.getName() + " -> [" +
-                    String.join(", ", recipientNames) + "]: " + rawMessage);
+                            String.join(", ", recipientNames) + "]: " + rawMessage);
+
+            // Persist to Redis asynchronously — does not block the chat thread.
+            String serialised = MiniMessage.miniMessage().serialize(formatted);
+            String origin     = Altara.getSharedInstance().getLocalServerName();
+            new ChatLogEntry(
+                    messageId,
+                    name,
+                    sender.getUniqueId().toString(),
+                    sender.getName(),
+                    serialised,
+                    rawMessage,
+                    recipientNames,
+                    origin
+            ).save();
         }
 
         // ── Cross-server relay ─────────────────────────────────────────────────
         if (global) {
             String origin = Altara.getSharedInstance().getLocalServerName();
-            new ChatMessagePacket(formatted, name, sender.getUniqueId(), origin).publish();
+            new ChatMessagePacket(formatted, name, sender.getUniqueId(), origin, messageId, log)
+                    .publish();
         }
     }
 
     // ── Helpers ────────────────────────────────────────────────────────────────
-
-    /**
-     * Converts a legacy {@code &}-color-coded rank string (e.g. {@code "&c[ADMIN] "})
-     * into a {@link Component} using Adventure's legacy serialiser.
-     */
-    protected static Component legacy(String text) {
-        return LegacyComponentSerializer.legacyAmpersand().deserialize(text);
-    }
 
     /** Minimal profile stand-in used when the real profile isn't loaded yet. */
     private static Profile fallbackProfile(Player player) {
         return new Profile(player.getUniqueId(), player.getName());
     }
 }
-
-
-
