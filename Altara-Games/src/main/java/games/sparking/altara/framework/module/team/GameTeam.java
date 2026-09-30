@@ -1,7 +1,8 @@
 package games.sparking.altara.framework.module.team;
 
 import lombok.Getter;
-import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.ComponentLike;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
@@ -66,8 +67,8 @@ public class GameTeam {
     // Display helpers
     // -------------------------------------------------------------------------
 
-    /** Returns {@code "§cRed"} style coloured display name. */
-    public String getDisplayName() {
+    /** The team's name in its colour. */
+    public Component getDisplayName() {
         return color.getColoredName();
     }
 
@@ -78,13 +79,12 @@ public class GameTeam {
     /**
      * Sends {@code message} to every online member of this team.
      *
-     * @param message raw/colour-coded string (no translation needed — use
-     *                {@link games.sparking.altara.utils.CC#format(String, TagResolver...)} beforehand if required)
+     * @param message the message, e.g. from {@link games.sparking.altara.utils.CC}
      */
-    public void broadcast(String message) {
+    public void broadcast(ComponentLike message) {
         for (UUID id : members) {
             Player p = Bukkit.getPlayer(id);
-            if (p != null && p.isOnline()) {
+            if (p != null) {
                 p.sendMessage(message);
             }
         }

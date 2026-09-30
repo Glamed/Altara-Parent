@@ -10,53 +10,58 @@ import games.sparking.altara.utils.CC;
 import games.sparking.altara.utils.Messages;
 import games.sparking.altara.uuid.UUIDCache;
 import games.sparking.altara.uuid.UUIDUtils;
-import lombok.RequiredArgsConstructor;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.logging.Level;
 
-@RequiredArgsConstructor
+/**
+ * Resolves a player name or UUID to a {@link Profile}.  Online players use their cached
+ * profile; offline players are fetched from the API <em>without</em> being cached, so
+ * a later login always loads fresh data.  Blocking — commands using it must be async.
+ */
 public class ProfileParameter implements ParameterType<Profile> {
 
     @Override
     public Profile parse(CommandSender sender, String source) {
         if (Bukkit.isPrimaryThread()) {
-            sender.sendMessage(CC.errorMsg("Cannot use ProfileParameter on primary thread. Please inform server" +
-                    " administration to mark issued command as async."));
+            Bukkit.getLogger().log(Level.SEVERE, "ProfileParameter used on the main thread — mark the command async",
+                    new IllegalStateException());
+            sender.sendMessage(CC.error(Messages.API_ERROR));
             return null;
         }
 
-        if (source.equals("@self") && sender instanceof Player) {
-            return Altara.getSharedInstance().getProfileService().getProfile((Player) sender);
+        if (source.equals("@self") && sender instanceof Player player) {
+            return Altara.getSharedInstance().getProfileService().getProfile(player);
         }
 
-        if (Bukkit.getPlayer(source) != null)
-            return Altara.getSharedInstance().getProfileService().getProfile((Player) Bukkit.getOfflinePlayer(source));
-
-        UUID uuid = UUIDUtils.isUUID(source) ? UUID.fromString(source) : UUIDCache.getUuid(source);
+        Player online = Bukkit.getPlayerExact(source);
+        UUID uuid = online != null ? online.getUniqueId()
+                : UUIDUtils.isUUID(source) ? UUID.fromString(source)
+                : UUIDCache.getUuid(source);
 
         if (uuid == null) {
-            sender.sendMessage(CC.errorMsg(Messages.CONNECTED));
+            sender.sendMessage(CC.error(Messages.NEVER_JOINED));
             return null;
         }
 
-        Profile profile = Altara.getSharedInstance().getProfileService().getProfile(uuid);
-        if (profile != null)
-            return profile;
+        Profile cached = Altara.getSharedInstance().getProfileService().getProfile(uuid);
+        if (cached != null) return cached;
 
         RequestResponse response = RequestHandler.get("api/profile/%s", uuid.toString());
+        if (response.getCode() == 404) {
+            sender.sendMessage(CC.error(Messages.NEVER_JOINED));
+            return null;
+        }
         if (!response.wasSuccessful()) {
-            sender.sendMessage(CC.format("<red>Could not load profile of <yellow>%s<red>: %s (%d)",
-                    source, response.getErrorMessage(), response.getCode()));
+            sender.sendMessage(CC.error("Unable to load player.", response.getErrorMessage() + " (" + response.getCode() + ")"));
             return null;
         }
 
-        profile = new Profile(response.asObject());
-        Altara.getSharedInstance().getProfileService().cacheProfile(profile);
-        return profile;
+        return new Profile(response.asObject());
     }
 
     @Override

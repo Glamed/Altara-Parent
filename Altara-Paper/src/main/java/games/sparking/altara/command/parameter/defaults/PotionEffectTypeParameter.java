@@ -15,7 +15,7 @@ public class PotionEffectTypeParameter implements ParameterType<PotionEffectType
         PotionEffectType type = PotionEffectType.getByName(source);
 
         if (type == null)
-            sender.sendMessage(CC.errorMsg("Invalid arguments.", "Potion effect " + source + " was not found."));
+            sender.sendMessage(CC.error("Invalid effect.", "*" + source + "* doesn't exist."));
 
         return type;
     }

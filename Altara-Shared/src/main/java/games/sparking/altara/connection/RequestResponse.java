@@ -3,8 +3,9 @@ package games.sparking.altara.connection;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonNull;
 import com.google.gson.JsonParseException;
-import games.sparking.altara.utils.Statics;
+import com.google.gson.JsonParser;
 import lombok.Getter;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -37,7 +38,17 @@ public class RequestResponse {
                 return new RequestResponse(response.code(), null, null, requestBuilder);
             }
 
-            JsonElement body = Statics.JSON_PARSER.parse(response.body().string());
+            String raw = response.body().string();
+            JsonElement body;
+            try {
+                body = raw.isBlank() ? JsonNull.INSTANCE : JsonParser.parseString(raw);
+            } catch (JsonParseException e) {
+                // Error pages (e.g. a proxy's HTML 500) aren't JSON — keep the status code.
+                if (!response.isSuccessful()) {
+                    return new RequestResponse(response.code(), null, "HTTP " + response.code(), requestBuilder);
+                }
+                throw e;
+            }
 
             if (!response.isSuccessful()) {
                 String message = "Unknown Error";
@@ -45,10 +56,11 @@ public class RequestResponse {
                 if (body.isJsonObject()) {
                     JsonObject json = body.getAsJsonObject();
 
-                    if (json.has("error"))
+                    if (json.has("error") && json.get("error").isJsonPrimitive())
                         message = json.get("error").getAsString();
 
-                    if (json.has("message") && !json.get("message").getAsString().isEmpty())
+                    if (json.has("message") && json.get("message").isJsonPrimitive()
+                            && !json.get("message").getAsString().isEmpty())
                         message = json.get("message").getAsString();
                 }
 

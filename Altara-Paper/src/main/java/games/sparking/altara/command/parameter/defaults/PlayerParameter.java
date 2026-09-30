@@ -36,7 +36,7 @@ public class PlayerParameter implements ParameterType<Player> {
         else player = Bukkit.getPlayer(source);
 
         if (player == null || !VisibilityService.getOnlineTreatProvider().apply(player, sender)) {
-            sender.sendMessage(CC.errorMsg("Invalid arguments.", "Player " + source + " is not online."));
+            sender.sendMessage(CC.error("Invalid player.", "*" + source + "* isn't online."));
             return null;
         }
 

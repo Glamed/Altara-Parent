@@ -2,7 +2,7 @@ package games.sparking.altara.scoreboard;
 
 import com.github.retrooper.packetevents.PacketEvents;
 import com.github.retrooper.packetevents.protocol.player.User;
-import games.sparking.altara.utils.CC;
+import net.kyori.adventure.text.Component;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -17,7 +17,7 @@ public class ScoreboardListener implements Listener {
         Player player = event.getPlayer();
         User user = PacketEvents.getAPI().getPlayerManager().getUser(player);
 
-        Scoreboard scoreboard = new Scoreboard(user, "sidebar", CC.format("sidebar"));
+        Scoreboard scoreboard = new Scoreboard(user, "sidebar", Component.empty());
         scoreboard.create();
         scoreboard.display();
 

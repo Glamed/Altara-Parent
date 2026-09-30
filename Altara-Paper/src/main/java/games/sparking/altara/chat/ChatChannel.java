@@ -4,10 +4,12 @@ import games.sparking.altara.Altara;
 import games.sparking.altara.chat.log.ChatLogEntry;
 import games.sparking.altara.chat.packet.ChatMessagePacket;
 import games.sparking.altara.profile.Profile;
+import games.sparking.altara.rank.Rank;
+import games.sparking.altara.utils.CC;
 import lombok.Getter;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
-import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
@@ -25,19 +27,18 @@ import java.util.UUID;
  *
  * <h3>Options</h3>
  * <ul>
- *   <li>{@code log}    — when {@code true} every message is printed to the
- *       server console, its recipients are recorded, and the full delivery
- *       record is persisted to Redis for {@value ChatLogEntry#TTL_SECONDS}
- *       seconds (15 minutes).  Remote servers append their own viewer lists
- *       to the same Redis key via {@link ChatMessagePacket}.</li>
- *   <li>{@code global} — when {@code true} a {@link ChatMessagePacket} is
- *       published over Redis so other servers on the network receive the
- *       formatted message.  Remote delivery uses
- *       {@link ChannelAudience#canSeeRemote}.</li>
- *   <li>{@code persistable} — when {@code false} (e.g. {@code ShadowMuteChannel})
- *       switching into this channel will <em>not</em> overwrite the player's
- *       saved channel preference.</li>
+ *   <li>{@code log}    — every message is printed to the console, its recipients are
+ *       recorded, and the delivery record is persisted to Redis for
+ *       {@value ChatLogEntry#TTL_SECONDS} seconds.</li>
+ *   <li>{@code global} — a {@link ChatMessagePacket} relays the formatted message to
+ *       every other server, where {@link ChannelAudience#canSeeRemote} decides delivery.</li>
+ *   <li>{@code selectable} — players may switch into this channel with {@code /channel}
+ *       and it is saved as their preference.  System channels (shadow mute) are not.</li>
  * </ul>
+ *
+ * <p><b>Security:</b> chat text is player input.  Always insert it with
+ * {@link #messageComponent} (or another unparsed placeholder) — never concatenate it
+ * into a MiniMessage template.
  */
 @Getter
 public abstract class ChatChannel {
@@ -45,31 +46,21 @@ public abstract class ChatChannel {
     private final String name;
 
     /**
-     * Single-character prefix a player can type before their message to send it
-     * through this channel without switching.  {@code null} means no prefix
-     * (players must use {@code /channel} to switch).
+     * Prefix a player can type before their message to send it through this channel
+     * without switching, or {@code null} for none.
      */
     private final String prefix;
 
-    /** If {@code true}, messages are echoed to the server console, recipients
-     *  are tracked, and a Redis log entry is persisted for 15 minutes. */
     private final boolean log;
-
-    /** If {@code true}, a cross-server Redis packet is published after local delivery. */
     private final boolean global;
+    private final boolean selectable;
 
-    /**
-     * If {@code false} the player's saved channel preference is not overwritten
-     * when they are moved into this channel (used for shadow-mute enforcement).
-     */
-    private final boolean persistable;
-
-    protected ChatChannel(String name, String prefix, boolean log, boolean global, boolean persistable) {
-        this.name        = name;
-        this.prefix      = prefix;
-        this.log         = log;
-        this.global      = global;
-        this.persistable = persistable;
+    protected ChatChannel(String name, String prefix, boolean log, boolean global, boolean selectable) {
+        this.name       = name;
+        this.prefix     = prefix;
+        this.log        = log;
+        this.global     = global;
+        this.selectable = selectable;
     }
 
     // ── Abstract contract ──────────────────────────────────────────────────────
@@ -85,72 +76,63 @@ public abstract class ChatChannel {
     /** Returns the audience rules for this channel. */
     public abstract ChannelAudience getAudience();
 
+    /** Whether {@code player} may send messages in (and switch to) this channel. */
+    public boolean canUse(Player player) {
+        return true;
+    }
+
     // ── Dispatch ───────────────────────────────────────────────────────────────
 
     /**
      * Formats and delivers {@code rawMessage} from {@code sender} through this
      * channel, then publishes a cross-server packet if {@link #isGlobal()}.
-     *
-     * <p>When {@link #isLog()} is {@code true} a {@link ChatLogEntry} is written
-     * to Redis under key {@code altara:chatlog:{messageId}} with a 15-minute TTL.
-     * The message ID is forwarded inside {@link ChatMessagePacket} so remote
-     * servers can append their own viewer lists to the same key.
-     *
-     * @param sender     the player sending the message
-     * @param rawMessage message text (channel prefix already removed)
      */
     public void dispatch(Player sender, String rawMessage) {
         Profile profile = Altara.getSharedInstance().getProfileService().getProfile(sender.getUniqueId());
         Component formatted = format(profile != null ? profile : fallbackProfile(sender), rawMessage);
 
-        // Generate a stable ID shared with any cross-server packet for this message.
         String messageId = UUID.randomUUID().toString();
-
+        String origin = Altara.getSharedInstance().getLocalServerName();
         List<String> recipientNames = new ArrayList<>();
 
-        // ── Local delivery ─────────────────────────────────────────────────────
         Bukkit.getConsoleSender().sendMessage(formatted);
-
         for (Player viewer : Bukkit.getOnlinePlayers()) {
             if (getAudience().canSee(viewer, sender, this)) {
                 viewer.sendMessage(formatted);
-                if (log) recipientNames.add(viewer.getName());
+                recipientNames.add(viewer.getName());
             }
         }
 
-        // ── Logging ────────────────────────────────────────────────────────────
         if (log) {
             Altara.getSharedInstance().getLogger().info(
-                    "[" + name + "] " + sender.getName() + " -> [" +
-                            String.join(", ", recipientNames) + "]: " + rawMessage);
+                    "[" + name + "] " + sender.getName() + " -> [" + String.join(", ", recipientNames) + "]: " + rawMessage);
 
-            // Persist to Redis asynchronously — does not block the chat thread.
-            String serialised = MiniMessage.miniMessage().serialize(formatted);
-            String origin     = Altara.getSharedInstance().getLocalServerName();
-            new ChatLogEntry(
-                    messageId,
-                    name,
-                    sender.getUniqueId().toString(),
-                    sender.getName(),
-                    serialised,
-                    rawMessage,
-                    recipientNames,
-                    origin
-            ).save();
+            new ChatLogEntry(messageId, name, sender.getUniqueId().toString(), sender.getName(),
+                    MiniMessage.miniMessage().serialize(formatted), rawMessage, recipientNames, origin).save();
         }
 
-        // ── Cross-server relay ─────────────────────────────────────────────────
         if (global) {
-            String origin = Altara.getSharedInstance().getLocalServerName();
-            new ChatMessagePacket(formatted, name, sender.getUniqueId(), origin, messageId, log)
-                    .publish();
+            new ChatMessagePacket(formatted, name, sender.getUniqueId(), origin, messageId, log).publish();
         }
     }
 
-    // ── Helpers ────────────────────────────────────────────────────────────────
+    // ── Formatting helpers ─────────────────────────────────────────────────────
+
+    /** The sender's rank prefix followed by their name in rank colour. */
+    protected static Component senderName(Profile sender) {
+        Rank rank = sender.getCurrentGrant().asRank();
+        return CC.format(rank.getPrefix() + rank.getColor() + "<name>",
+                Placeholder.unparsed("name", sender.getCurrentName()));
+    }
+
+    /** The raw message in the sender's rank chat colour, never parsed as MiniMessage. */
+    protected static Component messageComponent(Profile sender, String message) {
+        return CC.format(sender.getCurrentGrant().asRank().getChatColor() + "<message>",
+                Placeholder.unparsed("message", message));
+    }
 
     /** Minimal profile stand-in used when the real profile isn't loaded yet. */
-    private static Profile fallbackProfile(Player player) {
+    protected static Profile fallbackProfile(Player player) {
         return new Profile(player.getUniqueId(), player.getName());
     }
 }

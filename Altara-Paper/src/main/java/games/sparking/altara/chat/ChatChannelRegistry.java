@@ -1,35 +1,28 @@
 package games.sparking.altara.chat;
 
-import java.util.ArrayList;
+import org.bukkit.entity.Player;
+
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * Static registry that maps channel names and prefixes to {@link ChatChannel}
- * instances.
- *
- * <p>Channels are checked in registration order when resolving a prefix, so
- * register higher-priority channels first.
+ * instances.  Channels are checked in registration order when resolving a prefix.
  */
 public final class ChatChannelRegistry {
 
-    private static final List<ChatChannel> CHANNELS = new ArrayList<>();
+    private static final List<ChatChannel> CHANNELS = new CopyOnWriteArrayList<>();
 
     private ChatChannelRegistry() {}
-
-    // ── Registration ───────────────────────────────────────────────────────────
 
     public static void register(ChatChannel channel) {
         CHANNELS.add(channel);
     }
 
-    // ── Lookup ─────────────────────────────────────────────────────────────────
-
-    /**
-     * Returns the channel with the given (case-insensitive) internal name, or
-     * {@code null} if no such channel is registered.
-     */
+    /** The channel with the given (case-insensitive) name, or {@code null}. */
     public static ChatChannel getByName(String name) {
+        if (name == null) return null;
         for (ChatChannel c : CHANNELS)
             if (c.getName().equalsIgnoreCase(name))
                 return c;
@@ -37,20 +30,19 @@ public final class ChatChannelRegistry {
     }
 
     /**
-     * Returns the first registered channel whose prefix matches the start of
-     * {@code message}, or {@code null} if no prefix matches.
+     * The first channel {@code player} may use whose prefix starts {@code message},
+     * or {@code null}.  Prefixes of channels the player can't use are ignored, so the
+     * message is sent normally instead.
      */
-    public static ChatChannel getByPrefix(String message) {
+    public static ChatChannel getByPrefix(Player player, String message) {
         for (ChatChannel c : CHANNELS) {
-            if (c.getPrefix() != null && message.startsWith(c.getPrefix()))
+            if (c.getPrefix() != null && message.startsWith(c.getPrefix()) && c.canUse(player))
                 return c;
         }
         return null;
     }
 
-    /** Returns an unmodifiable view of all registered channels. */
     public static List<ChatChannel> getChannels() {
         return Collections.unmodifiableList(CHANNELS);
     }
 }
-

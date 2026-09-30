@@ -14,8 +14,9 @@ public class FloatParameter implements ParameterType<Float> {
         Float value;
         try {
             value = Float.parseFloat(source);
+            if (!Float.isFinite(value)) throw new NumberFormatException();
         } catch (NumberFormatException e) {
-            sender.sendMessage(CC.errorMsg("Invalid arguments.", source + " is not a valid number."));
+            sender.sendMessage(CC.error("Invalid number.", "*" + source + "* isn't a valid number."));
             return null;
         }
         return value;

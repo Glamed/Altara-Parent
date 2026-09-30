@@ -7,6 +7,7 @@ import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientAt
 import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientInteractEntity;
 import games.sparking.altara.hologram.Hologram;
 import games.sparking.altara.hologram.clickhandler.HologramClickHandler;
+import games.sparking.altara.task.Tasks;
 import games.sparking.altara.utils.timebased.TimeBasedContainer;
 import org.bukkit.entity.Player;
 
@@ -57,9 +58,10 @@ public class HologramClickListener extends PacketListenerAbstract {
         UUID uuid = player.getUniqueId();
         if (cooldown.contains(uuid)) return;
 
-        data.hologram().getClickHandler().click(
-                player, data.hologram(), data.lineIndex(), HologramClickHandler.ClickType.LEFT_CLICK);
         cooldown.add(uuid);
+        // Packets arrive on the netty thread; handlers may touch the world or open menus.
+        Tasks.run(() -> data.hologram().getClickHandler().click(
+                player, data.hologram(), data.lineIndex(), HologramClickHandler.ClickType.LEFT_CLICK));
     }
 
     /** Right-click: client sends INTERACT_ENTITY with action INTERACT or INTERACT_AT. */
@@ -77,8 +79,9 @@ public class HologramClickListener extends PacketListenerAbstract {
         UUID uuid = player.getUniqueId();
         if (cooldown.contains(uuid)) return;
 
-        data.hologram().getClickHandler().click(
-                player, data.hologram(), data.lineIndex(), HologramClickHandler.ClickType.RIGHT_CLICK);
         cooldown.add(uuid);
+        // Packets arrive on the netty thread; handlers may touch the world or open menus.
+        Tasks.run(() -> data.hologram().getClickHandler().click(
+                player, data.hologram(), data.lineIndex(), HologramClickHandler.ClickType.RIGHT_CLICK));
     }
 }

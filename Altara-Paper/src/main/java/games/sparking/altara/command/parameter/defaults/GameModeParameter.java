@@ -35,7 +35,7 @@ public class GameModeParameter implements ParameterType<GameMode> {
             return ((Player) sender).getGameMode().equals(GameMode.CREATIVE) ? GameMode.SURVIVAL : GameMode.CREATIVE;
         }
         if (!map.containsKey(source.toLowerCase())) {
-            sender.sendMessage(CC.errorMsg("Invalid arguments.", "Gamemode " + source + " was not found."));
+            sender.sendMessage(CC.error("Invalid game mode.", "*" + source + "* doesn't exist."));
             return null;
         }
 

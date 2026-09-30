@@ -4,9 +4,8 @@ import games.sparking.altara.Altara;
 import games.sparking.altara.chat.ChannelAudience;
 import games.sparking.altara.chat.ChatChannel;
 import games.sparking.altara.profile.Profile;
-import games.sparking.altara.utils.CC;
+import games.sparking.altara.utils.Theme;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -16,12 +15,11 @@ import java.util.List;
 
 /**
  * System-only channel used by the Profiler to silently quarantine suspicious
- * players.  The sender sees their own message normally; staff see it with a
- * {@code [SM]} marker.  Messages are never relayed to other servers.
+ * players.  The sender sees their own message exactly as normal global chat; staff
+ * see it with a {@code [SM]} marker.  Messages are never relayed to other servers.
  *
- * <p>This channel is <em>not persistable</em> — moving a player into it never
- * overwrites their saved channel preference, so they return to the correct
- * channel once the shadow mute is lifted.
+ * <p>Players are never switched into this channel — {@code ChatListener} routes a
+ * flagged player's messages here regardless of their selected channel.
  */
 public final class ShadowMuteChannel extends ChatChannel {
 
@@ -29,74 +27,57 @@ public final class ShadowMuteChannel extends ChatChannel {
     public static ShadowMuteChannel getInstance() { return INSTANCE; }
 
     private ShadowMuteChannel() {
-        // no prefix — players cannot switch into this channel manually
         super("ShadowMute", null, true, false, false);
     }
 
-    // ── Custom dispatch ────────────────────────────────────────────────────────
+    @Override
+    public boolean canUse(Player player) {
+        return false;
+    }
 
-    /**
-     * Overrides the default dispatch so only the sender and online staff receive
-     * the message, with appropriate formatting per audience.
-     */
     @Override
     public void dispatch(Player sender, String rawMessage) {
         Profile profile = Altara.getSharedInstance().getProfileService().getProfile(sender.getUniqueId());
-        Component senderView = format(profile != null ? profile : new Profile(sender.getUniqueId(), sender.getName()), rawMessage);
-        Component staffView  = formatForStaff(profile != null ? profile : new Profile(sender.getUniqueId(), sender.getName()), rawMessage);
+        if (profile == null) profile = fallbackProfile(sender);
 
+        Component senderView = format(profile, rawMessage);
+        Component staffView = staffMarker().append(senderView);
         List<String> staffRecipients = new ArrayList<>();
 
-        // Sender always receives their own message (appears normal to them).
         sender.sendMessage(senderView);
-
-        // Staff receive the staff-annotated version.
         for (Player staff : Bukkit.getOnlinePlayers()) {
-            if (staff.getUniqueId().equals(sender.getUniqueId())) continue;
-            if (staff.hasPermission("altara.staff")) {
+            if (!staff.equals(sender) && staff.hasPermission(StaffChannel.PERMISSION)) {
                 staff.sendMessage(staffView);
                 staffRecipients.add(staff.getName());
             }
         }
-
-        // Console always gets the staff view.
         Bukkit.getConsoleSender().sendMessage(staffView);
 
-        // Log.
         Altara.getSharedInstance().getLogger().info(
-                "[SHADOW-MUTE] " + sender.getName() + " -> staff[" +
-                String.join(", ", staffRecipients) + "]: " + rawMessage);
+                "[SHADOW-MUTE] " + sender.getName() + " -> staff[" + String.join(", ", staffRecipients) + "]: " + rawMessage);
     }
 
-    // ── Formatting ─────────────────────────────────────────────────────────────
-
-    /** The version the muted player sees — looks like normal global chat. */
+    /** Identical to {@link GlobalChannel#format} so the sender can't tell. */
     @Override
     public Component format(Profile sender, String message) {
-        return Component.empty()
-                .append(CC.format(sender.getCurrentGrant().asRank().getPrefix()))
-                .append(CC.format(sender.getCurrentName()))
-                .append(CC.format(sender.getCurrentGrant().asRank().getSuffix()))
-                .append(Component.text(": "))
-                .append(CC.format(sender.getCurrentGrant().asRank().getChatColor() + message));
+        return GlobalChannel.getInstance().format(sender, message);
     }
 
-    /** The version staff sees — prefixed with a bold red [SM] tag. */
-    private Component formatForStaff(Profile sender, String message) {
-        return Component.empty()
-                .append(Component.text("[SM] ", NamedTextColor.DARK_RED, TextDecoration.BOLD))
-                .append(format(sender, message));
+    /** Bold dark-red {@code [SM]} tag prepended to messages shown to staff. */
+    public static Component staffMarker() {
+        return Component.text()
+                .append(Component.text("[", Theme.STRUCTURE))
+                .append(Component.text("SM", Theme.ERROR_DARK, TextDecoration.BOLD))
+                .append(Component.text("] ", Theme.STRUCTURE))
+                .build();
     }
-
-    // ── Audience (fallback — dispatch is fully overridden above) ───────────────
 
     @Override
     public ChannelAudience getAudience() {
         return new ChannelAudience() {
             @Override
             public boolean canSee(Player viewer, Player sender, ChatChannel channel) {
-                return viewer.getUniqueId().equals(sender.getUniqueId())
-                        || viewer.hasPermission("altara.staff");
+                return viewer.equals(sender) || viewer.hasPermission(StaffChannel.PERMISSION);
             }
 
             @Override
@@ -106,4 +87,3 @@ public final class ShadowMuteChannel extends ChatChannel {
         };
     }
 }
-

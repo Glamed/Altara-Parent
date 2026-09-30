@@ -1,138 +1,79 @@
 package games.sparking.altara.permission;
-import games.sparking.altara.Altara;
+
 import games.sparking.altara.AltaraPaper;
 import games.sparking.altara.configuration.entry.LocalPermissionEntry;
 import games.sparking.altara.grant.Grant;
 import games.sparking.altara.profile.Profile;
 import games.sparking.altara.rank.Rank;
-import games.sparking.altara.utils.CC;
-import lombok.RequiredArgsConstructor;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
-import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.permissions.PermissionAttachment;
 
 import java.util.*;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.logging.Logger;
 
-@RequiredArgsConstructor
+/**
+ * Applies rank, profile and server-local permissions to online players through a
+ * single {@link PermissionAttachment} each.  Main thread only.
+ */
 public class PermissionService {
 
-    private static final Logger LOG = Bukkit.getLogger();
     private final Map<UUID, PermissionAttachment> attachments = new HashMap<>();
 
     public void injectPlayer(Player player) {
-        Profile profile = AltaraPaper.getSharedInstance().getProfileService().getProfile(player);
-        if (profile == null) {
-            LOG.warning(String.format("Tried to inject player without profile: %s (%s)", player.getUniqueId(), player.getName()));
-            return;
-        }
-
-        // Clean old attachment if any
-        if (attachments.containsKey(player.getUniqueId())) {
-            player.removeAttachment(attachments.get(player.getUniqueId()));
-        }
-
-        PermissionAttachment attachment = player.addAttachment(AltaraPaper.getPlugin());
-        attachments.put(player.getUniqueId(), attachment);
-
+        uninjectPlayer(player);
+        attachments.put(player.getUniqueId(), player.addAttachment(AltaraPaper.getPlugin()));
         updatePermissions(player);
     }
 
     public void uninjectPlayer(Player player) {
-        UUID uuid = player.getUniqueId();
-        if (attachments.containsKey(uuid)) {
-            player.removeAttachment(attachments.get(uuid));
-            attachments.remove(uuid);
+        PermissionAttachment attachment = attachments.remove(player.getUniqueId());
+        if (attachment != null) {
+            player.removeAttachment(attachment);
         }
     }
 
     public void updatePermissions(Player player) {
         Profile profile = AltaraPaper.getSharedInstance().getProfileService().getProfile(player);
-        if (profile == null) {
-            LOG.warning(String.format("Tried to update player without profile: %s (%s)", player.getUniqueId(), player.getName()));
+        PermissionAttachment attachment = attachments.get(player.getUniqueId());
+        if (profile == null || attachment == null) {
+            AltaraPaper.getPlugin().getLogger().warning("Can't update permissions of " + player.getName()
+                    + (profile == null ? " (no profile loaded)" : " (not injected)"));
             return;
         }
 
-        PermissionAttachment attachment = attachments.get(player.getUniqueId());
-        if (attachment == null) return;
-
-        // Clear old permissions
         attachment.getPermissions().keySet().forEach(attachment::unsetPermission);
-
-        Map<String, Boolean> perms = getEffectivePermissions(profile);
-        perms.forEach(attachment::setPermission);
+        getEffectivePermissions(profile).forEach(attachment::setPermission);
     }
 
+    /**
+     * Rank permissions (lowest weight first so higher ranks win), then the profile's own
+     * permissions, then this server's local overrides.
+     */
     public Map<String, Boolean> getEffectivePermissions(Profile profile) {
-        Map<String, Boolean> effectivePermissions = new HashMap<>();
+        Map<String, Boolean> effective = new HashMap<>();
 
         List<Grant> grants = new ArrayList<>(profile.getActiveGrants());
-        grants.sort(Grant.COMPARATOR.reversed());
-
+        grants.sort(Grant.COMPARATOR);
         for (Grant grant : grants) {
-            effectivePermissions.putAll(convert(grant.asRank().getAllPermissions()));
+            Rank rank = grant.asRank();
+            if (rank != null) effective.putAll(convert(rank.getAllPermissions()));
         }
 
-        effectivePermissions.putAll(convert(profile.getPermissions()));
+        effective.putAll(convert(profile.getPermissions()));
 
         LocalPermissionEntry entry = AltaraPaper.getPaperInstance().getLocalPermissionConfig().getEntry(profile);
         if (entry != null) {
-            effectivePermissions.putAll(convert(entry.getPermissions()));
+            effective.putAll(convert(entry.getPermissions()));
         }
-
-        return effectivePermissions;
+        return effective;
     }
 
+    /** {@code node} grants, {@code -node} negates. */
     public Map<String, Boolean> convert(List<String> list) {
-        Map<String, Boolean> permissions = new HashMap<>();
-        list.forEach(permission -> {
-            if (permission.startsWith("-"))
-                permissions.put(permission.substring(1), false);
-            else
-                permissions.put(permission, true);
-        });
-        return permissions;
-    }
-
-    public List<Component> getDebugInfo(Player player, String permission) {
-        List<Component> debugs = new ArrayList<>();
-        Profile profile = Altara.getSharedInstance().getProfileService().getProfile(player);
-        AtomicBoolean hasPermission = new AtomicBoolean(false);
-
-        profile.getActiveGrants().stream()
-                .map(Grant::getRank)
-                .sorted()
-                .forEach(uuid -> {
-                    Rank rank = Altara.getSharedInstance().getRankService().getRank(uuid);
-                    Map<String, Boolean> perms = convert(rank.getAllPermissions());
-                    Component result = Component.text("NOT_SET", NamedTextColor.GRAY);
-                    if (perms.containsKey(permission.toLowerCase())) {
-                        Boolean value = perms.get(permission.toLowerCase());
-                        result = CC.colorBoolean(value, "YES", "NEGATED");
-                        if (value)
-                            hasPermission.set(true);
-                    }
-                    debugs.add(Component.text("Grant " + rank.getName() + ": ", NamedTextColor.BLUE).append(result));
-                });
-
-        Map<String, Boolean> perms = convert(profile.getPermissions());
-        Component result = Component.text("NOT_SET", NamedTextColor.GRAY);
-        if (perms.containsKey(permission.toLowerCase())) {
-            Boolean value = perms.get(permission.toLowerCase());
-            result = CC.colorBoolean(value, "YES", "NEGATED");
-            if (value)
-                hasPermission.set(true);
+        Map<String, Boolean> permissions = new LinkedHashMap<>();
+        for (String permission : list) {
+            if (permission.startsWith("-")) permissions.put(permission.substring(1), false);
+            else permissions.put(permission, true);
         }
-
-        debugs.add(Component.text("Profile: ", NamedTextColor.BLUE).append(result));
-        debugs.add(CC.format("<blue>Result: <yellow>%s</yellow> %s <blue>permission <yellow>%s</yellow>.</blue>",
-                player.getName(),
-                CC.strip(CC.colorBoolean(hasPermission.get(), "has", "doesn't have")),
-                permission));
-
-        return debugs;
+        return permissions;
     }
 }

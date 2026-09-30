@@ -2,18 +2,20 @@ package games.sparking.altara.queue.packet;
 
 import games.sparking.altara.AltaraPaper;
 import games.sparking.altara.redis.packet.Packet;
-import lombok.RequiredArgsConstructor;
+import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
 
 import java.util.UUID;
 
-@RequiredArgsConstructor
+/** A player left the network: every server drops them from its queue. */
+@NoArgsConstructor
+@AllArgsConstructor
 public class QueuePlayerLeavePacket extends Packet {
 
-    private final UUID uuid;
+    private UUID uuid;
 
     @Override
     public void receive() {
-        if (AltaraPaper.getPaperInstance().getQueue().getPlayers().contains(uuid))
-            AltaraPaper.getPaperInstance().getProfileService().loadProfile(uuid, profile -> AltaraPaper.getPaperInstance().getQueue().removePlayer(profile), true);
+        AltaraPaper.getPaperInstance().getQueue().removePlayer(uuid);
     }
 }

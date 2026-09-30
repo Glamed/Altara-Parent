@@ -6,6 +6,7 @@ import com.github.retrooper.packetevents.protocol.packettype.PacketType;
 import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientAttack;
 import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientInteractEntity;
 import games.sparking.altara.npc.NPC;
+import games.sparking.altara.task.Tasks;
 import games.sparking.altara.utils.timebased.TimeBasedContainer;
 import org.bukkit.entity.Player;
 
@@ -59,8 +60,9 @@ public class NPCClickListener extends PacketListenerAbstract {
         UUID uuid = player.getUniqueId();
         if (cooldown.contains(uuid)) return;
 
-        npc.getClickHandler().click(npc, player);
         cooldown.add(uuid);
+        // Packets arrive on the netty thread; handlers may open menus or run commands.
+        Tasks.run(() -> npc.getClickHandler().click(npc, player));
     }
 
     /** Right-click: client sends INTERACT_ENTITY with action INTERACT or INTERACT_AT. */
@@ -78,8 +80,9 @@ public class NPCClickListener extends PacketListenerAbstract {
         UUID uuid = player.getUniqueId();
         if (cooldown.contains(uuid)) return;
 
-        npc.getClickHandler().click(npc, player);
         cooldown.add(uuid);
+        // Packets arrive on the netty thread; handlers may open menus or run commands.
+        Tasks.run(() -> npc.getClickHandler().click(npc, player));
     }
 }
 

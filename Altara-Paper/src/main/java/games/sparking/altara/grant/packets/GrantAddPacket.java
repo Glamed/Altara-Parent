@@ -11,7 +11,7 @@ import org.bukkit.entity.Player;
 
 import java.util.UUID;
 
-
+/** Tells the grantee's server to reload their profile and let them know about the new rank. */
 @NoArgsConstructor
 public class GrantAddPacket extends Packet {
 
@@ -28,23 +28,14 @@ public class GrantAddPacket extends Packet {
     @Override
     public void receive() {
         Player player = Bukkit.getPlayer(uuid);
+        if (player == null) return;
+
+        AltaraPaper.getPaperInstance().getProfileService().refreshProfile(uuid);
+        AltaraPaper.getPaperInstance().updatePermissions(uuid);
+
         Rank rank = AltaraPaper.getPaperInstance().getRankService().getRank(rankUuid);
-        if (player == null) {
-            return;
-        }
-
-        AltaraPaper.getPaperInstance().getPermissionService().updatePermissions(player);
-
-        if (duration == -1)
-            player.sendMessage(CC.format(
-                    "<green>You've been <yellow>permanently <green>granted the %s<green> rank.",
-                    rank.getName()
-            ));
-        else
-            player.sendMessage(CC.format(
-                    "<green>You've been granted the %s<green> rank for <yellow>%s<green>.",
-                    rank.getName(),
-                    Time.formatDetailed(duration)
-            ));
+        String rankName = rank != null ? rank.getName() : "a new";
+        player.sendMessage(CC.success("Rank granted.", "You now have the *" + rankName + "* rank "
+                + (duration == -1 ? "permanently" : "for *" + Time.formatDetailed(duration) + "*") + "."));
     }
 }

@@ -4,7 +4,9 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
-import org.bukkit.event.entity.FoodLevelChangeEvent;
+import org.bukkit.event.entity.EntityEvent;
+import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.event.player.PlayerEvent;
@@ -55,11 +57,11 @@ public final class PlayerExtractor {
             return ev.getWhoClicked() instanceof Player p ? p : null;
         });
 
-        // Food level — extends EntityEvent, entity is the player
-        register(FoodLevelChangeEvent.class, e -> {
-            FoodLevelChangeEvent ev = (FoodLevelChangeEvent) e;
-            return ev.getEntity() instanceof Player p ? p : null;
-        });
+        // Any other entity event (deaths, food, combust...) — the entity, if it's a player
+        register(EntityEvent.class, e -> ((EntityEvent) e).getEntity() instanceof Player p ? p : null);
+
+        register(BlockBreakEvent.class, e -> ((BlockBreakEvent) e).getPlayer());
+        register(BlockPlaceEvent.class, e -> ((BlockPlaceEvent) e).getPlayer());
     }
 
     /**
@@ -89,14 +91,15 @@ public final class PlayerExtractor {
             return fn.apply(event);
         }
 
-        // Supertype walk — only happens once per unknown concrete event class
-        for (Map.Entry<Class<?>, Function<Event, Player>> entry : CACHE.entrySet()) {
-            if (entry.getKey().isAssignableFrom(type)) {
-                CACHE.put(type, entry.getValue()); // cache for next time → O(1) forever after
-                return entry.getValue().apply(event);
+        // Nearest registered superclass wins; cached so this walk happens once per event class.
+        for (Class<?> parent = type.getSuperclass(); parent != null && parent != Event.class; parent = parent.getSuperclass()) {
+            Function<Event, Player> inherited = CACHE.get(parent);
+            if (inherited != null) {
+                CACHE.put(type, inherited);
+                return inherited.apply(event);
             }
         }
-
+        CACHE.put(type, e -> null);
         return null;
     }
 }

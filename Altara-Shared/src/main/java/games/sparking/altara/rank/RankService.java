@@ -1,67 +1,54 @@
 package games.sparking.altara.rank;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
+import com.google.gson.JsonElement;
 import games.sparking.altara.Altara;
 import games.sparking.altara.connection.RequestHandler;
 import games.sparking.altara.connection.RequestResponse;
 import games.sparking.altara.task.Tasks;
 import games.sparking.altara.utils.Timings;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
-@RequiredArgsConstructor
 public class RankService {
 
-    private final Map<UUID, Rank> ranks = new ConcurrentHashMap<>();
+    /** Replaced wholesale on reload so readers never see a half-loaded set. */
+    private volatile Map<UUID, Rank> ranks = new ConcurrentHashMap<>();
+
     @Getter
-    private boolean loaded = false;
+    private volatile boolean loaded = false;
+
+    /** Placeholder default used until ranks have loaded — never persisted. */
+    private final Rank fallbackDefault = createFallbackDefault();
 
     public void loadRanks(Runnable callback) {
         Tasks.runAsync(() -> {
-            System.out.println("[CONFIG] Loading ranks...");
+            Altara.getSharedInstance().getLogger().info("Loading ranks...");
             Timings timings = new Timings("rank-loading").startTimings();
-            ranks.clear();
 
             RequestResponse response = RequestHandler.get("api/rank");
             if (!response.wasSuccessful()) {
-                System.out.printf("[WARN] Could not load ranks: %s (%d)%n",
-                        response.getErrorMessage(), response.getCode());
+                Altara.getSharedInstance().getLogger().warn(String.format("Could not load ranks: %s (%d)",
+                        response.getErrorMessage(), response.getCode()));
                 return;
             }
 
-            JsonArray rankArray = response.asArray();
-            rankArray.forEach(object -> {
-                Rank rank = new Rank(object.getAsJsonObject());
-                ranks.put(rank.getUuid(), rank);
-            });
-
-            for (Rank rank : ranks.values()) {
-                response = RequestHandler.get("api/rank/%s", rank.getUuid().toString());
-                if (!response.wasSuccessful()) {
-                    System.out.printf("[WARN] Could not load inherits for %s: %s (%d)%n",
-                            rank.getName(), response.getErrorMessage(), response.getCode());
-                    continue;
+            Map<UUID, Rank> loadedRanks = new ConcurrentHashMap<>();
+            for (JsonElement element : response.asArray()) {
+                try {
+                    Rank rank = new Rank(element.getAsJsonObject());
+                    loadedRanks.put(rank.getUuid(), rank);
+                } catch (RuntimeException e) {
+                    Altara.getSharedInstance().getLogger().warn("Skipping malformed rank: " + e.getMessage());
                 }
-
-                JsonObject object = response.asObject();
-                if (!object.has("inherits") || !object.get("inherits").isJsonArray())
-                    continue;
-
-                object.get("inherits").getAsJsonArray().forEach(element -> {
-                    Rank inherit = getRank(UUID.fromString(element.getAsString()));
-                    if (inherit != null)
-                        rank.getInherits().add(inherit);
-                });
             }
 
-            System.out.println(String.format("[INFO] Loaded %d ranks in %dms",
-                    ranks.size(), timings.stopTimings().calculateDifference()));
-            loaded = true;
+            this.ranks = loadedRanks;
+            this.loaded = true;
+            Altara.getSharedInstance().getLogger().info(String.format("Loaded %d ranks in %dms",
+                    loadedRanks.size(), timings.stopTimings().calculateDifference()));
             callback.run();
         });
     }
@@ -70,59 +57,49 @@ public class RankService {
         Tasks.runAsync(() -> {
             RequestResponse response = RequestHandler.get("api/rank/%s", uuid.toString());
             if (!response.wasSuccessful()) {
-                System.out.println(String.format("[WARN] Could not load rank %s: %s (%d)",
+                Altara.getSharedInstance().getLogger().warn(String.format("Could not load rank %s: %s (%d)",
                         uuid, response.getErrorMessage(), response.getCode()));
                 return;
             }
 
-            JsonObject object = response.asObject();
-            Rank rank = new Rank(object);
-            if (object.has("inherits") && object.get("inherits").isJsonArray()) {
-                object.get("inherits").getAsJsonArray().forEach(element -> {
-                    Rank inherit = getRank(UUID.fromString(element.getAsString()));
-                    if (inherit != null)
-                        rank.getInherits().add(inherit);
-                });
-            }
+            Rank rank = new Rank(response.asObject());
             ranks.put(rank.getUuid(), rank);
             callback.accept(rank);
         });
     }
 
-    public void deleteRank(UUID uuid, Runnable callback) {
+    /** Deletes the rank through the API; the API's delete packet updates every server. */
+    public void deleteRank(UUID uuid, Consumer<String> feedback, Runnable callback) {
         Tasks.runAsync(() -> {
             RequestResponse response = RequestHandler.delete("api/rank/%s", uuid.toString());
             if (response.getCode() != 404 && !response.wasSuccessful()) {
-                System.out.println(String.format("[WARN] Could not delete rank %s: %s (%d)",
-                        uuid, response.getErrorMessage(), response.getCode()));
+                feedback.accept("Could not delete rank: " + response.getErrorMessage() + " (" + response.getCode() + ")");
                 return;
             }
 
-            Rank rank = getRank(uuid);
-            if (rank != null) {
-                System.out.println(String.format("[CONFIG] Deleting rank %s...", rank.getName()));
-                ranks.remove(rank.getUuid());
-                Altara.getSharedInstance().updatePermissionsWithRank(rank);
-            }
-
+            removeLocally(uuid);
             callback.run();
         });
     }
 
-    public void updateRank(UUID uuid, Runnable callback) {
-        Rank rank = getRank(uuid);
-        if (rank != null)
-            System.out.println(String.format("[CONFIG] Updating rank %s...", rank.getName()));
+    /** Drops a deleted rank from this server's cache and refreshes affected players. */
+    public void removeLocally(UUID uuid) {
+        Rank rank = ranks.remove(uuid);
+        if (rank != null) {
+            Altara.getSharedInstance().handleRankDeletion(rank);
+            Altara.getSharedInstance().updatePermissionsWithRank(rank);
+        }
+    }
 
-        loadRank(uuid, (newRank) -> {
+    public void updateRank(UUID uuid, Runnable callback) {
+        loadRank(uuid, newRank -> {
             Altara.getSharedInstance().updatePermissionsWithRank(newRank);
             callback.run();
-            ranks.put(newRank.getUuid(), newRank);
         });
     }
 
     public Rank getRank(UUID uuid) {
-        return ranks.get(uuid);
+        return uuid == null ? null : ranks.get(uuid);
     }
 
     public Rank getRank(String name) {
@@ -130,49 +107,65 @@ public class RankService {
             if (rank.getName().equalsIgnoreCase(name))
                 return rank;
         }
-
         return null;
     }
 
+    /**
+     * The rank flagged as default.  Before ranks load this returns an in-memory placeholder;
+     * once loaded, a missing default is created exactly once.
+     */
     public Rank getDefaultRank() {
         for (Rank rank : ranks.values()) {
-            if (rank.isDefaultRank()) {
-                return rank;
-            }
+            if (rank.isDefaultRank()) return rank;
         }
 
-        System.out.println("[INFO] Default rank missing, creating a new one");
-        Rank found = new Rank("Member");
-        found.setDefaultRank(true);
+        if (!loaded) return fallbackDefault;
 
-        RequestResponse response = RequestHandler.post("api/rank", found.toJson());
-        if (!response.wasSuccessful())
-            System.out.println(String.format("[WARN] Could not create default rank: %s (%d)",
-                    response.getErrorMessage(), response.getCode()));
+        synchronized (this) {
+            for (Rank rank : ranks.values()) {
+                if (rank.isDefaultRank()) return rank;
+            }
 
-        ranks.put(found.getUuid(), found);
-        return found;
+            Altara.getSharedInstance().getLogger().info("Default rank missing, creating one");
+            Rank created = createFallbackDefault();
+            RequestResponse response = RequestHandler.post("api/rank", created.toJson());
+            if (!response.wasSuccessful()) {
+                Altara.getSharedInstance().getLogger().warn(String.format("Could not create default rank: %s (%d)",
+                        response.getErrorMessage(), response.getCode()));
+            }
+            ranks.put(created.getUuid(), created);
+            return created;
+        }
+    }
+
+    private static Rank createFallbackDefault() {
+        Rank rank = new Rank("Member");
+        rank.setDefaultRank(true);
+        rank.setPrefix("<gray>");
+        rank.setColor("<gray>");
+        rank.setChatColor("<white>");
+        return rank;
     }
 
     public List<Rank> getRanks() {
         return new ArrayList<>(ranks.values());
     }
 
+    /** Highest weight first. */
     public List<Rank> getRanksSorted() {
-        List<Rank> sortedRanks = new ArrayList<>(this.ranks.values());
-        sortedRanks.sort(Comparator.comparingInt(Rank::getWeight));
-        Collections.reverse(sortedRanks);
-        return sortedRanks;
+        List<Rank> sorted = new ArrayList<>(ranks.values());
+        sorted.sort(Rank.COMPARATOR);
+        return sorted;
     }
 
+    /** Highest queue priority first. */
     public List<Rank> getRanksSortedPriority() {
-        List<Rank> sortedRanks = new ArrayList<>(this.ranks.values());
-        sortedRanks.sort(Comparator.comparingInt(Rank::getQueuePriority));
-        Collections.reverse(sortedRanks);
-        return sortedRanks;
+        List<Rank> sorted = new ArrayList<>(ranks.values());
+        sorted.sort(Comparator.comparingInt(Rank::getQueuePriority).reversed());
+        return sorted;
     }
 
     public void cacheRank(Rank rank) {
-        this.ranks.put(rank.getUuid(), rank);
+        ranks.put(rank.getUuid(), rank);
     }
 }

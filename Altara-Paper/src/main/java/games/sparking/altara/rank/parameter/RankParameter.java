@@ -1,6 +1,5 @@
 package games.sparking.altara.rank.parameter;
 
-
 import games.sparking.altara.Altara;
 import games.sparking.altara.command.parameter.ParameterType;
 import games.sparking.altara.rank.Rank;
@@ -17,10 +16,10 @@ public class RankParameter implements ParameterType<Rank> {
         if (source.equals("@default")) {
             return Altara.getSharedInstance().getRankService().getDefaultRank();
         }
+
         Rank rank = Altara.getSharedInstance().getRankService().getRank(source);
         if (rank == null) {
-            sender.sendMessage(CC.format("<red>Rank <yellow>%s <red>not found.", source));
-            return null;
+            sender.sendMessage(CC.error("Invalid rank.", "*" + source + "* doesn't exist."));
         }
         return rank;
     }

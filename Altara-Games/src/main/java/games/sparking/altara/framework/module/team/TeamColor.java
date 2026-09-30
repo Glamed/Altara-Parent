@@ -1,9 +1,9 @@
 package games.sparking.altara.framework.module.team;
 
 import lombok.Getter;
+import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
-import net.md_5.bungee.api.ChatColor;
 import org.bukkit.DyeColor;
 import org.bukkit.Material;
 
@@ -13,7 +13,7 @@ import org.bukkit.Material;
  * <p>Each constant bundles together:
  * <ul>
  *   <li>A human-readable display name</li>
- *   <li>A BungeeCord {@link ChatColor} for chat/scoreboard formatting</li>
+ *   <li>A {@link TextColor} for chat/scoreboard formatting</li>
  *   <li>A Bukkit {@link DyeColor} for wool/terracotta placement</li>
  *   <li>A wool {@link Material} for GUI icons and map decorations</li>
  * </ul>
@@ -44,9 +44,9 @@ public enum TeamColor {
         this.woolMaterial = woolMaterial;
     }
 
-    /** Returns the display name wrapped in the team's chat colour, e.g. {@code "§cRed"}. */
-    public String getColoredName() {
-        return chatColor + displayName;
+    /** The display name in the team's colour. */
+    public Component getColoredName() {
+        return Component.text(displayName, chatColor);
     }
 }
 

@@ -12,6 +12,7 @@ import org.bukkit.Bukkit;
 
 import java.util.UUID;
 
+/** A grant change queued while the API was unreachable; reports the outcome to its issuer. */
 public class GrantBackLogEntry extends BackLogEntry {
 
     private final Grant grant;
@@ -25,27 +26,17 @@ public class GrantBackLogEntry extends BackLogEntry {
 
     @Override
     public void onSend(RequestResponse response) {
-        Component message;
+        String name = UUIDCache.getName(uuid);
+        String target = name != null ? name : uuid.toString();
+        String action = grant.isRemoved() ? "removal" : "grant";
 
-        if (!response.wasSuccessful())
-            message = CC.format(
-                    "<red>[Grant BackLog] Could not %s grant for <white>%s</white>: %s (%d)</red>",
-                    grant.isRemoved() ? "remove" : "create",
-                    UUIDCache.getName(uuid),
-                    response.getErrorMessage(),
-                    response.getCode()
-            );
-        else message = CC.format(
-                "<green>[Grant BackLog] Successfully %s grant for <white>%s</white>.</green>",
-                grant.isRemoved() ? "removed" : "created",
-                UUIDCache.getName(uuid)
-        );
+        Component message = response.wasSuccessful()
+                ? CC.success("Queued " + action + " applied.", "The " + action + " for *" + target + "* went through.")
+                : CC.error("Queued " + action + " failed.", "*" + target + "*: " + response.getErrorMessage()
+                        + " (" + response.getCode() + ")");
 
         if (UUIDUtils.isUUID(grant.getGrantedBy()))
-            new PlayerMessagePacket(
-                    UUID.fromString(grant.getGrantedBy()),
-                    message
-            ).publish();
+            new PlayerMessagePacket(UUID.fromString(grant.getGrantedBy()), message).publish();
         else Bukkit.getConsoleSender().sendMessage(message);
     }
 }

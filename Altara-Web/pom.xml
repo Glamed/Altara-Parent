@@ -12,51 +12,62 @@
     <artifactId>Altara-Web</artifactId>
 
     <properties>
-        <maven.compiler.source>21</maven.compiler.source>
-        <maven.compiler.target>21</maven.compiler.target>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <start-class>games.sparking.altara.AltaraWebApplication</start-class>
+        <micronaut.version>5.2.0</micronaut.version>
+        <!-- Must match the platform BOM above (BOM properties aren't inherited) -->
+        <micronaut.core.version>5.2.8</micronaut.core.version>
+        <micronaut.serialization.version>3.2.2</micronaut.serialization.version>
+        <exec.mainClass>games.sparking.altara.AltaraWebApplication</exec.mainClass>
     </properties>
 
+    <dependencyManagement>
+        <dependencies>
+            <!-- Micronaut platform BOM — scoped to this module so the plugins are unaffected -->
+            <dependency>
+                <groupId>io.micronaut.platform</groupId>
+                <artifactId>micronaut-platform</artifactId>
+                <version>${micronaut.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
     <dependencies>
-        <!-- Spring Boot Web -->
+        <!-- HTTP server -->
         <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-web</artifactId>
+            <groupId>io.micronaut</groupId>
+            <artifactId>micronaut-http-server-netty</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.micronaut.serde</groupId>
+            <artifactId>micronaut-serde-jackson</artifactId>
         </dependency>
 
-        <!-- Spring Boot Cache -->
+        <!-- Caching (@Cacheable / @CacheInvalidate backed by Caffeine) -->
         <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-cache</artifactId>
+            <groupId>io.micronaut.cache</groupId>
+            <artifactId>micronaut-cache-caffeine</artifactId>
         </dependency>
 
-        <!-- Caffeine in-process cache -->
+        <!-- Logging -->
         <dependency>
-            <groupId>com.github.ben-manes.caffeine</groupId>
-            <artifactId>caffeine</artifactId>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <scope>runtime</scope>
         </dependency>
 
-        <!-- Spring Boot Data MongoDB -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-data-mongodb</artifactId>
-        </dependency>
-
-        <!-- Altara Shared -->
+        <!-- Altara Shared (Mongo + Redis connections, packets, models) -->
         <dependency>
             <groupId>games.sparking</groupId>
             <artifactId>Altara-Shared</artifactId>
         </dependency>
 
-        <!-- Paper API (compile scope so classes are available at runtime in fat jar) -->
+        <!-- Shared's packet classes reference these, so they must be on the runtime classpath -->
         <dependency>
             <groupId>io.papermc.paper</groupId>
             <artifactId>paper-api</artifactId>
             <scope>compile</scope>
         </dependency>
-
-        <!-- Velocity API (compile scope) -->
         <dependency>
             <groupId>com.velocitypowered</groupId>
             <artifactId>velocity-api</artifactId>
@@ -66,29 +77,52 @@
 
     <build>
         <plugins>
-            <!-- Spring Boot Maven Plugin for executable fat jar -->
             <plugin>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-maven-plugin</artifactId>
-                <version>${spring-boot.version}</version>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>repackage</goal>
-                        </goals>
-                    </execution>
-                </executions>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <!-- Lombok must run before Micronaut's processors so they see the generated code -->
+                    <annotationProcessorPaths combine.self="override">
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                            <version>${lombok.version}</version>
+                        </path>
+                        <path>
+                            <groupId>io.micronaut</groupId>
+                            <artifactId>micronaut-inject-java</artifactId>
+                            <version>${micronaut.core.version}</version>
+                        </path>
+                    </annotationProcessorPaths>
+                    <compilerArgs>
+                        <arg>-Amicronaut.processing.group=games.sparking</arg>
+                        <arg>-Amicronaut.processing.module=altara-web</arg>
+                    </compilerArgs>
+                </configuration>
             </plugin>
 
-            <!-- Skip the shade plugin for this module -->
+            <!-- Executable fat jar -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <phase>none</phase>
-                    </execution>
-                </executions>
+                <configuration>
+                    <transformers>
+                        <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                        <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                            <mainClass>${exec.mainClass}</mainClass>
+                        </transformer>
+                    </transformers>
+                    <filters>
+                        <filter>
+                            <artifact>*:*</artifact>
+                            <excludes>
+                                <exclude>META-INF/*.SF</exclude>
+                                <exclude>META-INF/*.DSA</exclude>
+                                <exclude>META-INF/*.RSA</exclude>
+                            </excludes>
+                        </filter>
+                    </filters>
+                </configuration>
             </plugin>
         </plugins>
     </build>

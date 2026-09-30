@@ -2,28 +2,29 @@ package games.sparking.altara.profile.packet;
 
 import games.sparking.altara.Altara;
 import games.sparking.altara.SystemType;
-import games.sparking.altara.profile.Profile;
 import games.sparking.altara.redis.packet.Packet;
-import lombok.RequiredArgsConstructor;
+import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
 
 import java.util.UUID;
 
-@RequiredArgsConstructor
+/**
+ * Published by the Web API whenever a profile document changes (profile saves, grants,
+ * grant clears).  Paper servers holding the profile re-read it and re-apply permissions,
+ * so changes take effect immediately instead of on the next login.
+ */
+@NoArgsConstructor
+@AllArgsConstructor
 public class ProfileUpdatePacket extends Packet {
 
-    private final UUID uuid;
+    private UUID uuid;
 
     @Override
     public void receive() {
-        if (Altara.getSystemType() == SystemType.WEB) {
-            Profile profile = Altara.getSharedInstance().getProfileService().getProfile(uuid);
-            if (profile == null) {
-                return;
-            }
+        if (Altara.getSystemType() != SystemType.PAPER || uuid == null) return;
 
-            Altara.getSharedInstance().getProfileService().updateProfile(uuid, unused -> {
-            }, true);
+        if (Altara.getSharedInstance().getProfileService().refreshProfile(uuid) != null) {
+            Altara.getSharedInstance().updatePermissions(uuid);
         }
     }
-
 }

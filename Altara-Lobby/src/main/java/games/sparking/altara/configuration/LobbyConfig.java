@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.logging.Level;
 
 @Data
 @NoArgsConstructor
@@ -25,35 +26,47 @@ public class LobbyConfig extends LocalConfig {
 
     private boolean hidePlayers = false;
 
-    private String scoreboardTitle = "Sparking Games";
+    /** Plain text; the scoreboard animates it in the Altara colours. */
+    private String scoreboardTitle = "Altara";
 
+    /**
+     * MiniMessage lines.  Placeholders: {@code <rank>}, {@code <onlinecount>}, {@code <maxcount>},
+     * {@code <connection_address>}, {@code <store_address>}, {@code <web_address>}.  A line that is
+     * exactly {@code <rotate>}, {@code <queue>} or {@code <reboot>} expands to that block.
+     */
     private List<String> scoreBoardLines =
             Arrays.asList(
-                    "<dark_blue><gray><strikethrough>--------------------",
-                    "<dark_red>Online:",
-                    " <white><onlinecount> / <maxcount>",
+                    "<dark_gray><strikethrough>--------------------",
+                    "<aqua>Online:",
+                    " <white><onlinecount><gray>/<white><maxcount>",
                     " ",
-                    "<dark_red>Rank:",
+                    "<aqua>Rank:",
                     " <rank>",
+                    "",
                     "<rotate>",
                     "<gray><italic><connection_address>",
-                    "<gray><strikethrough>--------------------");
+                    "<dark_gray><strikethrough>--------------------");
 
+    /** Placeholders: {@code <queue_name>}, {@code <queue_position>}, {@code <queue_total>}. */
     private List<String> scoreBoardQueueLines =
             Arrays.asList(
-                    "<dark_red>Queue:",
-                    " %queue_name% <gray>(#<queue_position> / <queue_total>)",
+                    "<aqua>Queue:",
+                    " <white><queue_name> <gray>(#<queue_position>/<queue_total>)",
                     ""
             );
 
+    /** Placeholder: {@code <time_remaining>}. */
     private List<String> scoreBoardRebootLines =
             Arrays.asList(
-                    "<dark_red><bold>Rebooting<gray>: <red><time_remaining>",
+                    "<red>Rebooting:",
+                    " <white><time_remaining>",
                     ""
             );
 
+    /** Rows × 9. */
     private int selectorSize = 45;
-    private String selectorFiller = "BORDER";
+    /** A {@link games.sparking.altara.menu.fill.FillTemplate} name. */
+    private String selectorFiller = "ALTARA";
     private List<ServerSelectorEntry> serverSelector = Collections.singletonList(new ServerSelectorEntry());
 
     private LocationConfig spawnLocation;
@@ -69,7 +82,8 @@ public class LobbyConfig extends LocalConfig {
         return staffSignLocations.removeIf(config -> config.getX() == location.getBlockX()
                 && config.getY() == location.getBlockY()
                 && config.getZ() == location.getBlockZ()
-                && config.getWorld().equals(location.getWorld().getName()));
+                && location.getWorld() != null
+                && location.getWorld().getName().equals(config.getWorld()));
     }
 
     public void saveConfig() {
@@ -77,7 +91,7 @@ public class LobbyConfig extends LocalConfig {
             AltaraLobby.getSharedInstance().getConfigurationService().saveConfiguration(this,
                     new File(AltaraLobby.getPlugin().getDataFolder(), "config.json"));
         } catch (IOException e) {
-            e.printStackTrace();
+            AltaraLobby.getPlugin().getLogger().log(Level.SEVERE, "Failed to save the lobby config", e);
         }
     }
 }

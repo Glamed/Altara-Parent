@@ -13,308 +13,271 @@ import games.sparking.altara.hologram.leaderboard.LeaderboardHologram;
 import games.sparking.altara.hologram.statics.StaticHologram;
 import games.sparking.altara.hologram.updating.UpdatingHologram;
 import games.sparking.altara.utils.CC;
+import games.sparking.altara.utils.Panel;
+import games.sparking.altara.utils.Theme;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.HoverEvent;
-import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.Sound;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
-@Header(
-        primaryColor = "dark_purple",
-        secondaryColor = "dark_gray",
-        tertiaryColor = "light_purple",
-        header = "Hologram"
-)
+/**
+ * Hologram management.  Line text is a staff-authored MiniMessage template; type
+ * {@code {empty}} for a blank line.
+ */
+@Header(value = "Hologram", panel = Panel.DEV)
 public class HologramCommands {
+
+    private static final String PERMISSION = "altara.holograms";
+    private static final String EMPTY_LINE = "{empty}";
 
     private final HologramService hologramService = AltaraPaper.getPaperInstance().getHologramService();
 
-    @Command(names = {"hologram test", "holo test"},
-             permission = "altara.holograms",
-             description = "Spawn a temporary updating hologram (only visible to you)",
-             playerOnly = true)
+    private static String lineText(String input) {
+        return input.equalsIgnoreCase(EMPTY_LINE) ? "" : input;
+    }
+
+    private static String label(StaticHologram hologram) {
+        return hologram.getName() != null ? hologram.getName() : "#" + hologram.getId();
+    }
+
+    /** Validates a 1-based line index; returns it 0-based, or -1 after telling the sender. */
+    private static int lineIndex(CommandSender sender, StaticHologram hologram, int index, boolean allowAppend) {
+        int size = hologram.getCurrentLines().size();
+        int max = allowAppend ? size + 1 : size;
+        if (index < 1 || index > max) {
+            sender.sendMessage(CC.error("Invalid line.", "Choose a line between *1* and *" + max + "*."));
+            return -1;
+        }
+        return index - 1;
+    }
+
+    private void save(StaticHologram hologram, List<String> lines) {
+        hologram.setLines(lines);
+        hologramService.save();
+    }
+
+    private static List<String> texts(StaticHologram hologram) {
+        List<String> lines = new ArrayList<>();
+        for (HologramLine line : hologram.getCurrentLines()) lines.add(line.getText());
+        return lines;
+    }
+
+    // ── Lifecycle ────────────────────────────────────────────────────────────
+
+    @Command(names = {"hologram create", "holo create"}, permission = PERMISSION,
+            description = "Create a hologram where you stand")
+    public boolean create(Player sender, @Param(name = "name") String name, @Param(name = "text", wildcard = true) String text) {
+        if (name.matches("\\d+")) {
+            sender.sendMessage(CC.error("Invalid name.", "Names can't be numbers — those are used for IDs."));
+            return false;
+        }
+        if (hologramService.getHologram(name) != null) {
+            sender.sendMessage(CC.error("Name taken.", "A hologram called *" + name + "* already exists."));
+            return false;
+        }
+
+        StaticHologram hologram = new HologramBuilder()
+                .at(sender.getLocation())
+                .staticHologram()
+                .addLines(lineText(text))
+                .build();
+        hologram.setName(name);
+        hologram.spawn();
+        hologramService.register(hologram);
+        hologramService.save();
+        sender.sendMessage(CC.success("Hologram created.", "*" + name + "* (#" + hologram.getId() + ") is ready."));
+        return true;
+    }
+
+    @Command(names = {"hologram delete", "hologram remove", "holo delete"}, permission = PERMISSION,
+            description = "Delete a hologram")
+    public boolean delete(CommandSender sender, @Param(name = "hologram") StaticHologram hologram) {
+        hologramService.remove(hologram);
+        hologramService.save();
+        sender.sendMessage(CC.success("Hologram deleted.", "*" + label(hologram) + "* has been removed."));
+        return true;
+    }
+
+    @Command(names = {"hologram list", "holo list"}, permission = PERMISSION, description = "List saved holograms")
+    public boolean list(CommandSender sender) {
+        List<StaticHologram> holograms = hologramService.getSerializedHolograms();
+
+        sender.sendMessage(CC.header(Panel.DEV, "Holograms"));
+        if (holograms.isEmpty()) sender.sendMessage(CC.empty("No holograms have been created yet."));
+
+        for (StaticHologram hologram : holograms) {
+            Location loc = hologram.getLocation();
+            TextComponent.Builder hover = Component.text()
+                    .append(Component.text(String.format("%s %.1f, %.1f, %.1f", loc.getWorld().getName(),
+                            loc.getX(), loc.getY(), loc.getZ()), Theme.TEXT));
+            int i = 0;
+            for (HologramLine line : hologram.getCurrentLines()) {
+                hover.append(Component.newline())
+                        .append(Component.text(++i + ". ", Theme.STRUCTURE))
+                        .append(HologramLine.toComponent(line.getText()));
+            }
+            hover.append(Component.newline()).append(Component.newline())
+                    .append(Component.text("Click to teleport to this hologram.", Theme.TEXT));
+
+            sender.sendMessage(CC.item(Component.text()
+                    .append(Component.text(label(hologram), Theme.TEXT_STRONG))
+                    .append(Component.text(" #" + hologram.getId(), Theme.TEXT))
+                    .hoverEvent(HoverEvent.showText(hover.build()))
+                    .clickEvent(ClickEvent.runCommand("/hologram tpto " + hologram.getId()))
+                    .build()));
+        }
+        sender.sendMessage(CC.footer(Panel.DEV));
+        return true;
+    }
+
+    // ── Lines ────────────────────────────────────────────────────────────────
+
+    @Command(names = {"hologram addline", "holo addline"}, permission = PERMISSION, description = "Add a line to the bottom")
+    public boolean addLine(CommandSender sender, @Param(name = "hologram") StaticHologram hologram,
+                           @Param(name = "text", wildcard = true) String text) {
+        List<String> lines = texts(hologram);
+        lines.add(lineText(text));
+        save(hologram, lines);
+        sender.sendMessage(CC.success("Line added.", "*" + label(hologram) + "* now has *" + lines.size() + "* lines."));
+        return true;
+    }
+
+    @Command(names = {"hologram removeline", "holo removeline"}, permission = PERMISSION, description = "Remove a line")
+    public boolean removeLine(CommandSender sender, @Param(name = "hologram") StaticHologram hologram,
+                              @Param(name = "line") int index) {
+        int position = lineIndex(sender, hologram, index, false);
+        if (position < 0) return false;
+
+        List<String> lines = texts(hologram);
+        lines.remove(position);
+        save(hologram, lines);
+        sender.sendMessage(CC.success("Line removed.", "Removed line *" + index + "* from *" + label(hologram) + "*."));
+        return true;
+    }
+
+    @Command(names = {"hologram setline", "holo setline"}, permission = PERMISSION, description = "Replace a line")
+    public boolean setLine(CommandSender sender, @Param(name = "hologram") StaticHologram hologram,
+                           @Param(name = "line") int index, @Param(name = "text", wildcard = true) String text) {
+        int position = lineIndex(sender, hologram, index, false);
+        if (position < 0) return false;
+
+        List<String> lines = texts(hologram);
+        lines.set(position, lineText(text));
+        save(hologram, lines);
+        sender.sendMessage(CC.success("Line updated.", "Line *" + index + "* of *" + label(hologram) + "* was changed."));
+        return true;
+    }
+
+    @Command(names = {"hologram insertbefore", "holo insertbefore"}, permission = PERMISSION,
+            description = "Insert a line above another")
+    public boolean insertBefore(CommandSender sender, @Param(name = "hologram") StaticHologram hologram,
+                                @Param(name = "line") int index, @Param(name = "text", wildcard = true) String text) {
+        return insert(sender, hologram, index, text, 0);
+    }
+
+    @Command(names = {"hologram insertafter", "holo insertafter"}, permission = PERMISSION,
+            description = "Insert a line below another")
+    public boolean insertAfter(CommandSender sender, @Param(name = "hologram") StaticHologram hologram,
+                               @Param(name = "line") int index, @Param(name = "text", wildcard = true) String text) {
+        return insert(sender, hologram, index, text, 1);
+    }
+
+    private boolean insert(CommandSender sender, StaticHologram hologram, int index, String text, int offset) {
+        int position = lineIndex(sender, hologram, index, false);
+        if (position < 0) return false;
+
+        List<String> lines = texts(hologram);
+        lines.add(position + offset, lineText(text));
+        save(hologram, lines);
+        sender.sendMessage(CC.success("Line inserted.", "Added a line at position *" + (position + offset + 1)
+                + "* on *" + label(hologram) + "*."));
+        return true;
+    }
+
+    // ── Placement ────────────────────────────────────────────────────────────
+
+    @Command(names = {"hologram tphere", "hologram movehere", "holo tphere"}, permission = PERMISSION,
+            description = "Move a hologram to you")
+    public boolean tphere(Player sender, @Param(name = "hologram") StaticHologram hologram) {
+        hologram.setLocation(sender.getLocation());
+        hologramService.save();
+        sender.sendMessage(CC.success("Hologram moved.", "*" + label(hologram) + "* is now at your location."));
+        return true;
+    }
+
+    @Command(names = {"hologram tpto", "holo tpto"}, permission = PERMISSION, description = "Teleport to a hologram")
+    public boolean tpto(Player sender, @Param(name = "hologram") StaticHologram hologram) {
+        sender.teleport(hologram.getLocation());
+        sender.sendMessage(CC.info("Teleported to *" + label(hologram) + "*."));
+        return true;
+    }
+
+    @Command(names = {"hologram setspacing", "holo setspacing"}, permission = PERMISSION,
+            description = "Set the gap between lines")
+    public boolean setSpacing(CommandSender sender, @Param(name = "hologram") StaticHologram hologram,
+                              @Param(name = "spacing") double spacing) {
+        if (spacing <= 0 || spacing > 5) {
+            sender.sendMessage(CC.error("Invalid spacing.", "Choose a value above *0* and up to *5*."));
+            return false;
+        }
+        hologram.setLineSpacing(spacing);
+        hologramService.save();
+        sender.sendMessage(CC.success("Spacing updated.", "*" + label(hologram) + "* now uses *" + spacing + "* spacing."));
+        return true;
+    }
+
+    // ── Previews (only visible to you, not saved) ────────────────────────────
+
+    @Command(names = {"hologram test", "holo test"}, permission = PERMISSION, hidden = true,
+            description = "Preview an updating hologram")
     public boolean test(Player sender) {
         UpdatingHologram hologram = new HologramBuilder()
                 .at(sender.getLocation())
                 .visibleTo(sender)
                 .updating()
                 .intervalTicks(20L)
-                .lines(() -> Arrays.asList(
-                        "<yellow><bold>Players Online",
-                        "<white>" + Bukkit.getOnlinePlayers().size()
-                ))
-                .clickHandler((player, holo, line, clickType) -> {
-                    if (line == 0) {
-                        player.sendMessage(CC.noticeMsg("", "There are currently *" + Bukkit.getOnlinePlayers().size() + "* players online."));
-                    }
-                })
+                .lines(() -> List.of("<aqua>Players Online", "<white>" + Bukkit.getOnlinePlayers().size()))
+                .clickHandler((player, holo, line, clickType) -> player.sendMessage(
+                        CC.info("There are *" + Bukkit.getOnlinePlayers().size() + "* players online.")))
                 .build();
 
         hologram.spawn();
         hologram.start();
-        sender.sendMessage(CC.format("<blue>Test hologram spawned — only you can see it."));
+        sender.sendMessage(CC.info("Preview hologram spawned. Only you can see it, and it isn't saved."));
         return true;
     }
 
-    @Command(names = {"hologram create", "holo create"},
-             permission = "altara.holograms",
-             description = "Create a new hologram at your location",
-             playerOnly = true)
-    public boolean create(Player sender,
-                          @Param(name = "name") String name,
-                          @Param(name = "text", wildcard = true) String text) {
-        try {
-            Integer.parseInt(name);
-            sender.sendMessage(CC.RED + "Hologram names cannot be pure integers.");
-            return false;
-        } catch (NumberFormatException ignored) { }
-
-        StaticHologram hologram = new HologramBuilder()
-                .at(sender.getLocation())
-                .staticHologram()
-                .addLines(text)
-                .build();
-
-        hologram.setName(name);
-        hologram.spawn();
-        hologramService.register(hologram);
-        hologramService.save();
-        sender.sendMessage(CC.format("<blue>Hologram <yellow>#%d <blue>created.", hologram.getId()));
-        return true;
-    }
-
-    @Command(names = {"hologram delete", "hologram remove", "holo delete"},
-             permission = "altara.holograms",
-             description = "Delete a hologram")
-    public boolean delete(CommandSender sender, @Param(name = "id") StaticHologram hologram) {
-        hologramService.remove(hologram);
-        hologramService.save();
-        sender.sendMessage(CC.format("<blue>Deleted hologram <yellow>#%d<blue>.", hologram.getId()));
-        return true;
-    }
-
-    @Command(names = {"hologram list", "holo list"},
-             permission = "altara.holograms",
-             description = "List all saved holograms")
-    public boolean list(CommandSender sender) {
-        List<StaticHologram> holograms = hologramService.getSerializedHolograms();
-        if (holograms.isEmpty()) {
-            sender.sendMessage(CC.RED + "No holograms exist.");
-            return true;
-        }
-
-        for (StaticHologram hologram : holograms) {
-            String loc = String.format("[%.1f, %.1f, %.1f]",
-                    hologram.getLocation().getX(),
-                    hologram.getLocation().getY(),
-                    hologram.getLocation().getZ());
-
-            List<String> hover = new ArrayList<>();
-            hover.add(NamedTextColor.GREEN + "Location: " + loc);
-            hover.add(NamedTextColor.YELLOW + "Click to teleport");
-            hover.add(" ");
-
-            int i = 0;
-            for (HologramLine line : hologram.getCurrentLines())
-                hover.add(String.format("%d. %s", ++i, line.getText()));
-
-            Component msg = Component.text(hologram.getName() + " - #" + hologram.getId(), CC.RED)
-                    .hoverEvent(HoverEvent.showText(CC.format(String.join("\n", hover))))
-                    .clickEvent(ClickEvent.runCommand("/hologram tpto " + hologram.getId()));
-            sender.sendMessage(msg);
-        }
-        return true;
-    }
-
-    @Command(names = {"hologram addline", "holo addline"},
-             permission = "altara.holograms",
-             description = "Append a line to a hologram")
-    public boolean addLine(CommandSender sender,
-                           @Param(name = "id") StaticHologram hologram,
-                           @Param(name = "text", wildcard = true) String text) {
-        text = text.equalsIgnoreCase("{empty}") ? "" : text;
-        hologram.addLines(text);
-        hologramService.save();
-        sender.sendMessage(CC.format("<blue>Added line to hologram <yellow>#%d<blue>.", hologram.getId()));
-        return true;
-    }
-
-    @Command(names = {"hologram removeline", "holo removeline"},
-             permission = "altara.holograms",
-             description = "Remove a line from a hologram")
-    public boolean removeLine(CommandSender sender,
-                              @Param(name = "id") StaticHologram hologram,
-                              @Param(name = "index") int index) {
-        List<HologramLine> lines = new ArrayList<>(hologram.getCurrentLines());
-        if (--index < 0 || index >= lines.size()) {
-            sender.sendMessage(CC.format("<red>Invalid index. (<yellow>1<red>-<yellow>%d<red>)", lines.size()));
-            return false;
-        }
-
-        HologramLine removed = lines.remove(index);
-        List<String> strings = new ArrayList<>();
-        for (HologramLine l : lines) strings.add(l.getText());
-        hologram.setLines(strings);
-        hologramService.save();
-        sender.sendMessage(CC.format("<blue>Removed '<reset>%s<blue>' from hologram <yellow>#%d<blue>.",
-                removed.getText(), hologram.getId()));
-        return true;
-    }
-
-    @Command(names = {"hologram setline", "holo setline"},
-             permission = "altara.holograms",
-             description = "Set a specific line on a hologram")
-    public boolean setLine(CommandSender sender,
-                           @Param(name = "id") StaticHologram hologram,
-                           @Param(name = "index") int index,
-                           @Param(name = "text", wildcard = true) String text) {
-        if (--index < 0 || index >= hologram.getCurrentLines().size()) {
-            sender.sendMessage(CC.format("<red>Invalid index. (<yellow>1<red>-<yellow>%d<red>)",
-                    hologram.getCurrentLines().size()));
-            return false;
-        }
-
-        text = text.equalsIgnoreCase("{empty}") ? "" : text;
-        hologram.setLine(index, text);
-        hologramService.save();
-        sender.sendMessage(CC.format("<blue>Set line <yellow>%d <blue>on hologram <yellow>#%d<blue>.", index + 1, hologram.getId()));
-        return true;
-    }
-
-    @Command(names = {"hologram insertbefore", "holo insertbefore"},
-             permission = "altara.holograms",
-             description = "Insert a line before an index")
-    public boolean insertBefore(CommandSender sender,
-                                @Param(name = "id") StaticHologram hologram,
-                                @Param(name = "index") int index,
-                                @Param(name = "text", wildcard = true) String text) {
-        List<HologramLine> lines = new ArrayList<>(hologram.getCurrentLines());
-        if (--index < 0 || index >= lines.size()) {
-            sender.sendMessage(CC.format("<red>Invalid index. (<yellow>1<red>-<yellow>%d<red>)", lines.size()));
-            return false;
-        }
-
-        text = text.equalsIgnoreCase("{empty}") ? "" : text;
-        lines.add(index, new HologramLine(text));
-        List<String> strings = new ArrayList<>();
-        for (HologramLine l : lines) strings.add(l.getText());
-        hologram.setLines(strings);
-        hologramService.save();
-        sender.sendMessage(CC.format("<blue>Inserted line at position <yellow>%d <blue>on hologram <yellow>#%d<blue>.",
-                index + 1, hologram.getId()));
-        return true;
-    }
-
-    @Command(names = {"hologram insertafter", "holo insertafter"},
-             permission = "altara.holograms",
-             description = "Insert a line after an index")
-    public boolean insertAfter(CommandSender sender,
-                               @Param(name = "id") StaticHologram hologram,
-                               @Param(name = "index") int index,
-                               @Param(name = "text", wildcard = true) String text) {
-        List<HologramLine> lines = new ArrayList<>(hologram.getCurrentLines());
-        if (--index < 0 || index >= lines.size()) {
-            sender.sendMessage(CC.format("<red>Invalid index. (<yellow>1<red>-<yellow>%d<red>)", lines.size()));
-            return false;
-        }
-
-        text = text.equalsIgnoreCase("{empty}") ? "" : text;
-        lines.add(index + 1, new HologramLine(text));
-        List<String> strings = new ArrayList<>();
-        for (HologramLine l : lines) strings.add(l.getText());
-        hologram.setLines(strings);
-        hologramService.save();
-        sender.sendMessage(CC.format("<blue>Inserted line at position <yellow>%d <blue>on hologram <yellow>#%d<blue>.",
-                index + 2, hologram.getId()));
-        return true;
-    }
-
-    @Command(names = {"hologram tphere", "hologram movehere", "holo tphere"},
-             permission = "altara.holograms",
-             description = "Move a hologram to your location",
-             playerOnly = true)
-    public boolean tphere(Player sender, @Param(name = "id") StaticHologram hologram) {
-        hologram.setLocation(sender.getLocation());
-        hologramService.save();
-        sender.sendMessage(CC.format("<blue>Moved hologram <yellow>#%d <blue>to your location.", hologram.getId()));
-        return true;
-    }
-
-    @Command(names = {"hologram tpto", "holo tpto"},
-             permission = "altara.holograms",
-             description = "Teleport to a hologram",
-             playerOnly = true)
-    public boolean tpto(Player sender, @Param(name = "id") StaticHologram hologram) {
-        sender.teleport(hologram.getLocation());
-        sender.sendMessage(CC.format("<blue>Teleported to hologram <yellow>#%d<blue>.", hologram.getId()));
-        return true;
-    }
-
-    @Command(names = {"hologram setspacing", "holo setspacing"},
-             permission = "altara.holograms",
-             description = "Set the line spacing of a hologram")
-    public boolean setSpacing(CommandSender sender,
-                              @Param(name = "id") StaticHologram hologram,
-                              @Param(name = "spacing") double spacing) {
-        if (spacing <= 0) {
-            sender.sendMessage(CC.RED + "Spacing must be greater than 0.");
-            return false;
-        }
-        hologram.setLineSpacing(spacing);
-        hologramService.save();
-        sender.sendMessage(CC.format("<blue>Set spacing of hologram <yellow>#%d <blue>to <yellow>%.2f<blue>.", hologram.getId(), spacing));
-        return true;
-    }
-
-    @Command(names = {"hologram leaderboard", "holo lb"},
-             permission = "altara.holograms",
-             description = "Spawn a demo leaderboard hologram with all features",
-             playerOnly = true)
+    @Command(names = {"hologram leaderboard", "holo lb"}, permission = PERMISSION, hidden = true,
+            description = "Preview a leaderboard hologram")
     public boolean leaderboard(Player sender) {
-        List<LeaderboardCategory> categories = Arrays.asList(
-                new LeaderboardCategory("Kills", Arrays.asList(
-                        new LeaderboardEntry(1, "Notch",      42_000, "kills"),
-                        new LeaderboardEntry(2, "Jeb_",       38_500, "kills"),
+        List<LeaderboardCategory> categories = List.of(
+                new LeaderboardCategory("Kills", List.of(
+                        new LeaderboardEntry(1, "Notch", 42_000, "kills"),
+                        new LeaderboardEntry(2, "Jeb_", 38_500, "kills"),
                         new LeaderboardEntry(3, "Dinnerbone", 31_200, "kills"),
-                        new LeaderboardEntry(4, "Grumm",      28_000, "kills"),
-                        new LeaderboardEntry(5, "Marc",       24_100, "kills"),
-                        new LeaderboardEntry(6, "Searge",     19_800, "kills")
-                )),
-                new LeaderboardCategory("Wins", Arrays.asList(
-                        new LeaderboardEntry(1, "Jeb_",   980, "wins"),
-                        new LeaderboardEntry(2, "Notch",  870, "wins"),
-                        new LeaderboardEntry(3, "Marc",   760, "wins")
-                )),
-                new LeaderboardCategory("Playtime", Arrays.asList(
-                        new LeaderboardEntry(1, "Searge",     1_200, "hrs"),
-                        new LeaderboardEntry(2, "Dinnerbone", 1_050, "hrs"),
-                        new LeaderboardEntry(3, "Grumm",        940, "hrs"),
-                        new LeaderboardEntry(4, "Notch",        880, "hrs")
-                ))
+                        new LeaderboardEntry(4, "Grumm", 28_000, "kills"))),
+                new LeaderboardCategory("Wins", List.of(
+                        new LeaderboardEntry(1, "Jeb_", 980, "wins"),
+                        new LeaderboardEntry(2, "Notch", 870, "wins")))
         );
 
         LeaderboardHologram lb = new LeaderboardHologram.Builder(sender, sender.getLocation(), categories, 3)
-                // Click sound — heard up to 3 blocks (default), slight pitch-up
                 .clickSound(Sound.UI_BUTTON_CLICK)
                 .clickSoundPitch(1.2f)
-                // Auto-rotate: step through every page then advance category every 5 s (100 ticks)
                 .autoRotateBoth(100L)
-                // Pling when rotating — default 3-block range
-                .autoRotateSound(Sound.BLOCK_NOTE_BLOCK_PLING)
-                .autoRotateSoundPitch(1.5f)
                 .build();
 
         lb.spawn();
         lb.start();
-        sender.sendMessage(NamedTextColor.GREEN + "Leaderboard hologram spawned — only you can see it.");
+        sender.sendMessage(CC.info("Preview leaderboard spawned. Only you can see it, and it isn't saved."));
         return true;
     }
-
 }

@@ -9,13 +9,14 @@ import lombok.RequiredArgsConstructor;
 import org.bukkit.entity.Player;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
 @RequiredArgsConstructor
 public class ProfileService {
 
     @Getter
-    private static final Map<UUID, Profile> profiles = new HashMap<>();
+    private static final Map<UUID, Profile> profiles = new ConcurrentHashMap<>();
 
     public void loadProfile(UUID uuid, Consumer<Profile> callback, boolean async) {
         if (uuid == null) {
@@ -96,13 +97,16 @@ public class ProfileService {
     }
 
     public Profile getProfile(UUID uuid) {
-        return profiles.getOrDefault(uuid, null);
+        if (uuid == null) return null;
+        return profiles.get(uuid);
     }
 
     public void removeProfile(UUID uuid) {
+        if (uuid == null) return;
         profiles.remove(uuid);
     }
 
+    /** Saves the cached profile to the API and refreshes it from the response. */
     public void updateProfile(UUID uuid, Consumer<Profile> callback, boolean async) {
         Profile profile = getProfile(uuid);
         if (profile == null) {
@@ -110,26 +114,44 @@ public class ProfileService {
             return;
         }
 
-        JsonObject object = profile.toJson();
-        if (async) {
-            Tasks.runAsync(() -> {
-                RequestResponse response = RequestHandler.put("api/profile/" + uuid, object);
-                if (response.wasSuccessful()) {
-                    profile.update(response.asObject());
-                    if (callback != null) callback.accept(profile);
-                } else {
-                    if (callback != null) callback.accept(null);
-                }
-            });
-        } else {
-            RequestResponse response = RequestHandler.put("api/profile/" + uuid, object);
+        JsonObject object = profile.toSaveJson();
+        Runnable save = () -> {
+            RequestResponse response = RequestHandler.put("api/profile/%s", object, uuid.toString());
             if (response.wasSuccessful()) {
                 profile.update(response.asObject());
-                if (callback != null) callback.accept(profile);
-            } else {
-                if (callback != null) callback.accept(null);
             }
+            if (callback != null) callback.accept(response.wasSuccessful() ? profile : null);
+        };
+
+        if (async) Tasks.runAsync(save);
+        else save.run();
+    }
+
+    /**
+     * The cached profile, or a fresh read from the API that is <em>not</em> cached (for
+     * players on other servers).  Returns {@code null} if it can't be loaded.  Blocking.
+     */
+    public Profile fetchProfile(UUID uuid) {
+        Profile cached = getProfile(uuid);
+        if (cached != null) return cached;
+
+        RequestResponse response = RequestHandler.get("api/profile/%s", uuid.toString());
+        return response.wasSuccessful() ? new Profile(response.asObject()) : null;
+    }
+
+    /**
+     * Re-reads a cached profile from the API (e.g. after a grant or punishment changed it
+     * elsewhere).  Does nothing if the profile isn't cached.  Blocking.
+     */
+    public Profile refreshProfile(UUID uuid) {
+        Profile profile = getProfile(uuid);
+        if (profile == null) return null;
+
+        RequestResponse response = RequestHandler.get("api/profile/%s", uuid.toString());
+        if (response.wasSuccessful()) {
+            profile.update(response.asObject());
         }
+        return profile;
     }
 
     public void getAlts(Profile profile, Consumer<List<Profile>> callback, boolean async) {
@@ -141,11 +163,9 @@ public class ProfileService {
         RequestResponse response = RequestHandler.get("api/profile/" + profile.getUuid() + "/alts");
         if (response.wasSuccessful()) {
             List<Profile> alts = new ArrayList<>();
-            response.asArray().forEach(element -> {
-                Profile alt = new Profile(element.getAsJsonObject());
-                alts.add(alt);
-                cacheProfile(alt);
-            });
+            // Not cached: alts are usually offline, and a cached copy would be reused
+            // (stale) when they next log in.
+            response.asArray().forEach(element -> alts.add(new Profile(element.getAsJsonObject())));
             if (callback != null) callback.accept(alts);
         } else {
             if (callback != null) callback.accept(new ArrayList<>());

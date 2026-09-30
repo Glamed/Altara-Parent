@@ -16,7 +16,7 @@ public class BukkitProfileService {
     public RequestResponse addGrant(Profile target, Grant grant) {
         JsonBuilder builder = new JsonBuilder();
         builder.add("id", grant.getId());
-        builder.add("rank", grant.asRank().getUuid());
+        builder.add("rank", grant.getRank());
         builder.add("grantedBy", grant.getGrantedBy());
         builder.add("grantedAt", grant.getGrantedAt());
         builder.add("grantedReason", grant.getGrantedReason());
@@ -64,16 +64,5 @@ public class BukkitProfileService {
         }
         return response;
     }
-
-//    public RequestResponse addNote(Profile target, Note note) {
-//        RequestResponse response = RequestHandler.post("profile/%s/notes", note.toJson(), target.getUuid());
-//        if (response.couldNotConnect())
-//            RequestHandler.addToBackLog(new NoteBackLogEntry(note, target.getUuid(), response.getRequestBuilder()));
-//        return response;
-//    }
-//
-//    public RequestResponse removeNote(Profile target, Note note) {
-//        return RequestHandler.delete("profile/%s/notes/%s", target.getUuid().toString(), note.getId().toString());
-//    }
 
 }

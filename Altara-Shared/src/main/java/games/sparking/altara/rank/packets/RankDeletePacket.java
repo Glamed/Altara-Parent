@@ -1,25 +1,21 @@
 package games.sparking.altara.rank.packets;
 
 import games.sparking.altara.Altara;
-import games.sparking.altara.rank.Rank;
 import games.sparking.altara.redis.packet.Packet;
 import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
 
 import java.util.UUID;
 
+/** Published by the API after a rank is deleted; every server drops it locally. */
+@NoArgsConstructor
 @AllArgsConstructor
 public class RankDeletePacket extends Packet {
 
-    private final UUID uuid;
+    private UUID uuid;
 
     @Override
     public void receive() {
-        Rank rank = Altara.getSharedInstance().getRankService().getRank(uuid);
-        if (rank != null) {
-            Altara.getSharedInstance().handleRankDeletion(rank);
-        }
-        Altara.getSharedInstance().getRankService().deleteRank(uuid, () -> {
-        });
+        Altara.getSharedInstance().getRankService().removeLocally(uuid);
     }
-
 }

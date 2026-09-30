@@ -1,57 +1,76 @@
 package games.sparking.altara.utils;
 
+import net.kyori.adventure.text.Component;
 import org.bukkit.command.CommandSender;
 
 import java.util.List;
 
 /**
- * @author Emilxyz (langgezockt@gmail.com)
- * 25.02.2020 / 00:25
- * iLib / cc.invictusgames.ilib.messages.page
+ * Paginated chat list in the standard section format:
+ * <pre>
+ * -----[Title > Page 1/3]-----
+ *  - entry
+ *  ...
+ * Use /command [page] to view more.
+ * ----------------------------
+ * </pre>
  */
-
 public abstract class PagedMessage<T> {
 
-    private int maxMessagesPerPage;
+    private final int perPage;
 
-    public PagedMessage() {
+    protected PagedMessage() {
         this(9);
     }
 
-    public PagedMessage(int maxMessagesPerPage) {
-        this.maxMessagesPerPage = maxMessagesPerPage;
+    protected PagedMessage(int perPage) {
+        this.perPage = perPage;
     }
 
-    public void display(CommandSender sender, List<T> messages, int page) {
-        if (messages.size() == 0) {
-            sender.sendMessage(CC.RED + "No entries were found");
+    /** Heading shown in the section header. */
+    protected abstract String title();
+
+    /** Command players run to view another page, e.g. {@code "/ignore list"}. */
+    protected abstract String pageCommand();
+
+    /** Line for a single entry. */
+    protected abstract Component format(T entry);
+
+    /** Colour tier of the panel. */
+    protected Panel panel() {
+        return Panel.PLAYER;
+    }
+
+    /** Shown instead of the list when there are no entries. */
+    protected String emptyMessage() {
+        return "There's nothing here yet.";
+    }
+
+    public void display(CommandSender sender, List<T> entries, int page) {
+        if (entries.isEmpty()) {
+            sender.sendMessage(CC.header(panel(), title()));
+            sender.sendMessage(CC.empty(emptyMessage()));
+            sender.sendMessage(CC.footer(panel()));
             return;
         }
 
-        int maxPages = messages.size() / this.maxMessagesPerPage + 1;
-        if ((page <= 0) || (page > maxPages)) {
-            sender.sendMessage(CC.RED + "Page " + page + " not found. (1-" + maxPages + ")");
+        int pages = (entries.size() + perPage - 1) / perPage;
+        if (page < 1 || page > pages) {
+            sender.sendMessage(CC.error("Invalid page.", "Choose a page between *1* and *" + pages + "*."));
             return;
         }
 
-        int minIndex = (int) ((double) (page - 1) * this.maxMessagesPerPage);
-        int maxIndex = (int) ((double) (page) * this.maxMessagesPerPage);
-
-        for (String s : getHeader(page, maxPages))
-            sender.sendMessage(s);
-
-        for (int i = minIndex; (i < maxIndex) && (i < messages.size()); i++) {
-            this.send(sender, messages.get(i));
+        sender.sendMessage(CC.header(panel(), title(), pages > 1 ? "Page " + page + "/" + pages : null));
+        int end = Math.min(entries.size(), page * perPage);
+        for (int i = (page - 1) * perPage; i < end; i++) {
+            sender.sendMessage(format(entries.get(i)));
         }
-
-        for (String s : this.getFooter(page, maxPages))
-            sender.sendMessage(s);
+        if (page < pages) {
+            sender.sendMessage(CC.line(Component.text()
+                    .append(Component.text("Use ", Theme.TEXT))
+                    .append(Component.text(pageCommand() + " " + (page + 1), Theme.TEXT_STRONG))
+                    .append(Component.text(" to view more.", Theme.TEXT))));
+        }
+        sender.sendMessage(CC.footer(panel()));
     }
-
-    public abstract List<String> getHeader(int page, int maxPages);
-
-    public abstract List<String> getFooter(int page, int maxPages);
-
-    public abstract void send(CommandSender sender, T t);
-
 }

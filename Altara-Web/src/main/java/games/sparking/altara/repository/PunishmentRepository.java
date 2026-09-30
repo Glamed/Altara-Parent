@@ -3,197 +3,137 @@ package games.sparking.altara.repository;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-import lombok.RequiredArgsConstructor;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.model.Filters;
+import com.mongodb.client.model.Updates;
+import jakarta.inject.Singleton;
 import org.bson.Document;
-import org.bson.json.JsonMode;
-import org.bson.json.JsonWriterSettings;
-import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.query.Criteria;
-import org.springframework.data.mongodb.core.query.Query;
-import org.springframework.data.mongodb.core.query.Update;
-import org.springframework.stereotype.Repository;
+import org.bson.conversions.Bson;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 /**
- * MongoDB repository for the {@code punishments} collection.
+ * The {@code punishments} collection.  {@code _id} mirrors the punishment's own {@code id}.
  *
- * <p>Schema:
  * <pre>
  * {
- *   "_id":            "&lt;punishment-uuid&gt;",
- *   "id":             "&lt;punishment-uuid&gt;",
- *   "playerUuid":     "...",
- *   "staffUuid":      "...",
- *   "infractionType": "PROFANITY",
- *   "actions":        [ { "type": "CHAT_RESTRICTION", "duration": 1800000 } ],
- *   "message":        null,
- *   "notes":          null,
- *   "issuedAt":       1234567890000,
- *   "removed":        false,
- *   "removedAt":      -1,
- *   "removedBy":      null
+ *   "id": "...", "playerUuid": "...", "staffUuid": "...", "infractionType": "PROFANITY",
+ *   "actions": [ { "type": "CHAT_RESTRICTION", "duration": 1800000 } ],
+ *   "message": null, "notes": null, "issuedAt": 1234567890000,
+ *   "removed": false, "removedAt": -1, "removedBy": null, "notified": false
  * }
  * </pre>
+ * Action durations are relative to {@code issuedAt}; {@code -1} is permanent.
  */
-@Repository
-@RequiredArgsConstructor
+@Singleton
 public class PunishmentRepository {
 
-    private static final String COLLECTION = "punishments";
-    private static final JsonWriterSettings RELAXED =
-            JsonWriterSettings.builder().outputMode(JsonMode.RELAXED).build();
+    private final MongoCollection<Document> collection;
 
-    private final MongoTemplate mongoTemplate;
+    public PunishmentRepository(MongoDatabase database) {
+        this.collection = database.getCollection("punishments");
+    }
 
     // ── CRUD ───────────────────────────────────────────────────────────────────
 
     public Optional<JsonObject> findById(String id) {
-        Document doc = mongoTemplate.findOne(byId(id), Document.class, COLLECTION);
-        return Optional.ofNullable(doc).map(this::toJson);
+        return Optional.ofNullable(collection.find(byId(id)).first()).map(MongoJson::toJson);
     }
 
-    /**
-     * Insert a new punishment document. The {@code _id} is set to the punishment's
-     * own {@code id} field so queries by both {@code _id} and {@code id} work.
-     */
     public JsonObject insert(JsonObject punishment) {
-        Document doc = Document.parse(punishment.toString());
-        doc.put("_id", punishment.get("id").getAsString());
-        mongoTemplate.insert(doc, COLLECTION);
-        return findById(punishment.get("id").getAsString()).orElse(punishment);
+        String id = punishment.get("id").getAsString();
+        Document doc = MongoJson.toDocument(punishment);
+        doc.put("_id", id);
+        collection.insertOne(doc);
+        return findById(id).orElse(punishment);
     }
 
-    /**
-     * Soft-delete a punishment (sets {@code removed=true}, {@code removedAt}, {@code removedBy}).
-     */
+    /** Soft-deletes (revokes) a punishment. */
     public Optional<JsonObject> revoke(String id, String removedBy) {
-        Update update = new Update()
-                .set("removed",   true)
-                .set("removedAt", System.currentTimeMillis())
-                .set("removedBy", removedBy);
-        long matched = mongoTemplate.updateFirst(byId(id), update, COLLECTION).getMatchedCount();
-        if (matched == 0) return Optional.empty();
-        return findById(id);
+        return updateAndFind(id, Updates.combine(
+                Updates.set("removed", true),
+                Updates.set("removedAt", System.currentTimeMillis()),
+                Updates.set("removedBy", removedBy)));
     }
 
-    /**
-     * Partial update (PATCH) — only the allowed mutable fields are written.
-     * Allowed: {@code infractionType}, {@code message}, {@code notes}, {@code actions}.
-     */
+    /** Records that the player has been shown this punishment. */
+    public Optional<JsonObject> markNotified(String id) {
+        return updateAndFind(id, Updates.set("notified", true));
+    }
+
+    /** Partial update.  Only {@code infractionType}, {@code message}, {@code notes} and {@code actions} are written. */
     public Optional<JsonObject> patch(String id, JsonObject updates) {
-        Update update = new Update();
-        boolean any = false;
-
+        List<Bson> changes = new ArrayList<>();
         if (updates.has("infractionType") && !updates.get("infractionType").isJsonNull()) {
-            update.set("infractionType", updates.get("infractionType").getAsString());
-            any = true;
+            changes.add(Updates.set("infractionType", updates.get("infractionType").getAsString()));
         }
-        if (updates.has("message")) {
-            update.set("message", updates.get("message").isJsonNull() ? null : updates.get("message").getAsString());
-            any = true;
-        }
-        if (updates.has("notes")) {
-            update.set("notes", updates.get("notes").isJsonNull() ? null : updates.get("notes").getAsString());
-            any = true;
-        }
+        if (updates.has("message")) changes.add(Updates.set("message", MongoJson.string(updates, "message")));
+        if (updates.has("notes")) changes.add(Updates.set("notes", MongoJson.string(updates, "notes")));
         if (updates.has("actions") && updates.get("actions").isJsonArray()) {
-            update.set("actions", Document.parse("{\"v\":" + updates.get("actions").toString() + "}").get("v"));
-            any = true;
+            changes.add(Updates.set("actions", Document.parse("{\"v\":" + updates.get("actions") + "}").get("v")));
         }
 
-        if (!any) return findById(id);
+        if (changes.isEmpty()) return findById(id);
+        return updateAndFind(id, Updates.combine(changes));
+    }
 
-        long matched = mongoTemplate.updateFirst(byId(id), update, COLLECTION).getMatchedCount();
-        if (matched == 0) return Optional.empty();
+    private Optional<JsonObject> updateAndFind(String id, Bson update) {
+        if (collection.updateOne(byId(id), update).getMatchedCount() == 0) return Optional.empty();
         return findById(id);
     }
 
     // ── Player queries ─────────────────────────────────────────────────────────
 
-    /** All punishment records for a player (newest first). */
+    /** Every punishment record for a player. */
     public JsonArray findByPlayer(String playerUuid) {
-        Query query = Query.query(Criteria.where("playerUuid").is(playerUuid));
-        List<Document> docs = mongoTemplate.find(query, Document.class, COLLECTION);
-        return toArray(docs);
+        return MongoJson.toArray(collection.find(Filters.eq("playerUuid", playerUuid)));
     }
 
-    /** Only active punishments for a player. */
+    /** Punishments with at least one restriction still running. */
     public JsonArray findActiveByPlayer(String playerUuid) {
-        Query query = Query.query(
-                Criteria.where("playerUuid").is(playerUuid)
-                        .and("removed").is(false)
-        );
-        List<Document> docs = mongoTemplate.find(query, Document.class, COLLECTION);
-
-        // Filter client-side for expiry (duration is relative to issuedAt)
         JsonArray result = new JsonArray();
-        for (Document d : docs) {
-            JsonObject obj = toJson(d);
-            if (isActive(obj)) result.add(obj);
+        for (Document doc : collection.find(Filters.and(Filters.eq("playerUuid", playerUuid), Filters.eq("removed", false)))) {
+            JsonObject punishment = MongoJson.toJson(doc);
+            if (hasRunningAction(punishment, null)) result.add(punishment);
         }
         return result;
     }
 
-    /** Whether the player currently has an active SUSPENSION (ban). */
+    /** Whether the player has a suspension that is still running. */
     public boolean isBanned(String playerUuid) {
-        JsonArray actives = findActiveByPlayer(playerUuid);
-        for (JsonElement el : actives) {
-            JsonObject p = el.getAsJsonObject();
-            if (hasSuspension(p)) return true;
+        for (JsonElement element : findActiveByPlayer(playerUuid)) {
+            if (hasRunningAction(element.getAsJsonObject(), "SUSPENSION")) return true;
         }
         return false;
     }
 
     // ── Helpers ────────────────────────────────────────────────────────────────
 
-    private Query byId(String id) {
-        return Query.query(Criteria.where("id").is(id));
-    }
-
-    private JsonObject toJson(Document doc) {
-        doc.remove("_id");
-        JsonElement parsed = JsonParser.parseString(doc.toJson(RELAXED));
-        return parsed.isJsonObject() ? parsed.getAsJsonObject() : new JsonObject();
-    }
-
-    private JsonArray toArray(List<Document> docs) {
-        JsonArray arr = new JsonArray();
-        for (Document d : docs) arr.add(toJson(d));
-        return arr;
+    private static Bson byId(String id) {
+        return Filters.eq("id", id);
     }
 
     /**
-     * Determines activity purely from the JSON document — mirrors
-     * {@code Punishment#isActive()} without needing the entity class here.
+     * Whether any action (of {@code type}, or of any type when {@code null}) is still running.
+     * Mirrors {@code Punishment#isActive()} / {@code RestrictionAction#hasExpired}.
      */
-    private static boolean isActive(JsonObject p) {
-        if (p.has("removed") && p.get("removed").getAsBoolean()) return false;
-        long issuedAt = p.has("issuedAt") ? p.get("issuedAt").getAsLong() : 0L;
-        if (!p.has("actions") || !p.get("actions").isJsonArray()) return false;
-        for (JsonElement el : p.get("actions").getAsJsonArray()) {
-            JsonObject a = el.getAsJsonObject();
-            long duration = a.has("duration") ? a.get("duration").getAsLong() : 0L;
-            if (duration == -1L) return true;   // permanent
-            if (duration == 0L)  continue;       // immediate
-            if (System.currentTimeMillis() <= issuedAt + duration) return true;
+    private static boolean hasRunningAction(JsonObject punishment, String type) {
+        if (punishment.has("removed") && punishment.get("removed").getAsBoolean()) return false;
+        if (!punishment.has("actions") || !punishment.get("actions").isJsonArray()) return false;
+
+        long issuedAt = punishment.has("issuedAt") ? punishment.get("issuedAt").getAsLong() : 0L;
+        long now = System.currentTimeMillis();
+        for (JsonElement element : punishment.get("actions").getAsJsonArray()) {
+            JsonObject action = element.getAsJsonObject();
+            if (type != null && !type.equals(MongoJson.string(action, "type"))) continue;
+
+            long duration = action.has("duration") ? action.get("duration").getAsLong() : 0L;
+            if (duration == -1L) return true;
+            if (duration > 0L && now <= issuedAt + duration) return true;
         }
         return false;
-    }
-
-    private static boolean hasSuspension(JsonObject p) {
-        if (!p.has("actions") || !p.get("actions").isJsonArray()) return false;
-        for (JsonElement el : p.get("actions").getAsJsonArray()) {
-            JsonObject a = el.getAsJsonObject();
-            if ("SUSPENSION".equals(jsonString(a, "type"))) return true;
-        }
-        return false;
-    }
-
-    private static String jsonString(JsonObject obj, String key) {
-        return (obj.has(key) && !obj.get(key).isJsonNull()) ? obj.get(key).getAsString() : null;
     }
 }
-

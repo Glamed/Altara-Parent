@@ -3,169 +3,142 @@ package games.sparking.altara.service;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import games.sparking.altara.config.CacheConfig;
+import games.sparking.altara.config.CacheEvictor;
 import games.sparking.altara.punishment.Punishment;
 import games.sparking.altara.punishment.packet.PunishmentIssuedPacket;
 import games.sparking.altara.punishment.packet.PunishmentRevokedPacket;
 import games.sparking.altara.redis.RedisService;
+import games.sparking.altara.redis.packet.Packet;
 import games.sparking.altara.repository.PunishmentRepository;
+import io.micronaut.cache.annotation.CacheInvalidate;
+import io.micronaut.cache.annotation.Cacheable;
+import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.cache.Cache;
-import org.springframework.cache.CacheManager;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
-import org.springframework.cache.annotation.Caching;
-import org.springframework.stereotype.Service;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 /**
- * Spring service for the punishment REST layer.
- *
- * <h3>Caching strategy</h3>
- * <ul>
- *   <li>{@code punishments}        — {@code GET /api/punishment/{id}}</li>
- *   <li>{@code playerPunishments}  — {@code GET /api/punishment/player/{uuid}}</li>
- *   <li>{@code playerActivePunishments} — {@code GET /api/punishment/player/{uuid}/active}</li>
- *   <li>{@code playerBanStatus}    — {@code GET /api/punishment/player/{uuid}/banned}</li>
- * </ul>
- * All mutation operations evict the relevant keys and publish a Redis packet
- * to keep every Paper server in sync.
+ * Punishments.  Issuing, revoking and editing publish a Redis packet so every game server
+ * applies the change live; marking one notified deliberately doesn't.
  */
-@Service
+@Singleton
 @RequiredArgsConstructor
 @Slf4j
 public class PunishmentWebService {
 
     private final PunishmentRepository punishmentRepository;
     private final RedisService redisService;
-    private final CacheManager cacheManager;
+    private final CacheEvictor cacheEvictor;
 
     // ── Issue ──────────────────────────────────────────────────────────────────
 
-    @Caching(evict = {
-            @CacheEvict(value = CacheConfig.PLAYER_PUNISHMENTS,        key = "#punishment.get('playerUuid').getAsString()"),
-            @CacheEvict(value = CacheConfig.PLAYER_ACTIVE_PUNISHMENTS, key = "#punishment.get('playerUuid').getAsString()"),
-            @CacheEvict(value = CacheConfig.PLAYER_BAN_STATUS,         key = "#punishment.get('playerUuid').getAsString()")
-    })
     public Optional<JsonObject> issuePunishment(JsonObject punishment) {
-        try {
-            // Ensure server-side fields are set regardless of what the caller sent.
-            if (!punishment.has("id") || punishment.get("id").isJsonNull()) {
-                punishment.addProperty("id", UUID.randomUUID().toString());
-            }
-            if (!punishment.has("issuedAt") || punishment.get("issuedAt").isJsonNull()) {
-                punishment.addProperty("issuedAt", System.currentTimeMillis());
-            }
-            if (!punishment.has("removed")) {
-                punishment.addProperty("removed",   false);
-                punishment.addProperty("removedAt", -1L);
-            }
+        // Server-side defaults, whatever the caller sent.
+        if (!punishment.has("id") || punishment.get("id").isJsonNull()) {
+            punishment.addProperty("id", UUID.randomUUID().toString());
+        }
+        if (!punishment.has("issuedAt") || punishment.get("issuedAt").isJsonNull()) {
+            punishment.addProperty("issuedAt", System.currentTimeMillis());
+        }
+        if (!punishment.has("notified") || punishment.get("notified").isJsonNull()) {
+            punishment.addProperty("notified", false);
+        }
+        if (!punishment.has("removed")) {
+            punishment.addProperty("removed", false);
+            punishment.addProperty("removedAt", -1L);
+        }
 
+        try {
             JsonObject saved = punishmentRepository.insert(punishment);
-            Punishment p = Punishment.fromJson(saved);
-            publishIssuedPacket(p);
+            cacheEvictor.playerPunishments(punishment.get("playerUuid").getAsString());
+            publish(new PunishmentIssuedPacket(Punishment.fromJson(saved)));
             return Optional.of(saved);
         } catch (Exception e) {
-            log.error("Failed to issue punishment for player {}: {}",
-                    punishment.has("playerUuid") ? punishment.get("playerUuid") : "unknown", e.getMessage(), e);
+            log.error("Failed to issue punishment for player {}", punishment.get("playerUuid"), e);
             return Optional.empty();
         }
     }
 
     // ── Retrieve ───────────────────────────────────────────────────────────────
 
-    @Cacheable(value = CacheConfig.PUNISHMENTS, key = "#id")
+    @Cacheable(CacheConfig.PUNISHMENTS)
     public Optional<JsonObject> getPunishment(String id) {
         return punishmentRepository.findById(id);
     }
 
-    @Cacheable(value = CacheConfig.PLAYER_PUNISHMENTS, key = "#playerUuid.toString()")
-    public JsonArray getPlayerPunishments(UUID playerUuid) {
-        return punishmentRepository.findByPlayer(playerUuid.toString());
+    @Cacheable(CacheConfig.PLAYER_PUNISHMENTS)
+    public JsonArray getPlayerPunishments(String playerUuid) {
+        return punishmentRepository.findByPlayer(playerUuid);
     }
 
-    @Cacheable(value = CacheConfig.PLAYER_ACTIVE_PUNISHMENTS, key = "#playerUuid.toString()")
-    public JsonArray getActivePlayerPunishments(UUID playerUuid) {
-        return punishmentRepository.findActiveByPlayer(playerUuid.toString());
+    @Cacheable(CacheConfig.PLAYER_ACTIVE_PUNISHMENTS)
+    public JsonArray getActivePlayerPunishments(String playerUuid) {
+        return punishmentRepository.findActiveByPlayer(playerUuid);
     }
 
-    @Cacheable(value = CacheConfig.PLAYER_BAN_STATUS, key = "#playerUuid.toString()")
-    public boolean isPlayerBanned(UUID playerUuid) {
-        return punishmentRepository.isBanned(playerUuid.toString());
+    @Cacheable(CacheConfig.PLAYER_BAN_STATUS)
+    public boolean isPlayerBanned(String playerUuid) {
+        return punishmentRepository.isBanned(playerUuid);
     }
 
     // ── Revoke ─────────────────────────────────────────────────────────────────
 
-    @CacheEvict(value = CacheConfig.PUNISHMENTS, key = "#id")
+    @CacheInvalidate(cacheNames = CacheConfig.PUNISHMENTS, parameters = "id")
     public Optional<JsonObject> revokePunishment(String id, String removedBy) {
         Optional<JsonObject> result = punishmentRepository.revoke(id, removedBy);
-        result.ifPresent(p -> {
-            String playerUuid = p.has("playerUuid") ? p.get("playerUuid").getAsString() : null;
-            if (playerUuid != null) {
-                evictPlayerCaches(playerUuid);
-                publishRevokedPacket(id, playerUuid, removedBy);
-            }
+        result.map(PunishmentWebService::playerOf).ifPresent(playerUuid -> {
+            cacheEvictor.playerPunishments(playerUuid);
+            publish(new PunishmentRevokedPacket(id, playerUuid, removedBy));
         });
+        return result;
+    }
+
+    // ── Notification ───────────────────────────────────────────────────────────
+
+    /**
+     * Records that the player was shown this punishment.  No packet: servers already know,
+     * and re-publishing would re-run enforcement (kicks) for nothing.
+     */
+    @CacheInvalidate(cacheNames = CacheConfig.PUNISHMENTS, parameters = "id")
+    public Optional<JsonObject> markNotified(String id) {
+        Optional<JsonObject> result = punishmentRepository.markNotified(id);
+        result.map(PunishmentWebService::playerOf).ifPresent(cacheEvictor::playerPunishments);
         return result;
     }
 
     // ── Update (PATCH) ─────────────────────────────────────────────────────────
 
-    /**
-     * Applies a partial update to an existing punishment document.
-     *
-     * <p>Only {@code infractionType}, {@code message}, {@code notes}, and {@code actions}
-     * are accepted; all other fields are ignored for safety.
-     *
-     * @param id      the punishment ID
-     * @param updates partial JSON body from the caller
-     */
-    @CacheEvict(value = CacheConfig.PUNISHMENTS, key = "#id")
+    /** Partial update; see {@link PunishmentRepository#patch} for the accepted fields. */
+    @CacheInvalidate(cacheNames = CacheConfig.PUNISHMENTS, parameters = "id")
     public Optional<JsonObject> updatePunishment(String id, JsonObject updates) {
         Optional<JsonObject> result = punishmentRepository.patch(id, updates);
-        result.ifPresent(p -> {
-            String playerUuid = p.has("playerUuid") ? p.get("playerUuid").getAsString() : null;
-            if (playerUuid != null) {
-                evictPlayerCaches(playerUuid);
-                try {
-                    publishIssuedPacket(Punishment.fromJson(p));
-                } catch (Exception e) {
-                    log.warn("Could not re-publish updated punishment {}: {}", id, e.getMessage());
-                }
+        result.ifPresent(punishment -> {
+            String playerUuid = playerOf(punishment);
+            if (playerUuid == null) return;
+            cacheEvictor.playerPunishments(playerUuid);
+            try {
+                publish(new PunishmentIssuedPacket(Punishment.fromJson(punishment)));
+            } catch (RuntimeException e) {
+                log.warn("Could not re-publish updated punishment {}: {}", id, e.getMessage());
             }
         });
         return result;
     }
 
-    private void evictPlayerCaches(String playerUuid) {
-        for (String cacheName : List.of(
-                CacheConfig.PLAYER_PUNISHMENTS,
-                CacheConfig.PLAYER_ACTIVE_PUNISHMENTS,
-                CacheConfig.PLAYER_BAN_STATUS)) {
-            Cache cache = cacheManager.getCache(cacheName);
-            if (cache != null) cache.evict(playerUuid);
-        }
+    // ── Helpers ────────────────────────────────────────────────────────────────
+
+    private static String playerOf(JsonObject punishment) {
+        return punishment.has("playerUuid") && !punishment.get("playerUuid").isJsonNull()
+                ? punishment.get("playerUuid").getAsString() : null;
     }
 
-    // ── Redis propagation ──────────────────────────────────────────────────────
-
-    private void publishIssuedPacket(Punishment punishment) {
+    private void publish(Packet packet) {
         try {
-            redisService.publish(new PunishmentIssuedPacket(punishment));
+            redisService.publish(packet);
         } catch (Exception e) {
-            log.warn("Could not publish PunishmentIssuedPacket for {}: {}", punishment.getId(), e.getMessage());
-        }
-    }
-
-    private void publishRevokedPacket(String punishmentId, String playerUuid, String revokedBy) {
-        try {
-            redisService.publish(new PunishmentRevokedPacket(punishmentId, playerUuid, revokedBy));
-        } catch (Exception e) {
-            log.warn("Could not publish PunishmentRevokedPacket for {}: {}", punishmentId, e.getMessage());
+            log.warn("Could not publish {}: {}", packet.getClass().getSimpleName(), e.getMessage());
         }
     }
 }
-

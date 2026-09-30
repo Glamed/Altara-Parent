@@ -148,16 +148,11 @@ public class RedisService {
 
     public RedisService subscribe() {
         if (subscribeThread != null) {
-            return null;
+            return this;
         }
 
-        subscribeThread = new Thread(() -> {
-            try (Jedis client = openRawClient()) {
-                subscribed = true;
-                client.subscribe(new PacketPubSub(), channel);
-            }
-        }, "Redis Subscriber");
-
+        subscribeThread = new Thread(() -> subscribeForever("packets", () -> new PacketPubSub(), channel),
+                "Redis Subscriber");
         subscribeThread.setDaemon(true);
         subscribeThread.start();
 
@@ -170,12 +165,39 @@ public class RedisService {
                         .filter(method -> method.isAnnotationPresent(RedisSubscriber.class)
                                 && method.getParameterCount() > 0
                                 && method.getParameterCount() < 3)
-                        .forEach(method -> executor.submit(() -> {
-                            try (Jedis client = openRawClient()) {
-                                RedisSubscriber annotation = method.getAnnotation(RedisSubscriber.class);
-                                client.subscribe(new ListenerPubSub(listener, method), annotation.channels());
-                            }
-                        })));
+                        .forEach(method -> executor.submit(() -> subscribeForever(
+                                listener.getClass().getSimpleName() + "#" + method.getName(),
+                                () -> new ListenerPubSub(listener, method),
+                                method.getAnnotation(RedisSubscriber.class).channels()))));
+    }
+
+    /**
+     * Blocking subscribe that reconnects with backoff whenever the connection drops,
+     * so a Redis restart doesn't silently stop cross-server packets.
+     */
+    private void subscribeForever(String name, java.util.function.Supplier<JedisPubSub> pubSub, String... channels) {
+        long backoff = 1000L;
+        while (!Thread.currentThread().isInterrupted()) {
+            try (Jedis client = openRawClient()) {
+                subscribed = true;
+                backoff = 1000L;
+                client.subscribe(pubSub.get(), channels);
+            } catch (Exception e) {
+                System.out.println("[Redis] Subscription '" + name + "' lost: " + e.getMessage()
+                        + " - reconnecting in " + backoff / 1000 + "s");
+            }
+
+            subscribed = false;
+            down = true;
+            lastError = System.currentTimeMillis();
+            try {
+                Thread.sleep(backoff);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return;
+            }
+            backoff = Math.min(backoff * 2, 30_000L);
+        }
     }
 
     public <T> T executeCommand(RedisCommand<T> command) {

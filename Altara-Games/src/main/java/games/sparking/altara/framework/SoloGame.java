@@ -1,5 +1,8 @@
 package games.sparking.altara.framework;
 
+import games.sparking.altara.utils.CC;
+import org.bukkit.Bukkit;
+
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -68,5 +71,12 @@ public abstract class SoloGame extends AbstractGame {
         if (active.size() == 1) return Optional.of(active.iterator().next());
         return Optional.empty();
     }
-}
 
+    /** Announces the round's result once, when at most one player is left standing. */
+    protected void checkWinCondition(String gameName) {
+        if (!hasWinner() || !finish()) return;
+        Bukkit.broadcast(getWinner()
+                .map(winner -> CC.success(gameName + " is over.", "*" + nameOf(winner) + "* won the game."))
+                .orElseGet(() -> CC.notice(gameName + " is over.", "Nobody survived.")));
+    }
+}

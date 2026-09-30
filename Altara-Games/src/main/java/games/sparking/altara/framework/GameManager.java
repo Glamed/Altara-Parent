@@ -66,8 +66,10 @@ public class GameManager {
 
         for (GameModule module : modules) {
             module.setup();
-            GameScanner.scan(module, this, plugin);
+            GameScanner.scan(module, game, this, plugin);
         }
+        // The game's own handlers (eliminations, win checks).
+        GameScanner.scan(game, game, this, plugin);
 
         game.start();
 

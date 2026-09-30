@@ -1,10 +1,13 @@
 package games.sparking.altara.framework;
 
 import games.sparking.altara.framework.module.team.GameTeam;
+import games.sparking.altara.utils.CC;
 import lombok.Getter;
+import org.bukkit.Bukkit;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * Convenience base class for every game where players compete in
@@ -95,5 +98,18 @@ public abstract class TeamGame extends AbstractGame {
         if (alive.size() == 1) return Optional.of(alive.get(0));
         return Optional.empty();
     }
-}
 
+    /** Announces the round's result once, when at most one team is left standing. */
+    protected void checkWinCondition(String gameName) {
+        if (!hasWinner() || !finish()) return;
+        Bukkit.broadcast(getWinnerTeam()
+                .map(team -> {
+                    String members = team.getMembers().stream()
+                            .map(member -> "*" + nameOf(member) + "*")
+                            .collect(Collectors.joining(" and "));
+                    return CC.success(gameName + " is over.",
+                            members + " won the game for team *" + team.getColor().getDisplayName() + "*.");
+                })
+                .orElseGet(() -> CC.notice(gameName + " is over.", "Nobody survived.")));
+    }
+}

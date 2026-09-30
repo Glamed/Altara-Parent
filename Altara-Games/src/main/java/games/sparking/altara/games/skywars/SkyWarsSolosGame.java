@@ -42,6 +42,8 @@ import java.util.UUID;
  */
 public class SkyWarsSolosGame extends SoloGame {
 
+    public static final String DISPLAY_NAME = "SkyWars Solos";
+
     // -------------------------------------------------------------------------
     // Loot table
     // -------------------------------------------------------------------------
@@ -106,6 +108,7 @@ public class SkyWarsSolosGame extends SoloGame {
         getActivePlayers().forEach(this::removePlayer);
         getSpectators().forEach(this::removePlayer);
         chestFiller.reset();
+        resetRound();
     }
 
     // -------------------------------------------------------------------------
@@ -132,7 +135,7 @@ public class SkyWarsSolosGame extends SoloGame {
     @GameEvent(value = PlayerDeathEvent.class, states = {GameState.PLAYING})
     public void onPlayerDeath(PlayerDeathEvent event, Game game, Player player, GameState state) {
         addSpectator(player);
-        checkWinCondition();
+        checkWinCondition(DISPLAY_NAME);
     }
 
     /**
@@ -141,23 +144,6 @@ public class SkyWarsSolosGame extends SoloGame {
     @GameEvent(value = PlayerQuitEvent.class, states = {GameState.PLAYING})
     public void onPlayerQuit(PlayerQuitEvent event, Game game, Player player, GameState state) {
         removePlayer(player.getUniqueId());
-        checkWinCondition();
-    }
-
-    // -------------------------------------------------------------------------
-    // Win condition
-    // -------------------------------------------------------------------------
-
-    private void checkWinCondition() {
-        if (!hasWinner()) return;
-
-        getWinner().ifPresent(winnerId -> {
-            Player winner = org.bukkit.Bukkit.getPlayer(winnerId);
-            String name = winner != null ? winner.getName() : winnerId.toString();
-            org.bukkit.Bukkit.broadcast(
-                    net.kyori.adventure.text.minimessage.MiniMessage.miniMessage().deserialize(
-                            "<gold><bold>SkyWars Solos <reset><gray>» <yellow>" + name + " <gray>has won the game!"));
-        });
+        checkWinCondition(DISPLAY_NAME);
     }
 }
-

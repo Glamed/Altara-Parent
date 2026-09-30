@@ -13,7 +13,7 @@ import java.util.UUID;
  * is soft-deleted (revoked) via {@code DELETE /api/punishment/{id}}.
  *
  * <p>Receipt is a no-op on non-Paper nodes. On Paper the record is removed from the
- * local cache so active-check hot-paths (mute, ban) immediately reflect the revocation.
+ * local cache as revoked so active-check hot-paths (mute, ban) immediately reflect it.
  */
 @AllArgsConstructor
 @NoArgsConstructor
@@ -38,7 +38,7 @@ public class PunishmentRevokedPacket extends Packet {
 
         Altara.getSharedInstance()
               .getPunishmentService()
-              .removeFromCacheFromPacket(punishmentId, uuid);
+              .removeFromCacheFromPacket(punishmentId, uuid, revokedBy);
     }
 }
 

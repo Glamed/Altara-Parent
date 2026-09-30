@@ -6,27 +6,21 @@ import games.sparking.altara.utils.EnchantmentWrapper;
 import org.bukkit.command.CommandSender;
 import org.bukkit.enchantments.Enchantment;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class EnchantmentParameter implements ParameterType<Enchantment> {
 
     @Override
     public Enchantment parse(CommandSender sender, String source) {
-        EnchantmentWrapper enchantment = EnchantmentWrapper.fromString(source);
+        Enchantment enchantment = EnchantmentWrapper.resolve(source);
         if (enchantment == null) {
-            sender.sendMessage(CC.errorMsg("Invalid arguments.", "Enchantment " + source + " was not found."));
-            return null;
+            sender.sendMessage(CC.error("Invalid enchantment.", "*" + source + "* doesn't exist."));
         }
-        return enchantment.toBukkitEnchant();
+        return enchantment;
     }
 
     @Override
     public List<String> tabComplete(CommandSender sender, List<String> flags) {
-        List<String> completions = new ArrayList<>();
-        for (EnchantmentWrapper value : EnchantmentWrapper.values()) {
-            completions.add(value.name().toLowerCase());
-        }
-        return completions;
+        return EnchantmentWrapper.completions();
     }
 }

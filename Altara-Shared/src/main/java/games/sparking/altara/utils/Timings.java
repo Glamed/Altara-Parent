@@ -26,13 +26,23 @@ public class Timings {
         return this;
     }
 
+    /** Discards the elapsed time: a running timer restarts from now, a stopped one is cleared. */
+    public void restart() {
+        if (running) {
+            this.startMillis = System.currentTimeMillis();
+        } else {
+            this.startMillis = -1;
+            this.endMillis = -1;
+        }
+    }
+
     public long calculateDifference() {
-        if ((startMillis == -1) && (endMillis == -1)) {
+        if (startMillis == -1) {
             return 0;
         }
-        if (isRunning()) {
+        if (running) {
             return System.currentTimeMillis() - startMillis;
         }
-        return this.endMillis - this.startMillis;
+        return Math.max(0, this.endMillis - this.startMillis);
     }
 }

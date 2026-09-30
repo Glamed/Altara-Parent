@@ -43,9 +43,13 @@ public final class GameScanner {
      * @param plugin   the owning plugin for Bukkit listener registration
      */
     @SuppressWarnings("unchecked")
-    public static void scan(Object instance, GameManager manager, Plugin plugin) {
-        Class<?> clazz = instance.getClass();
+    public static void scan(Object instance, Game owner, GameManager manager, Plugin plugin) {
+        for (Class<?> clazz = instance.getClass(); clazz != null && clazz != Object.class; clazz = clazz.getSuperclass()) {
+            scanClass(clazz, instance, owner, manager, plugin);
+        }
+    }
 
+    private static void scanClass(Class<?> clazz, Object instance, Game owner, GameManager manager, Plugin plugin) {
         for (Method method : clazz.getDeclaredMethods()) {
             if (!method.isAnnotationPresent(GameEvent.class)) continue;
 
@@ -77,7 +81,7 @@ public final class GameScanner {
 
                     // 2. O(1) player → game lookup
                     Game game = manager.getGame(player.getUniqueId());
-                    if (game == null) return;
+                    if (game != owner) return;
 
                     // 3. Fast active check
                     if (!game.isActive(player.getUniqueId())) return;

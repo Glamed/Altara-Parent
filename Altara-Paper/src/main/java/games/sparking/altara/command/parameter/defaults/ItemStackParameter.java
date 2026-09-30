@@ -15,7 +15,7 @@ public class ItemStackParameter implements ParameterType<ItemStack> {
     public ItemStack parse(CommandSender sender, String source) {
         Material material = Material.matchMaterial(source);
         if (material == null) {
-            sender.sendMessage(CC.errorMsg("Invalid arguments.", "Item " + source + " not found."));
+            sender.sendMessage(CC.error("Invalid item.", "*" + source + "* doesn't exist."));
             return null;
         }
         return new ItemStack(material);

@@ -4,15 +4,15 @@ import games.sparking.altara.Altara;
 import games.sparking.altara.redis.RedisService;
 import games.sparking.altara.uuid.packets.UUIDUpdatePacket;
 
-import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.Map;
 import java.util.UUID;
 
 
 public class UUIDCache {
 
-    private static final Map<String, UUID> nameUuidMap = new HashMap<>();
-    private static final Map<UUID, String> uuidNameMap = new HashMap<>();
+    private static final Map<String, UUID> nameUuidMap = new ConcurrentHashMap<>();
+    private static final Map<UUID, String> uuidNameMap = new ConcurrentHashMap<>();
 
     private static UUIDCache instance;
     private final RedisService redisService;
@@ -37,28 +37,26 @@ public class UUIDCache {
     }
 
     public static UUID getUuid(String name) {
-        return nameUuidMap.get(name.toLowerCase());
+        return name == null ? null : nameUuidMap.get(name.toLowerCase());
     }
 
     public static UUID uuid(String name) {
-        return nameUuidMap.get(name.toLowerCase());
+        return getUuid(name);
     }
 
     public static String getName(UUID uuid) {
-        return uuidNameMap.get(uuid);
+        return uuid == null ? null : uuidNameMap.get(uuid);
     }
 
     public static String name(UUID uuid) {
-        return uuidNameMap.get(uuid);
+        return getName(uuid);
     }
 
     public void update(UUID uuid, String name, boolean async) {
-        String oldName = uuidNameMap.getOrDefault(uuid, null);
-        if (oldName != null)
-            nameUuidMap.remove(oldName.toLowerCase());
+        String oldName = uuidNameMap.get(uuid);
+        if (name.equals(oldName)) return; // nothing changed — skip the Redis write and broadcast
 
-        nameUuidMap.put(name.toLowerCase(), uuid);
-        uuidNameMap.put(uuid, name);
+        updateLocally(uuid, oldName, name);
 
         Runnable runnable;
         runnable = () ->
@@ -75,9 +73,10 @@ public class UUIDCache {
     }
 
     public static void updateLocally(UUID uuid, String oldName, String newName) {
+        if (uuid == null || newName == null) return;
+        // Remove before put: a case-only rename maps to the same key.
+        if (oldName != null) nameUuidMap.remove(oldName.toLowerCase(), uuid);
         nameUuidMap.put(newName.toLowerCase(), uuid);
-        if (oldName != null)
-            nameUuidMap.remove(oldName.toLowerCase());
         uuidNameMap.put(uuid, newName);
     }
 

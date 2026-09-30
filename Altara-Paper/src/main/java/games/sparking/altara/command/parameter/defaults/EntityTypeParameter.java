@@ -26,7 +26,7 @@ public class EntityTypeParameter implements ParameterType<EntityType> {
         }
 
         if (parsed == null)
-            sender.sendMessage(CC.errorMsg("Invalid arguments.", "Entity " + source + " was not found."));
+            sender.sendMessage(CC.error("Invalid entity.", "*" + source + "* doesn't exist."));
 
         return parsed;
     }

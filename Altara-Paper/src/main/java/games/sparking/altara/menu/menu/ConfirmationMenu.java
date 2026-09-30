@@ -1,92 +1,105 @@
 package games.sparking.altara.menu.menu;
 
 import games.sparking.altara.menu.Button;
+import games.sparking.altara.menu.Gui;
 import games.sparking.altara.menu.Menu;
-import games.sparking.altara.menu.buttons.ConfirmationButton;
 import games.sparking.altara.menu.fill.FillTemplate;
-import games.sparking.altara.utils.CC;
+import games.sparking.altara.utils.ItemBuilder;
+import games.sparking.altara.utils.Theme;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
+import org.bukkit.event.inventory.ClickType;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
+/**
+ * Three-row accept/decline menu.
+ *
+ * <pre>
+ * slot 4  — summary of what is being confirmed
+ * slot 12 — ✔ accept          slot 14 — ✕ decline
+ * </pre>
+ *
+ * The callback receives {@code true} on accept and {@code false} on decline.
+ * Closing the menu any other way does nothing.
+ */
 public class ConfirmationMenu extends Menu {
 
-    private final String title;
-    private final Consumer<Boolean> callable;
-    private ItemStack info = null;
-    private String acceptName = "Confirm";
-    private String denyName = "Cancel";
+    private final String[] breadcrumb;
+    private final String question;
+    private final List<String> details;
+    private final String acceptLabel;
+    private final String declineLabel;
+    private final Consumer<Boolean> callback;
 
-    public ConfirmationMenu(String title, Consumer<Boolean> callable) {
-        this.title = title;
-        this.callable = callable;
+    /**
+     * @param breadcrumb pages after "Altara", e.g. {@code {"Punish", "Confirm"}}
+     * @param question   short summary, e.g. "Revoke this punishment?"
+     * @param details    gray lore lines explaining the consequence (may be empty)
+     */
+    public ConfirmationMenu(String[] breadcrumb, String question, List<String> details,
+                            String acceptLabel, String declineLabel, Consumer<Boolean> callback) {
+        this.breadcrumb = breadcrumb;
+        this.question = question;
+        this.details = details;
+        this.acceptLabel = acceptLabel;
+        this.declineLabel = declineLabel;
+        this.callback = callback;
     }
 
-    public ConfirmationMenu(String title, ItemStack info, Consumer<Boolean> callable) {
-        this.title = title;
-        this.info = info;
-        this.callable = callable;
-    }
-
-    public ConfirmationMenu(String title, String acceptName, String denyName, Consumer<Boolean> callable) {
-        this.title = title;
-        this.callable = callable;
-        this.acceptName = acceptName;
-        this.denyName = denyName;
-    }
-
-    public ConfirmationMenu(String title, ItemStack info, String acceptName, String denyName,
-                            Consumer<Boolean> callable) {
-        this.title = title;
-        this.info = info;
-        this.callable = callable;
-        this.acceptName = acceptName;
-        this.denyName = denyName;
-    }
-
+    @Override
     public Component getTitle(Player player) {
-        return CC.format(title);
+        return Gui.title(breadcrumb);
+    }
+
+    @Override
+    public int getSize() {
+        return 27;
+    }
+
+    @Override
+    public boolean isAutoUpdate() {
+        return false;
+    }
+
+    @Override
+    public FillTemplate getFillTemplate() {
+        return FillTemplate.ALTARA;
     }
 
     @Override
     public Map<Integer, Button> getButtons(Player player) {
         Map<Integer, Button> buttons = new HashMap<>();
-        buttons.put(10, new ConfirmationButton(true, acceptName, callable));
-        buttons.put(11, new ConfirmationButton(true, acceptName, callable));
-        buttons.put(12, new ConfirmationButton(true, acceptName, callable));
-        buttons.put(19, new ConfirmationButton(true, acceptName, callable));
-        buttons.put(20, new ConfirmationButton(true, acceptName, callable));
-        buttons.put(21, new ConfirmationButton(true, acceptName, callable));
-        buttons.put(28, new ConfirmationButton(true, acceptName, callable));
-        buttons.put(29, new ConfirmationButton(true, acceptName, callable));
-        buttons.put(30, new ConfirmationButton(true, acceptName, callable));
 
+        Gui.Lore info = Gui.lore();
+        details.forEach(info::text);
+        buttons.put(4, Button.createPlaceholder(new ItemBuilder(Material.PAPER)
+                .setDisplayName(Component.text(question, Theme.PRIMARY))
+                .setLore(info.build())
+                .build()));
 
-        buttons.put(14, new ConfirmationButton(false, denyName, callable));
-        buttons.put(15, new ConfirmationButton(false, denyName, callable));
-        buttons.put(16, new ConfirmationButton(false, denyName, callable));
-        buttons.put(23, new ConfirmationButton(false, denyName, callable));
-        buttons.put(24, new ConfirmationButton(false, denyName, callable));
-        buttons.put(25, new ConfirmationButton(false, denyName, callable));
-        buttons.put(32, new ConfirmationButton(false, denyName, callable));
-        buttons.put(33, new ConfirmationButton(false, denyName, callable));
-        buttons.put(34, new ConfirmationButton(false, denyName, callable));
-        buttons.put(36, Button.createPlaceholder(Material.GRAY_STAINED_GLASS_PANE));
+        buttons.put(12, choice(true, Gui.acceptItem(acceptLabel, Gui.lore().cta(acceptLabel.toLowerCase()).build())));
+        buttons.put(14, choice(false, Gui.declineItem(declineLabel, Gui.lore().cta(declineLabel.toLowerCase()).build())));
         return buttons;
     }
 
-    @Override
-    public FillTemplate getFillTemplate() {
-        return FillTemplate.FILL;
-    }
+    private Button choice(boolean accept, ItemStack item) {
+        return new Button() {
+            @Override
+            public ItemStack getItem(Player player) {
+                return item;
+            }
 
-    @Override
-    public ItemStack getPlaceholderItem(Player player) {
-        return Button.createPlaceholder(new ItemStack(Material.GRAY_STAINED_GLASS_PANE)).getItem(player);
+            @Override
+            public void click(Player player, int slot, ClickType clickType, int hotbarButton) {
+                player.closeInventory();
+                callback.accept(accept);
+            }
+        };
     }
 }

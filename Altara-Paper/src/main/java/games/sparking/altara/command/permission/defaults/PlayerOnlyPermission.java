@@ -16,7 +16,7 @@ public class PlayerOnlyPermission extends PermissionAdapter {
     public boolean test(CommandSender sender) {
         boolean b = testSilent(sender);
         if (!b)
-            sender.sendMessage(CC.errorMsg(Messages.UNKNOWN_COMMAND));
+            sender.sendMessage(CC.error(Messages.PLAYERS_ONLY));
         return b;
     }
 

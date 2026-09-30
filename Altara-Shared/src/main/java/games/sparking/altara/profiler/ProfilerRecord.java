@@ -1,52 +1,52 @@
 package games.sparking.altara.profiler;
 
 import lombok.Getter;
-import lombok.Setter;
+import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 /**
- * Holds the profiler state for a single player account.
- *
- * <p>A record is created the first time the profiler engine assigns a non-zero score.
- * {@link #shadowMuted} is true whenever the player has been flagged and not yet resolved.
+ * An active profiler flag for a single account.  While a record exists (and has not
+ * expired) the player is shadow-muted network-wide.  Records are persisted in Redis
+ * by {@link ProfilerService} and are removed when staff verify or ban the player.
  */
 @Getter
-@Setter
+@NoArgsConstructor
 public class ProfilerRecord {
 
-    private final UUID uuid;
-    private final String name;
+    private UUID uuid;
+    private String name;
 
-    /** Internal profiler score that triggered the flag. Higher = more suspicious. */
-    private final int score;
+    /** Internal suspicion score that triggered the flag. */
+    private int score;
 
-    /**
-     * Number of alt accounts (shared-IP accounts) associated with this player
-     * that have themselves been banned or previously flagged.
-     */
-    private int compromisedAltCount;
+    /** Human-readable reasons the account was flagged, shown to staff. */
+    private List<String> reasons = new ArrayList<>();
 
-    /** Whether this player is currently shadow-muted by the profiler. */
-    private boolean shadowMuted;
+    /** Linked accounts (shared IPs) that are currently banned. */
+    private int bannedAltCount;
 
-    /**
-     * True once a staff member has used /profilerverify on this player.
-     * Verified players are no longer shadow-muted and won't be re-flagged this session.
-     */
-    private boolean verified;
+    /** The IP the flagged login came from. */
+    private String ip;
 
-    /** Epoch-ms when the flag was first set. */
-    private final long flaggedAt;
+    private long flaggedAt;
+    private long expiresAt;
 
-    public ProfilerRecord(UUID uuid, String name, int score, int compromisedAltCount) {
-        this.uuid               = uuid;
-        this.name               = name;
-        this.score              = score;
-        this.compromisedAltCount = compromisedAltCount;
-        this.shadowMuted        = true;
-        this.verified           = false;
-        this.flaggedAt          = System.currentTimeMillis();
+    public ProfilerRecord(UUID uuid, String name, int score, List<String> reasons,
+                          int bannedAltCount, String ip, long ttlMillis) {
+        this.uuid           = uuid;
+        this.name           = name;
+        this.score          = score;
+        this.reasons        = new ArrayList<>(reasons);
+        this.bannedAltCount = bannedAltCount;
+        this.ip             = ip;
+        this.flaggedAt      = System.currentTimeMillis();
+        this.expiresAt      = flaggedAt + ttlMillis;
+    }
+
+    public boolean isExpired() {
+        return System.currentTimeMillis() >= expiresAt;
     }
 }
-

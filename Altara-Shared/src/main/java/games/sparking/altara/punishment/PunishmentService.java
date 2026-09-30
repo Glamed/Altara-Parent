@@ -2,6 +2,7 @@ package games.sparking.altara.punishment;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import games.sparking.altara.connection.RequestHandler;
 import games.sparking.altara.connection.RequestResponse;
 import games.sparking.altara.task.Tasks;
@@ -25,6 +26,9 @@ public class PunishmentService {
 
     /** JVM-local cache: playerUuid → punishment list (may include expired/removed records) */
     private final Map<UUID, List<Punishment>> cache = new ConcurrentHashMap<>();
+
+    /** Punishments this server has already shown to their player (guards against double notices). */
+    private final Set<String> shownHere = ConcurrentHashMap.newKeySet();
 
     // ── Issue ──────────────────────────────────────────────────────────────────
 
@@ -83,10 +87,26 @@ public class PunishmentService {
                 : RequestHandler.delete(url, punishmentId);
 
         if (response.wasSuccessful()) {
-            cache.values().forEach(list -> list.removeIf(p -> p.getId().equals(punishmentId)));
+            markRevoked(punishmentId, revokedBy != null ? revokedBy.toString() : "Console");
             return true;
         }
         return false;
+    }
+
+    /** Keeps the record in history but marks it inactive. */
+    private void markRevoked(String punishmentId, String revokedBy) {
+        long now = System.currentTimeMillis();
+        for (List<Punishment> list : cache.values()) {
+            synchronized (list) {
+                for (Punishment punishment : list) {
+                    if (punishment.getId().equals(punishmentId)) {
+                        punishment.setRemoved(true);
+                        punishment.setRemovedAt(now);
+                        punishment.setRemovedBy(revokedBy);
+                    }
+                }
+            }
+        }
     }
 
     // ── Queries ────────────────────────────────────────────────────────────────
@@ -94,6 +114,11 @@ public class PunishmentService {
     /** Returns all records for a player (loads from API if not cached). */
     public List<Punishment> getPunishments(UUID playerUuid) {
         return cache.containsKey(playerUuid) ? cache.get(playerUuid) : loadPunishments(playerUuid);
+    }
+
+    /** The cached history, or {@code null} if it hasn't been loaded — never blocks. */
+    public List<Punishment> getCachedPunishments(UUID playerUuid) {
+        return cache.get(playerUuid);
     }
 
     /** Returns only currently-active punishments. */
@@ -142,7 +167,12 @@ public class PunishmentService {
         JsonArray arr = response.asArray();
         if (arr != null) {
             for (JsonElement el : arr) {
-                list.add(Punishment.fromJson(el.getAsJsonObject()));
+                try {
+                    list.add(Punishment.fromJson(el.getAsJsonObject()));
+                } catch (RuntimeException e) {
+                    // One malformed record shouldn't hide the rest of the history.
+                    e.printStackTrace();
+                }
             }
         }
         cache.put(playerUuid, Collections.synchronizedList(list));
@@ -158,6 +188,43 @@ public class PunishmentService {
         callback.accept(loadPunishments(playerUuid));
     }
 
+    // ── Player notification ────────────────────────────────────────────────────
+
+    /**
+     * Claims the right to show {@code punishment} to its player.  Returns {@code true} at most
+     * once per punishment on this server, and never for one the player has already seen or
+     * that was revoked.  After showing it, call {@link #markNotified}.
+     */
+    public boolean claimNotification(Punishment punishment) {
+        if (punishment == null || punishment.getId() == null) return false;
+        if (punishment.isNotified() || punishment.isRemoved()) return false;
+        return shownHere.add(punishment.getId());
+    }
+
+    /** Records that the player has seen the punishment, locally and in the API (async). */
+    public void markNotified(Punishment punishment) {
+        punishment.setNotified(true);
+        List<Punishment> list = punishment.getPlayerUuid() == null ? null : cache.get(UUID.fromString(punishment.getPlayerUuid()));
+        if (list != null) {
+            synchronized (list) {
+                list.stream().filter(p -> p.getId().equals(punishment.getId())).forEach(p -> p.setNotified(true));
+            }
+        }
+        Tasks.runAsync(() -> RequestHandler.post("api/punishment/%s/notified", new JsonObject(), punishment.getId()));
+    }
+
+    /** Cached punishments the player hasn't been shown yet, oldest first. */
+    public List<Punishment> getUnnotified(UUID playerUuid) {
+        List<Punishment> list = cache.get(playerUuid);
+        if (list == null) return List.of();
+        synchronized (list) {
+            return list.stream()
+                    .filter(p -> !p.isNotified() && !p.isRemoved())
+                    .sorted(Comparator.comparingLong(Punishment::getIssuedAt))
+                    .toList();
+        }
+    }
+
     // ── Cache helpers (called by Redis packet receivers) ───────────────────────
 
     /** Upserts one punishment into the local cache (called when a packet arrives). */
@@ -166,14 +233,15 @@ public class PunishmentService {
         UUID playerUuid = UUID.fromString(punishment.getPlayerUuid());
         List<Punishment> list = cache.computeIfAbsent(playerUuid,
                 k -> Collections.synchronizedList(new ArrayList<>()));
+        // A re-published record (e.g. after an edit) mustn't undo a notice already shown here.
+        if (shownHere.contains(punishment.getId())) punishment.setNotified(true);
         list.removeIf(p -> p.getId().equals(punishment.getId()));
         list.add(punishment);
     }
 
-    /** Removes one punishment from the local cache (called when a revoke packet arrives). */
-    public void removeFromCacheFromPacket(String punishmentId, UUID playerUuid) {
-        List<Punishment> list = cache.get(playerUuid);
-        if (list != null) list.removeIf(p -> p.getId().equals(punishmentId));
+    /** Marks one punishment revoked in the local cache (called when a revoke packet arrives). */
+    public void removeFromCacheFromPacket(String punishmentId, UUID playerUuid, String revokedBy) {
+        if (cache.containsKey(playerUuid)) markRevoked(punishmentId, revokedBy);
     }
 
     public void invalidateCache(UUID playerUuid) {

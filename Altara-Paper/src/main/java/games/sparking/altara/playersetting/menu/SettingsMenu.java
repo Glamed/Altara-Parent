@@ -1,12 +1,11 @@
 package games.sparking.altara.playersetting.menu;
 
 import games.sparking.altara.menu.Button;
+import games.sparking.altara.menu.Gui;
 import games.sparking.altara.menu.Menu;
 import games.sparking.altara.menu.fill.FillTemplate;
 import games.sparking.altara.playersetting.PlayerSetting;
 import games.sparking.altara.playersetting.PlayerSettingService;
-import games.sparking.altara.utils.CC;
-import lombok.RequiredArgsConstructor;
 import net.kyori.adventure.text.Component;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.ClickType;
@@ -17,61 +16,24 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/** {@code /settings}: every setting the player may change, centred in rows of up to five. */
 public class SettingsMenu extends Menu {
+
+    private static final int[] ROW_STARTS = {11, 20, 29};
 
     @Override
     public Component getTitle(Player player) {
-        return CC.format("Settings");
+        return Gui.title("Settings");
     }
 
     @Override
-    public Map<Integer, Button> getButtons(Player player) {
-        Map<Integer, Button> buttons = new HashMap<>();
-
-        List<PlayerSetting> remaining = new ArrayList<>();
-        List<PlayerSetting> completeRows = new ArrayList<>();
-
-        int i = 0;
-        for (PlayerSetting setting : PlayerSettingService.getAllSettings()) {
-            if (!setting.canUpdate(player))
-                continue;
-
-            if (i >= 4) {
-                i = 0;
-                completeRows.addAll(remaining);
-                remaining.clear();
-            }
-
-            remaining.add(setting);
-            i++;
-        }
-
-        int slot = 1;
-        int row = 0;
-        for (PlayerSetting setting : completeRows) {
-            if (slot > 8) {
-                slot = 1;
-                row++;
-            }
-
-            buttons.put(getSlot(row, slot), new SettingButton(setting));
-            slot += 2;
-        }
-
-        if (!completeRows.isEmpty())
-            row++;
-        int[] slots = getSlots(remaining.size());
-        int j = 0;
-        for (PlayerSetting setting : remaining) {
-            buttons.put(getSlot(row, slots[j++]), new SettingButton(setting));
-        }
-
-        return buttons;
+    public int getSize() {
+        return 45;
     }
 
     @Override
     public FillTemplate getFillTemplate() {
-        return FillTemplate.FILL;
+        return FillTemplate.ALTARA;
     }
 
     @Override
@@ -79,30 +41,33 @@ public class SettingsMenu extends Menu {
         return true;
     }
 
-    private int[] getSlots(int size) {
-        switch (size) {
-            case 1: {
-                return new int[]{4};
-            }
+    @Override
+    public Map<Integer, Button> getButtons(Player player) {
+        Map<Integer, Button> buttons = new HashMap<>();
+        buttons.put(Gui.CLOSE_SLOT, Gui.closeButton());
 
-            case 2: {
-                return new int[]{3, 5};
-            }
+        List<PlayerSetting> visible = new ArrayList<>();
+        for (PlayerSetting setting : PlayerSettingService.getAllSettings()) {
+            if (setting.canUpdate(player)) visible.add(setting);
+        }
 
-            case 3: {
-                return new int[]{2, 4, 6};
-            }
-
-            default: {
-                return new int[]{1, 3, 5, 7};
+        for (int row = 0; row < ROW_STARTS.length && row * 5 < visible.size(); row++) {
+            int count = Math.min(5, visible.size() - row * 5);
+            int start = ROW_STARTS[row] + (5 - count) / 2;
+            for (int i = 0; i < count; i++) {
+                buttons.put(start + i, new SettingButton(visible.get(row * 5 + i)));
             }
         }
+        return buttons;
     }
 
-    @RequiredArgsConstructor
-    public class SettingButton extends Button {
+    private static class SettingButton extends Button {
 
         private final PlayerSetting setting;
+
+        SettingButton(PlayerSetting setting) {
+            this.setting = setting;
+        }
 
         @Override
         public ItemStack getItem(Player player) {
@@ -111,11 +76,7 @@ public class SettingsMenu extends Menu {
 
         @Override
         public void click(Player player, int slot, ClickType clickType, int hotbarButton) {
-            if (!setting.canUpdate(player))
-                return;
-
-            setting.click(player, clickType);
+            if (setting.canUpdate(player)) setting.click(player, clickType);
         }
     }
-
 }

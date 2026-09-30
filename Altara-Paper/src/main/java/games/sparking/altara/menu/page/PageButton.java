@@ -1,14 +1,16 @@
 package games.sparking.altara.menu.page;
 
 import games.sparking.altara.menu.Button;
-import games.sparking.altara.utils.CC;
+import games.sparking.altara.menu.Gui;
 import games.sparking.altara.utils.ItemBuilder;
-import games.sparking.altara.utils.Style;
+import games.sparking.altara.utils.Theme;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.ClickType;
 import org.bukkit.inventory.ItemStack;
 
+/** Previous / next page arrow. Shift-click jumps to the first / last page. */
 public class PageButton extends Button {
 
     private final int mod;
@@ -21,36 +23,26 @@ public class PageButton extends Button {
 
     @Override
     public ItemStack getItem(Player player) {
-        String label = mod > 0 ? "Next Page" : "Previous Page";
+        boolean next = mod > 0;
+        int target = menu.getPage() + mod;
 
-        if (this.hasNext(player)) {
-            return new ItemBuilder(Material.LIME_CARPET)
-                    .setDisplayName(CC.text(label, Style.GREEN.getColor(), Style.BOLD.getDecoration()))
-                    .build();
-        } else {
-            return new ItemBuilder(Material.GRAY_CARPET)
-                    .setDisplayName(CC.text(label, Style.GRAY.getColor(), Style.BOLD.getDecoration()))
-                    .build();
-        }
+        return new ItemBuilder(Material.ARROW)
+                .setDisplayName(next
+                        ? Component.text("Next page", Theme.TEXT_STRONG).append(Component.text(" ❱", Theme.TEXT))
+                        : Component.text(Theme.BACK + " ", Theme.TEXT).append(Component.text("Previous page", Theme.TEXT_STRONG)))
+                .setLore(Gui.lore()
+                        .value("Page", target + "/" + menu.getPages(player))
+                        .cta(next ? "view the next page" : "view the previous page")
+                        .build())
+                .build();
     }
 
     @Override
     public void click(Player player, int slot, ClickType clickType, int hotbarButton) {
         if (clickType.isShiftClick()) {
-            if (hasNext(player)) {
-                this.menu.modPage(player, this.mod > 0 ?
-                        this.menu.getPages(player) - this.menu.getPage() :
-                        1 - this.menu.getPage());
-            }
+            menu.modPage(player, mod > 0 ? menu.getPages(player) : -menu.getPage());
         } else {
-            if (hasNext(player)) {
-                this.menu.modPage(player, mod);
-            }
+            menu.modPage(player, mod);
         }
-    }
-
-    private boolean hasNext(Player player) {
-        int pg = this.menu.getPage() + this.mod;
-        return pg > 0 && this.menu.getPages(player) >= pg;
     }
 }
