@@ -225,6 +225,49 @@ public class PunishmentService {
         }
     }
 
+    // ── Leaderboards ───────────────────────────────────────────────────────────
+
+    /**
+     * Raw action counts per staff member for the last 30 days: staffUuid → (action type
+     * name, or {@code "TOTAL"} for the sum across all types) → count.  This is a network
+     * call every time — ranking, display names and caching are left to the caller, since
+     * this is only ever used to build a leaderboard on demand (not a hot path).
+     */
+    public Map<UUID, Map<String, Long>> getStaffActionCounts() {
+        return fetchActionCounts("api/punishment/leaderboard/staff");
+    }
+
+    /** Raw action counts per player, all time: playerUuid → (action type, or "TOTAL") → count. */
+    public Map<UUID, Map<String, Long>> getPlayerActionCounts() {
+        return fetchActionCounts("api/punishment/leaderboard/players");
+    }
+
+    private Map<UUID, Map<String, Long>> fetchActionCounts(String endpoint) {
+        Map<UUID, Map<String, Long>> result = new HashMap<>();
+        RequestResponse response = RequestHandler.get(endpoint);
+        if (!response.wasSuccessful()) return result;
+
+        JsonObject root = response.asObject();
+        if (root == null) return result;
+
+        for (Map.Entry<String, JsonElement> entry : root.entrySet()) {
+            UUID uuid;
+            try {
+                uuid = UUID.fromString(entry.getKey());
+            } catch (IllegalArgumentException e) {
+                continue; // malformed key — skip rather than fail the whole leaderboard
+            }
+            if (!entry.getValue().isJsonObject()) continue;
+
+            Map<String, Long> counts = new HashMap<>();
+            for (Map.Entry<String, JsonElement> typeEntry : entry.getValue().getAsJsonObject().entrySet()) {
+                counts.put(typeEntry.getKey(), typeEntry.getValue().getAsLong());
+            }
+            result.put(uuid, counts);
+        }
+        return result;
+    }
+
     // ── Cache helpers (called by Redis packet receivers) ───────────────────────
 
     /** Upserts one punishment into the local cache (called when a packet arrives). */

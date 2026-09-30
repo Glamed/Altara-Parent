@@ -268,7 +268,7 @@ public class MessageCommands {
 
         Punishment mute = PunishmentListener.activeMute(sender.getUuid());
         if (mute != null) {
-            senderPlayer.sendMessage(PunishmentMessages.chatRestricted(mute));
+            PunishmentMessages.chatRestricted(mute, senderPlayer.getName()).forEach(senderPlayer::sendMessage);
             return;
         }
 

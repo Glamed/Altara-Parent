@@ -52,6 +52,14 @@ import games.sparking.altara.punishment.listeners.PunishmentListener;
 import games.sparking.altara.queue.Queue;
 import games.sparking.altara.queue.QueueService;
 import games.sparking.altara.queue.commands.QueueCommands;
+import games.sparking.altara.report.ReportChatCache;
+import games.sparking.altara.report.ReportCloseCommand;
+import games.sparking.altara.report.ReportEngagement;
+import games.sparking.altara.report.ReportFollowListener;
+import games.sparking.altara.report.ReportFollowService;
+import games.sparking.altara.report.ReportHandleCommand;
+import games.sparking.altara.report.ReportSubmitCommand;
+import games.sparking.altara.report.ReportViewChatCommand;
 import games.sparking.altara.rank.Rank;
 import games.sparking.altara.rank.commands.RankCommands;
 import games.sparking.altara.rank.parameter.RankParameter;
@@ -62,6 +70,11 @@ import games.sparking.altara.server.ServerState;
 import games.sparking.altara.server.command.ServerMonitorCommands;
 import games.sparking.altara.server.packet.UpdateServerPacket;
 import games.sparking.altara.server.parameter.AllServersParameter;
+import games.sparking.altara.staffmode.StaffModeListener;
+import games.sparking.altara.staffmode.StaffModeVisibilityAdapter;
+import games.sparking.altara.staffmode.commands.SpectatorCommand;
+import games.sparking.altara.staffmode.commands.StaffModeCommand;
+import games.sparking.altara.staffmode.commands.VanishCommand;
 import games.sparking.altara.task.Tasks;
 import games.sparking.altara.task.UpdateTask;
 import games.sparking.altara.task.impl.BukkitTaskImplementor;
@@ -71,6 +84,7 @@ import games.sparking.altara.teleport.TeleportService;
 import games.sparking.altara.updater.FileUpdater;
 import games.sparking.altara.utils.json.adapter.ItemStackAdapter;
 import games.sparking.altara.utils.json.adapter.UUIDAdapter;
+import games.sparking.altara.visibility.VisibilityService;
 import lombok.Getter;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -101,6 +115,8 @@ public class AltaraPaper extends Altara {
     @Getter private QueueService queueService;
 
     @Getter private TeleportService teleportService;
+
+    @Getter private ReportFollowService reportFollowService;
 
     @Getter private HologramService hologramService;
     @Getter private HologramClickListener hologramClickListener;
@@ -141,6 +157,11 @@ public class AltaraPaper extends Altara {
         queueService.startTask();
 
         this.teleportService = new TeleportService();
+        this.reportFollowService = new ReportFollowService();
+        // Reports handed out from the website (ReportEngagePacket) land here.
+        getReportService().setEngageHandler((staffUuid, report) -> ReportEngagement.engage(staffUuid, report, true));
+
+        VisibilityService.registerVisibilityAdapter(new StaffModeVisibilityAdapter());
 
         PlayerSettingService.registerProvider(new AltaraSettings());
 
@@ -214,7 +235,14 @@ public class AltaraPaper extends Altara {
                 new RankCommands(),
                 new GrantCommands(),
                 new MessageCommands(),
-                new TeleportCommand()
+                new TeleportCommand(),
+                new ReportSubmitCommand(),
+                new ReportHandleCommand(),
+                new ReportCloseCommand(),
+                new ReportViewChatCommand(),
+                new StaffModeCommand(),
+                new VanishCommand(),
+                new SpectatorCommand()
         );
     }
 
@@ -231,7 +259,10 @@ public class AltaraPaper extends Altara {
                 new HologramListener(),
                 new NPCListener(npcService),
                 new TeleportListener(),
-                new PlayerSettingListener()
+                new PlayerSettingListener(),
+                new ReportChatCache(),
+                new ReportFollowListener(),
+                new StaffModeListener()
         ).forEach(listener -> getPlugin().getServer().getPluginManager().registerEvents(listener, getPlugin()));
 
         // Hologram click detection requires a PacketEvents listener (holograms are fake entities).

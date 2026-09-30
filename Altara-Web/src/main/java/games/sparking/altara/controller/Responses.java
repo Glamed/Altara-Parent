@@ -37,6 +37,15 @@ final class Responses {
         return json(HttpStatus.INTERNAL_SERVER_ERROR, error(message));
     }
 
+    static MutableHttpResponse<String> conflict(String message) {
+        return json(HttpStatus.CONFLICT, error(message));
+    }
+
+    /** Any status with an already-built JSON body. */
+    static MutableHttpResponse<String> withStatus(HttpStatus status, JsonElement json) {
+        return json(status, Statics.GSON.toJson(json));
+    }
+
     private static MutableHttpResponse<String> json(HttpStatus status, String body) {
         return HttpResponse.<String>status(status).contentType(MediaType.APPLICATION_JSON_TYPE).body(body);
     }

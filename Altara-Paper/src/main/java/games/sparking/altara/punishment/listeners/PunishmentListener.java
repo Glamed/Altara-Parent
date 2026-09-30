@@ -29,7 +29,7 @@ public class PunishmentListener implements Listener {
         if (mute == null) return;
 
         event.setCancelled(true);
-        player.sendMessage(PunishmentMessages.chatRestricted(mute));
+        PunishmentMessages.chatRestricted(mute, player.getName()).forEach(player::sendMessage);
     }
 
     /** Refuses logins from suspended players.  Runs after the profile is loaded (LOWEST). */

@@ -1,0 +1,34 @@
+package games.sparking.altara.report.packet;
+
+import games.sparking.altara.Altara;
+import games.sparking.altara.SystemType;
+import games.sparking.altara.redis.packet.Packet;
+import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
+
+/**
+ * Paper-to-Paper only (never published by the Web module): asks whichever server
+ * currently has {@code handlerUuid} online to send them to {@code targetServer}, where
+ * the suspect they're handling a report against now is.  Published either right after a
+ * claim (suspect was already elsewhere) or when the suspect changes servers mid-review —
+ * see {@code ReportFollowListener} in Altara-Paper, which mirrors the network teleport
+ * request/found flow in {@code games.sparking.altara.teleport}.
+ */
+@AllArgsConstructor
+@NoArgsConstructor
+public class ReportFollowPacket extends Packet {
+
+    private String handlerUuid;
+    private String suspectUuid;
+    private String suspectName;
+    private String targetServer;
+
+    @Override
+    public void receive() {
+        if (Altara.getSystemType() != SystemType.PAPER) return;
+        if (Altara.getSharedInstance().getLocalServerName().equalsIgnoreCase(targetServer)) return;
+
+        Altara.getSharedInstance().getReportService().handleFollowRequest(
+                handlerUuid, suspectUuid, suspectName, targetServer);
+    }
+}

@@ -26,6 +26,8 @@ import static games.sparking.altara.controller.Responses.*;
  *   PATCH  /api/punishment/{id}                   edit infractionType / message / notes / actions
  *   DELETE /api/punishment/{id}?removedBy=        revoke (soft-delete)
  *   POST   /api/punishment/{id}/notified          the player has been shown it
+ *   GET    /api/punishment/leaderboard/staff          staff action counts, last 30 days
+ *   GET    /api/punishment/leaderboard/players        player action counts, all time
  *   GET    /api/punishment/player/{uuid}          every punishment for a player
  *   GET    /api/punishment/player/{uuid}/active   active punishments
  *   GET    /api/punishment/player/{uuid}/banned   {"uuid", "banned"}
@@ -108,6 +110,20 @@ public class PunishmentController {
         return punishmentWebService.markNotified(id)
                 .map(Responses::ok)
                 .orElseGet(() -> notFound("Punishment not found: " + id));
+    }
+
+    // ── Leaderboards ───────────────────────────────────────────────────────────
+
+    /** Top staff by actions issued in the last 30 days; see {@code PunishmentWebService}. */
+    @Get("/leaderboard/staff")
+    public HttpResponse<String> getStaffLeaderboard() {
+        return ok(punishmentWebService.getStaffLeaderboard());
+    }
+
+    /** Top players by punishments received, all time. */
+    @Get("/leaderboard/players")
+    public HttpResponse<String> getPlayerLeaderboard() {
+        return ok(punishmentWebService.getPlayerLeaderboard());
     }
 
     /** Body may set {@code infractionType}, {@code message} (null clears), {@code notes}, {@code actions} (replaces). */

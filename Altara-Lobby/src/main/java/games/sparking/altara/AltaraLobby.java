@@ -3,7 +3,6 @@ package games.sparking.altara;
 import games.sparking.altara.command.CommandService;
 import games.sparking.altara.configuration.ConfigurationService;
 import games.sparking.altara.configuration.LobbyConfig;
-import games.sparking.altara.leaderboards.StaffHologramManager;
 import games.sparking.altara.npc.NpcManager;
 import games.sparking.altara.playersetting.LobbySettings;
 import games.sparking.altara.playersetting.PlayerSettingService;
@@ -56,7 +55,6 @@ public class AltaraLobby extends AltaraPaper {
     public void registerListeners() {
         super.registerListeners();
         List.of(
-                new StaffHologramManager(),
                 new SpawnListener()
         ).forEach(listener -> getPlugin().getServer().getPluginManager().registerEvents(listener, getPlugin()));
 

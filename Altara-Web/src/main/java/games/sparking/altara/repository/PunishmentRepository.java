@@ -85,6 +85,23 @@ public class PunishmentRepository {
         return findById(id);
     }
 
+    // ── Leaderboards ──────────────────────────────────────────────────────────
+
+    /**
+     * Every non-revoked punishment issued in the last {@code sinceMillis} ms ({@code 0} or
+     * less for all time).  Leaderboard counts are then built in Java from these raw records
+     * (see {@code PunishmentWebService}) — the collection is small enough that this is
+     * simpler and safer than a hand-written aggregation pipeline, and keeps the counting
+     * logic in one place instead of duplicated across a Mongo pipeline and Java fallback.
+     */
+    public JsonArray findIssuedSince(long sinceMillis) {
+        Bson filter = sinceMillis > 0
+                ? Filters.and(Filters.eq("removed", false),
+                        Filters.gte("issuedAt", System.currentTimeMillis() - sinceMillis))
+                : Filters.eq("removed", false);
+        return MongoJson.toArray(collection.find(filter));
+    }
+
     // ── Player queries ─────────────────────────────────────────────────────────
 
     /** Every punishment record for a player. */

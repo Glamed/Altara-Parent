@@ -13,6 +13,8 @@ import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
+import java.util.function.BiPredicate;
 
 /** Player-facing punishment text, shared by the login check and live enforcement. */
 public final class PunishmentMessages {
@@ -27,6 +29,31 @@ public final class PunishmentMessages {
 
     private static String reasonOf(Punishment punishment) {
         return punishment.getReason() != null ? punishment.getReason().getDisplayName() : "Policy Violation";
+    }
+
+    private static UUID uuidOf(Punishment punishment) {
+        return UUID.fromString(punishment.getPlayerUuid());
+    }
+
+    /**
+     * Every currently active restriction across every active punishment this player has,
+     * excluding whatever the caller is already showing elsewhere (so nothing is listed
+     * twice). Each line uses the time actually left, not what was originally issued, so
+     * this stays accurate no matter how long ago the punishment was applied.
+     */
+    private static List<Component> otherActiveRestrictions(UUID playerUuid,
+                                                            BiPredicate<Punishment, RestrictionAction> alreadyShown) {
+        List<Component> lines = new ArrayList<>();
+        for (Punishment p : Altara.getSharedInstance().getPunishmentService().getActivePunishments(playerUuid)) {
+            if (p.getActions() == null) continue;
+            for (RestrictionAction action : p.getActions()) {
+                if (action.getDuration() != 0L && action.hasExpired(p.getIssuedAt())) continue;
+                if (alreadyShown.test(p, action)) continue;
+                long remaining = action.getDuration() == 0L ? 0L : p.getRemainingDuration(action.getType());
+                lines.add(actionLine(action.getType().getActionLine(remaining)));
+            }
+        }
+        return lines;
     }
 
     /** Disconnect screen for an active suspension. */
@@ -54,13 +81,32 @@ public final class PunishmentMessages {
             screen.append(Component.text("Appeal at ", Theme.TEXT))
                     .append(Component.text(website() + "/appeal", Theme.PRIMARY));
         }
+
+        // Suspensions are often bundled with other restrictions (e.g. a mute that outlasts
+        // the ban), and separate punishment records can also be active at once — surface
+        // all of it here rather than letting the player find out only once the ban lifts.
+        List<Component> other = otherActiveRestrictions(uuidOf(punishment),
+                (p, a) -> p.getId().equals(punishment.getId()) && a.getType() == PunishmentType.SUSPENSION);
+        if (!other.isEmpty()) {
+            screen.append(Component.newline()).append(Component.newline())
+                    .append(Component.text("Other restrictions are also in effect on this account:", Theme.TEXT));
+            for (Component line : other) {
+                screen.append(Component.newline()).append(line);
+            }
+        }
+
         return screen.build();
     }
 
     /**
-     * Chat notice for non-suspension restrictions (mutes, warnings, …).  The player's name and
-     * the offending message are inserted as plain text — they are player input and must never
-     * be parsed as MiniMessage.
+     * The "Account Action" panel: what was applied, why, and — for anything still active —
+     * how long is left. Shown once when a punishment is first delivered, and reused
+     * verbatim by {@link #chatRestricted} every time a muted player tries to chat, so a
+     * repeat reminder always reflects the account's current state instead of a stale
+     * snapshot of what was originally issued.
+     *
+     * <p>The player's name and the offending message are inserted as plain text — they are
+     * player input and must never be parsed as MiniMessage.
      */
     public static List<Component> restrictionNotice(Punishment punishment, String playerName) {
         List<Component> lines = new ArrayList<>();
@@ -82,7 +128,11 @@ public final class PunishmentMessages {
         }
         if (punishment.getActions() != null) {
             for (RestrictionAction action : punishment.getActions()) {
-                lines.add(actionLine(action.getType().getActionLine(action.getDuration())));
+                // Skip anything that's already fully expired — this panel doubles as a live
+                // status check, not just a record of what was originally applied.
+                if (action.getDuration() != 0L && action.hasExpired(punishment.getIssuedAt())) continue;
+                long remaining = action.getDuration() == 0L ? 0L : punishment.getRemainingDuration(action.getType());
+                lines.add(actionLine(action.getType().getActionLine(remaining)));
             }
         }
 
@@ -101,6 +151,15 @@ public final class PunishmentMessages {
             lines.add(Component.empty());
             lines.add(MM.deserialize(" <gray>Please review our <aqua><underlined>Community Guidelines<gray>."));
             lines.add(MM.deserialize(" <gray>Did we make a mistake? <aqua><underlined>Let us know<gray>!"));
+        }
+
+        // Other punishment records can be active on the same account at once (e.g. an older
+        // mute that outlasts this action) — call those out too, with live countdowns.
+        List<Component> other = otherActiveRestrictions(uuidOf(punishment), (p, a) -> p.getId().equals(punishment.getId()));
+        if (!other.isEmpty()) {
+            lines.add(Component.empty());
+            lines.add(MM.deserialize(" <gray>You also currently have these restrictions in effect<dark_gray>:"));
+            lines.addAll(other);
         }
 
         lines.add(dashLine(null));
@@ -132,12 +191,14 @@ public final class PunishmentMessages {
         return line.build();
     }
 
-    /** One-line reply when a muted player tries to chat. */
-    public static Component chatRestricted(Punishment mute) {
-        long remaining = mute == null ? -1 : mute.getRemainingDuration(PunishmentType.CHAT_RESTRICTION);
-        return CC.error("You're muted.", remaining == -1
-                ? "Your chat restriction doesn't expire."
-                : "You can chat again in *" + Time.formatDetailed(remaining) + "*.");
+    /**
+     * Reminder shown whenever a muted player tries to chat. Rather than a separate
+     * one-line message, this is the same Account Action panel used for the initial notice
+     * — every action still shows the time actually left, so a reminder shown days into a
+     * mute is never stale, and any other active restriction on the account shows up too.
+     */
+    public static List<Component> chatRestricted(Punishment mute, String playerName) {
+        return restrictionNotice(mute, playerName);
     }
 
 }

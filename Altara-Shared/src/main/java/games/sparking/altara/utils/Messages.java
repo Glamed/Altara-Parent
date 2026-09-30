@@ -12,7 +12,7 @@ import lombok.Getter;
 public enum Messages {
 
     MODULE("Feature disabled.", "This feature is currently unavailable."),
-    NEVER_JOINED("Invalid player.", "That player has never joined Altara."),
+    NEVER_JOINED("Invalid player.", "That player has never joined Sparking."),
     PLAYER_NOT_FOUND("Invalid player.", "That player could not be found."),
     PLAYER_OFFLINE("Invalid player.", "That player is offline or on another realm."),
     PERMISSION("No permission.", "You don't have permission to do that."),

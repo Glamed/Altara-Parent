@@ -32,9 +32,7 @@ public class StaffConfig extends LocalConfig {
     private String scoreboardTitle = "Altara";
 
     /**
-     * MiniMessage lines.
-     *
-     * Placeholders:
+     * MiniMessage lines.  Placeholders:
      * <rank>
      * <onlinecount>
      * <maxcount>
@@ -46,7 +44,9 @@ public class StaffConfig extends LocalConfig {
      * <rotate>
      * <queue>
      * <reboot>
-     * <staff>
+     *
+     * Kept identical to the Lobby scoreboard on purpose — Staff-1 shows the same
+     * player-facing info, nothing team- or workload-specific.  See LobbyConfig.
      */
     private List<String> scoreBoardLines =
             Arrays.asList(
@@ -56,8 +56,8 @@ public class StaffConfig extends LocalConfig {
                     " ",
                     "<aqua>Rank:",
                     " <rank>",
+                    "",
                     "<rotate>",
-                    "<staff>",
                     "<gray><italic><connection_address>",
                     "<dark_gray><strikethrough>--------------------"
             );
@@ -84,165 +84,6 @@ public class StaffConfig extends LocalConfig {
                     "<red>Rebooting:",
                     " <white><time_remaining>",
                     ""
-            );
-
-    /*
-     * ======================================================================
-     * Staff-1 Scoreboard
-     * ======================================================================
-     */
-
-    /**
-     * Shared Staff-1 information.
-     *
-     * Placeholders:
-     * <staff_team>
-     * <staff_online>
-     * <staff_server_online>
-     * <network_online>
-     */
-    private List<String> scoreBoardStaffLines =
-            Arrays.asList(
-                    "",
-                    "<dark_aqua><bold>Staff",
-                    " <gray>Team: <white><staff_team>",
-                    " <gray>Online: <white><staff_online>"
-            );
-
-    /**
-     * Social Media.
-     *
-     * Placeholders:
-     * <scheduled_posts>
-     * <draft_posts>
-     * <pending_approval>
-     * <active_campaigns>
-     */
-    private List<String> scoreBoardSocialMediaLines =
-            Arrays.asList(
-                    "",
-                    "<aqua>Social Media:",
-                    " <gray>Scheduled: <white><scheduled_posts>",
-                    " <gray>Drafts: <white><draft_posts>",
-                    " <gray>Approval: <white><pending_approval>",
-                    " <gray>Campaigns: <white><active_campaigns>"
-            );
-
-    /**
-     * Support.
-     *
-     * Placeholders:
-     * <open_tickets>
-     * <unassigned_tickets>
-     * <waiting_tickets>
-     * <escalated_tickets>
-     */
-    private List<String> scoreBoardSupportLines =
-            Arrays.asList(
-                    "",
-                    "<aqua>Support:",
-                    " <gray>Open: <white><open_tickets>",
-                    " <gray>Unassigned: <white><unassigned_tickets>",
-                    " <gray>Waiting: <white><waiting_tickets>",
-                    " <gray>Escalated: <white><escalated_tickets>"
-            );
-
-    /**
-     * Trust & Safety.
-     *
-     * Placeholders:
-     * <reports>
-     * <unassigned_reports>
-     * <investigations>
-     * <safety_escalations>
-     */
-    private List<String> scoreBoardTrustSafetyLines =
-            Arrays.asList(
-                    "",
-                    "<aqua>Trust & Safety:",
-                    " <gray>Reports: <white><reports>",
-                    " <gray>Unassigned: <white><unassigned_reports>",
-                    " <gray>Investigations: <white><investigations>",
-                    " <gray>Escalated: <white><safety_escalations>"
-            );
-
-    /**
-     * Quality Assurance.
-     *
-     * Placeholders:
-     * <open_bugs>
-     * <active_tests>
-     * <regressions>
-     * <awaiting_qa>
-     * <testing_build>
-     */
-    private List<String> scoreBoardQualityAssuranceLines =
-            Arrays.asList(
-                    "",
-                    "<aqua>Quality Assurance:",
-                    " <gray>Open Bugs: <white><open_bugs>",
-                    " <gray>Testing: <white><active_tests>",
-                    " <gray>Regressions: <white><regressions>",
-                    " <gray>Awaiting QA: <white><awaiting_qa>",
-                    " <gray>Build: <white><testing_build>"
-            );
-
-    /**
-     * Level Design.
-     *
-     * Placeholders:
-     * <maps_development>
-     * <maps_awaiting_qa>
-     * <maps_revision>
-     * <maps_approved>
-     */
-    private List<String> scoreBoardLevelDesignLines =
-            Arrays.asList(
-                    "",
-                    "<aqua>Level Design:",
-                    " <gray>Development: <white><maps_development>",
-                    " <gray>Awaiting QA: <white><maps_awaiting_qa>",
-                    " <gray>Revisions: <white><maps_revision>",
-                    " <gray>Approved: <white><maps_approved>"
-            );
-
-    /**
-     * Community Management.
-     *
-     * Covers creators, YouTubers, events and other community-facing
-     * programs.
-     *
-     * Placeholders:
-     * <upcoming_events>
-     * <creator_requests>
-     * <active_creators>
-     * <community_projects>
-     */
-    private List<String> scoreBoardCommunityManagementLines =
-            Arrays.asList(
-                    "",
-                    "<aqua>Community:",
-                    " <gray>Events: <white><upcoming_events>",
-                    " <gray>Creator Requests: <white><creator_requests>",
-                    " <gray>Creators: <white><active_creators>",
-                    " <gray>Projects: <white><community_projects>"
-            );
-
-    /**
-     * Shared network block shown after the team-specific information.
-     *
-     * Placeholders:
-     * <network_online>
-     * <staff_online>
-     * <staff_server_online>
-     */
-    private List<String> scoreBoardStaffNetworkLines =
-            Arrays.asList(
-                    "",
-                    "<aqua>Network:",
-                    " <gray>Players: <white><network_online>",
-                    " <gray>Staff: <white><staff_online>",
-                    " <gray>Staff-1: <white><staff_server_online>"
             );
 
     /*

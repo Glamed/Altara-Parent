@@ -1,6 +1,7 @@
 package games.sparking.altara.service;
 
 import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import games.sparking.altara.config.CacheConfig;
 import games.sparking.altara.config.CacheEvictor;
@@ -16,6 +17,8 @@ import jakarta.inject.Singleton;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -105,6 +108,60 @@ public class PunishmentWebService {
     public Optional<JsonObject> markNotified(String id) {
         Optional<JsonObject> result = punishmentRepository.markNotified(id);
         result.map(PunishmentWebService::playerOf).ifPresent(cacheEvictor::playerPunishments);
+        return result;
+    }
+
+    // ── Leaderboards ─────────────────────────────────────────────────────────────
+
+    private static final long THIRTY_DAYS_MS = 30L * 24 * 60 * 60 * 1000;
+
+    /**
+     * Top staff by actions issued in the last 30 days: staffUuid → (action type, or
+     * {@code "TOTAL"}) → count.  Deliberately uncached — this is a low-traffic staff-only
+     * view and should reflect anything issued moments ago.
+     */
+    public JsonObject getStaffLeaderboard() {
+        return countByKey(punishmentRepository.findIssuedSince(THIRTY_DAYS_MS), "staffUuid");
+    }
+
+    /** Top players by punishments received, all time: playerUuid → (action type, or "TOTAL") → count. */
+    public JsonObject getPlayerLeaderboard() {
+        return countByKey(punishmentRepository.findIssuedSince(0L), "playerUuid");
+    }
+
+    /**
+     * Buckets raw punishment records by {@code keyField} (staffUuid or playerUuid), counting
+     * each action by its type plus a running {@code TOTAL}.  Records missing the key field
+     * (e.g. console-issued punishments when grouping by staff) are skipped.
+     */
+    private static JsonObject countByKey(JsonArray records, String keyField) {
+        Map<String, Map<String, Long>> counts = new HashMap<>();
+
+        for (JsonElement element : records) {
+            JsonObject record = element.getAsJsonObject();
+            if (!record.has(keyField) || record.get(keyField).isJsonNull()) continue;
+            if (!record.has("actions") || !record.get("actions").isJsonArray()) continue;
+
+            String key = record.get(keyField).getAsString();
+            Map<String, Long> perType = counts.computeIfAbsent(key, k -> new HashMap<>());
+
+            for (JsonElement actionElement : record.get("actions").getAsJsonArray()) {
+                JsonObject action = actionElement.getAsJsonObject();
+                String type = action.has("type") && !action.get("type").isJsonNull()
+                        ? action.get("type").getAsString() : "UNKNOWN";
+                perType.merge(type, 1L, Long::sum);
+                perType.merge("TOTAL", 1L, Long::sum);
+            }
+        }
+
+        JsonObject result = new JsonObject();
+        for (Map.Entry<String, Map<String, Long>> entry : counts.entrySet()) {
+            JsonObject perType = new JsonObject();
+            for (Map.Entry<String, Long> typeCount : entry.getValue().entrySet()) {
+                perType.addProperty(typeCount.getKey(), typeCount.getValue());
+            }
+            result.add(entry.getKey(), perType);
+        }
         return result;
     }
 
