@@ -1,50 +1,50 @@
 package games.sparking.altara.controller;
 
 import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import games.sparking.altara.punishment.InfractionType;
 import games.sparking.altara.punishment.PunishmentType;
 import games.sparking.altara.service.PunishmentWebService;
-import games.sparking.altara.utils.Statics;
+import io.micronaut.core.annotation.Nullable;
+import io.micronaut.http.HttpResponse;
+import io.micronaut.http.MediaType;
+import io.micronaut.http.annotation.*;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
 
+import static games.sparking.altara.controller.Responses.*;
+
 /**
- * REST controller exposing the Punishment API.
+ * Punishment API.
  *
  * <pre>
- *   POST   /api/punishment                          — Issue a punishment (multi-action)
- *   GET    /api/punishment/{id}                     — Get by ID
- *   PATCH  /api/punishment/{id}                     — Partial update (infractionType / message / notes / actions)
- *   DELETE /api/punishment/{id}                     — Revoke (soft-delete)
- *   GET    /api/punishment/player/{uuid}            — All punishments for player
- *   GET    /api/punishment/player/{uuid}/active     — Active punishments for player
- *   GET    /api/punishment/player/{uuid}/banned     — Is player currently banned?
- *   GET    /api/punishment/infractions              — List all InfractionType values
- *   GET    /api/punishment/types                    — List all PunishmentType values
+ *   POST   /api/punishment                        issue (multi-action)
+ *   GET    /api/punishment/{id}                   one punishment
+ *   PATCH  /api/punishment/{id}                   edit infractionType / message / notes / actions
+ *   DELETE /api/punishment/{id}?removedBy=        revoke (soft-delete)
+ *   POST   /api/punishment/{id}/notified          the player has been shown it
+ *   GET    /api/punishment/player/{uuid}          every punishment for a player
+ *   GET    /api/punishment/player/{uuid}/active   active punishments
+ *   GET    /api/punishment/player/{uuid}/banned   {"uuid", "banned"}
+ *   GET    /api/punishment/infractions            visible InfractionType values
+ *   GET    /api/punishment/types                  PunishmentType values
  * </pre>
  *
- * <h3>Issue request body</h3>
+ * Issue body:
  * <pre>{@code
  * {
- *   "playerUuid":     "<uuid>",
- *   "staffUuid":      "<uuid>",          // optional – defaults to CONSOLE_UUID
- *   "infractionType": "PROFANITY",       // InfractionType enum name
- *   "actions": [
- *     { "type": "CHAT_RESTRICTION", "duration": 1800000 }
- *   ],
- *   "message": null,                     // optional chat message that triggered infraction
- *   "notes":   null                      // optional internal staff notes
+ *   "playerUuid": "<uuid>", "staffUuid": "<uuid or null for console>",
+ *   "infractionType": "PROFANITY",
+ *   "actions": [ { "type": "CHAT_RESTRICTION", "duration": 1800000 } ],
+ *   "message": null, "notes": null
  * }
  * }</pre>
  */
-@RestController
-@RequestMapping("/api/punishment")
+@Controller("/api/punishment")
+@Produces(MediaType.APPLICATION_JSON)
 @RequiredArgsConstructor
 public class PunishmentController {
 
@@ -52,145 +52,121 @@ public class PunishmentController {
 
     // ── Issue ──────────────────────────────────────────────────────────────────
 
-    @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<String> issuePunishment(@RequestBody String body) {
+    @Post
+    public HttpResponse<String> issuePunishment(@Body String body) {
         try {
             JsonObject json = JsonParser.parseString(body).getAsJsonObject();
             validateIssueRequest(json);
-
             return punishmentWebService.issuePunishment(json)
-                    .map(p -> ResponseEntity.status(201)
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .body(Statics.GSON.toJson(p)))
-                    .orElse(ResponseEntity.internalServerError()
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .body("{\"error\":\"Failed to persist punishment\"}"));
-        } catch (Exception e) {
+                    .map(Responses::created)
+                    .orElseGet(() -> serverError("Failed to persist punishment"));
+        } catch (RuntimeException e) {
             return badRequest(e.getMessage());
         }
     }
 
     // ── Retrieve ───────────────────────────────────────────────────────────────
 
-    @GetMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<String> getPunishment(@PathVariable String id) {
+    @Get("/{id}")
+    public HttpResponse<String> getPunishment(String id) {
         return punishmentWebService.getPunishment(id)
-                .map(p -> ok(Statics.GSON.toJson(p)))
-                .orElse(notFound("Punishment not found: " + id));
+                .map(Responses::ok)
+                .orElseGet(() -> notFound("Punishment not found: " + id));
     }
 
-    @GetMapping(value = "/player/{uuid}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<String> getPlayerPunishments(@PathVariable UUID uuid) {
-        JsonArray punishments = punishmentWebService.getPlayerPunishments(uuid);
-        return ok(Statics.GSON.toJson(punishments));
+    @Get("/player/{uuid}")
+    public HttpResponse<String> getPlayerPunishments(UUID uuid) {
+        return ok(punishmentWebService.getPlayerPunishments(uuid.toString()));
     }
 
-    @GetMapping(value = "/player/{uuid}/active", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<String> getActivePlayerPunishments(@PathVariable UUID uuid) {
-        JsonArray punishments = punishmentWebService.getActivePlayerPunishments(uuid);
-        return ok(Statics.GSON.toJson(punishments));
+    @Get("/player/{uuid}/active")
+    public HttpResponse<String> getActivePlayerPunishments(UUID uuid) {
+        return ok(punishmentWebService.getActivePlayerPunishments(uuid.toString()));
     }
 
-    @GetMapping(value = "/player/{uuid}/banned", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<String> isPlayerBanned(@PathVariable UUID uuid) {
-        boolean banned = punishmentWebService.isPlayerBanned(uuid);
+    @Get("/player/{uuid}/banned")
+    public HttpResponse<String> isPlayerBanned(UUID uuid) {
         JsonObject result = new JsonObject();
-        result.addProperty("uuid",   uuid.toString());
-        result.addProperty("banned", banned);
+        result.addProperty("uuid", uuid.toString());
+        result.addProperty("banned", punishmentWebService.isPlayerBanned(uuid.toString()));
         return ok(result.toString());
     }
 
-    // ── Revoke ─────────────────────────────────────────────────────────────────
+    // ── Revoke / notify / edit ─────────────────────────────────────────────────
 
-    @DeleteMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<String> revokePunishment(
-            @PathVariable String id,
-            @RequestParam(required = false) String removedBy) {
+    @Delete("/{id}")
+    public HttpResponse<String> revokePunishment(String id, @QueryValue @Nullable String removedBy) {
         return punishmentWebService.revokePunishment(id, removedBy)
-                .map(p -> ok(Statics.GSON.toJson(p)))
-                .orElse(notFound("Punishment not found: " + id));
+                .map(Responses::ok)
+                .orElseGet(() -> notFound("Punishment not found: " + id));
     }
 
-    // ── Update (PATCH) ─────────────────────────────────────────────────────────
+    /** Called by a game server once the player has actually seen the punishment. */
+    @Post("/{id}/notified")
+    @Consumes(MediaType.ALL)
+    public HttpResponse<String> markNotified(String id) {
+        return punishmentWebService.markNotified(id)
+                .map(Responses::ok)
+                .orElseGet(() -> notFound("Punishment not found: " + id));
+    }
 
-    /**
-     * Partially updates a punishment.
-     *
-     * <h3>Accepted fields</h3>
-     * <pre>{@code
-     * {
-     *   "infractionType": "SPAM",               // optional
-     *   "message":        null,                  // optional (null clears it)
-     *   "notes":          "Staff note",          // optional
-     *   "actions": [                             // optional – replaces entire list
-     *     { "type": "CHAT_RESTRICTION", "duration": 3600000 }
-     *   ]
-     * }
-     * }</pre>
-     */
-    @PatchMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<String> updatePunishment(@PathVariable String id, @RequestBody String body) {
+    /** Body may set {@code infractionType}, {@code message} (null clears), {@code notes}, {@code actions} (replaces). */
+    @Patch("/{id}")
+    public HttpResponse<String> updatePunishment(String id, @Body String body) {
         try {
             JsonObject json = JsonParser.parseString(body).getAsJsonObject();
             return punishmentWebService.updatePunishment(id, json)
-                    .map(p -> ok(Statics.GSON.toJson(p)))
-                    .orElse(notFound("Punishment not found: " + id));
-        } catch (Exception e) {
+                    .map(Responses::ok)
+                    .orElseGet(() -> notFound("Punishment not found: " + id));
+        } catch (RuntimeException e) {
             return badRequest(e.getMessage());
         }
     }
 
-    // ── Enum Metadata ──────────────────────────────────────────────────────────
+    // ── Enum metadata (web panel dropdowns) ────────────────────────────────────
 
-    /**
-     * Returns all non-hidden {@link InfractionType} values with their metadata.
-     * Intended for populating web-panel dropdowns.
-     */
-    @GetMapping(value = "/infractions", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<String> listInfractions() {
-        JsonArray arr = new JsonArray();
+    @Get("/infractions")
+    public HttpResponse<String> listInfractions() {
+        JsonArray array = new JsonArray();
         for (InfractionType type : InfractionType.visibleValues()) {
             JsonObject obj = new JsonObject();
-            obj.addProperty("name",        type.name());
+            obj.addProperty("name", type.name());
             obj.addProperty("displayName", type.getDisplayName());
             obj.addProperty("description", type.getDescription());
             obj.addProperty("affirmation", type.getAffirmation());
-            arr.add(obj);
+            array.add(obj);
         }
-        return ok(Statics.GSON.toJson(arr));
+        return ok(array);
     }
 
-    /**
-     * Returns all {@link PunishmentType} values with their display names.
-     */
-    @GetMapping(value = "/types", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<String> listPunishmentTypes() {
-        JsonArray arr = new JsonArray();
+    @Get("/types")
+    public HttpResponse<String> listPunishmentTypes() {
+        JsonArray array = new JsonArray();
         for (PunishmentType type : PunishmentType.values()) {
             JsonObject obj = new JsonObject();
-            obj.addProperty("name",        type.name());
+            obj.addProperty("name", type.name());
             obj.addProperty("displayName", type.getName());
-            arr.add(obj);
+            array.add(obj);
         }
-        return ok(Statics.GSON.toJson(arr));
+        return ok(array);
     }
 
     // ── Validation ─────────────────────────────────────────────────────────────
 
     private static void validateIssueRequest(JsonObject json) {
         requireField(json, "playerUuid");
-        UUID.fromString(json.get("playerUuid").getAsString()); // format check
+        UUID.fromString(json.get("playerUuid").getAsString());
         requireField(json, "infractionType");
-        InfractionType.valueOf(json.get("infractionType").getAsString()); // enum check
-        if (!json.has("actions") || !json.get("actions").isJsonArray()
-                || json.get("actions").getAsJsonArray().isEmpty()) {
+        InfractionType.valueOf(json.get("infractionType").getAsString());
+
+        if (!json.has("actions") || !json.get("actions").isJsonArray() || json.get("actions").getAsJsonArray().isEmpty()) {
             throw new IllegalArgumentException("'actions' must be a non-empty array");
         }
-        for (var el : json.get("actions").getAsJsonArray()) {
-            JsonObject a = el.getAsJsonObject();
-            requireField(a, "type");
-            PunishmentType.valueOf(a.get("type").getAsString()); // enum check
-            requireField(a, "duration");
+        for (JsonElement element : json.get("actions").getAsJsonArray()) {
+            JsonObject action = element.getAsJsonObject();
+            requireField(action, "type");
+            PunishmentType.valueOf(action.get("type").getAsString());
+            requireField(action, "duration");
         }
     }
 
@@ -199,25 +175,4 @@ public class PunishmentController {
             throw new IllegalArgumentException("Missing required field: " + field);
         }
     }
-
-    // ── Response helpers ───────────────────────────────────────────────────────
-
-    private ResponseEntity<String> ok(String body) {
-        return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(body);
-    }
-
-    private ResponseEntity<String> notFound(String message) {
-        return ResponseEntity.status(404).contentType(MediaType.APPLICATION_JSON)
-                .body("{\"error\":\"" + escape(message) + "\"}");
-    }
-
-    private ResponseEntity<String> badRequest(String message) {
-        return ResponseEntity.badRequest().contentType(MediaType.APPLICATION_JSON)
-                .body("{\"error\":\"" + escape(message) + "\"}");
-    }
-
-    private static String escape(String s) {
-        return s == null ? "" : s.replace("\"", "\\\"");
-    }
 }
-

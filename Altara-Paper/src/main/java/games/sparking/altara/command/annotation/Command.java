@@ -19,6 +19,7 @@ public @interface Command {
 
     boolean hidden() default false;
 
-    String description() default "N/A";
+    /** Short help description — a sentence fragment without a trailing period. */
+    String description() default "";
 
 }

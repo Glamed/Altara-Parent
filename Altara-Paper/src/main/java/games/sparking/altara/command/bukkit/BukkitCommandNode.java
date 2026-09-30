@@ -8,6 +8,7 @@ import games.sparking.altara.command.data.ParameterData;
 import games.sparking.altara.command.permission.PermissionAdapter;
 import games.sparking.altara.task.impl.AsynchronousTaskChain;
 import games.sparking.altara.utils.CC;
+import games.sparking.altara.utils.Messages;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.bukkit.command.Command;
@@ -19,6 +20,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
 
 @RequiredArgsConstructor
 public class BukkitCommandNode implements CommandExecutor, TabCompleter {
@@ -31,8 +33,6 @@ public class BukkitCommandNode implements CommandExecutor, TabCompleter {
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        label = label.replace(plugin.getName().toLowerCase() + ":", "");
-
         List<String> arguments = new ArrayList<>();
         List<String> flags = new ArrayList<>();
         parseArgs(args, arguments, flags);
@@ -55,13 +55,18 @@ public class BukkitCommandNode implements CommandExecutor, TabCompleter {
             return true;
         }
 
+        if (executionNode.isPlayerOnly() && !(sender instanceof Player)) {
+            sender.sendMessage(CC.error(Messages.PLAYERS_ONLY));
+            return true;
+        }
+
         Runnable execution = () -> {
             try {
                 if (!executionNode.invoke(sender, arguments, flags)) {
                     sender.sendMessage(executionNode.getUsage(realLabel));
                 }
             } catch (Exception e) {
-                handleCommandError(sender, e);
+                handleCommandError(sender, realLabel, e);
             }
         };
 
@@ -79,7 +84,7 @@ public class BukkitCommandNode implements CommandExecutor, TabCompleter {
         if (!node.canUse(sender)) return new ArrayList<>();
 
         List<String> arguments = new ArrayList<>();
-        parseArgs(args, arguments, null); // flags ignored for tab completion
+        parseArgs(args, arguments, null);
 
         List<String> completions = new ArrayList<>();
         CommandNode tabbingNode = node.findNode(arguments);
@@ -97,22 +102,20 @@ public class BukkitCommandNode implements CommandExecutor, TabCompleter {
                 .map(d -> (ParameterData) d)
                 .toList();
 
-        List<FlagData> flagList = tabbingNode.getParameters().stream()
-                .filter(d -> d instanceof FlagData)
-                .map(d -> (FlagData) d)
-                .toList();
-
         int index = Math.max(0, args.length - 1) - offset;
         if (index >= 0 && index < parameters.size()) {
             ParameterData param = parameters.get(index);
-            completions.addAll(param.getParameterType().tabComplete(sender, param.getCompletionFlags()));
+            if (param.getParameterType() != null) {
+                completions.addAll(param.getParameterType().tabComplete(sender, param.getCompletionFlags()));
+            }
         }
 
-        flagList.forEach(flag -> flag.getNames().forEach(s -> completions.add("-" + s)));
+        tabbingNode.getParameters().stream()
+                .filter(d -> d instanceof FlagData flag && !flag.isHidden())
+                .forEach(d -> ((FlagData) d).getNames().forEach(s -> completions.add("-" + s)));
 
         return getCompletions(args, completions);
     }
-
 
     /**
      * Splits raw args into plain arguments and flag tokens.
@@ -121,28 +124,25 @@ public class BukkitCommandNode implements CommandExecutor, TabCompleter {
     private void parseArgs(String[] args, List<String> arguments, List<String> flags) {
         for (String s : args) {
             if (s.isEmpty()) continue;
-            if (s.charAt(0) == '-' && !s.equals("-") && !s.equals("--")
-                    && Flag.FLAG_PATTERN.matcher(s).matches()) {
-                if (flags != null) flags.add(s.replaceFirst("-", ""));
+            if (s.charAt(0) == '-' && Flag.FLAG_PATTERN.matcher(s).matches()) {
+                if (flags != null) flags.add(s.replaceFirst("^--?", "").toLowerCase());
             } else {
                 arguments.add(s);
             }
         }
     }
 
-    private void handleCommandError(CommandSender sender, Exception e) {
+    private void handleCommandError(CommandSender sender, String label, Exception e) {
         if (sender.isOp()) {
-            sender.sendMessage(CC.errorMsg("Command error.",
-                    e.getClass().getSimpleName() + ": " + e.getMessage()));
+            sender.sendMessage(CC.error("Command error.", e.getClass().getSimpleName() + ": " + e.getMessage()));
         } else {
-            sender.sendMessage(CC.errorMsg("An error occurred while executing your command.",
-                    "Please contact the server administration if this continues to happen."));
+            sender.sendMessage(CC.error(Messages.API_ERROR));
         }
-        e.printStackTrace();
+        plugin.getLogger().log(Level.SEVERE, "Error executing " + label + " for " + sender.getName(), e);
     }
 
     private List<String> getCompletions(String[] args, List<String> input) {
-        String argument = args[args.length - 1];
+        String argument = args.length == 0 ? "" : args[args.length - 1];
         List<String> result = new ArrayList<>();
         for (String s : input) {
             if (s.regionMatches(true, 0, argument, 0, argument.length()) && result.size() < 80)

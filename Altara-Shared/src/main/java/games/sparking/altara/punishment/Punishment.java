@@ -57,6 +57,12 @@ public class Punishment {
     /** UUID string of the staff member who revoked this, or null. */
     private String removedBy;
 
+    /**
+     * Whether the player has been shown this punishment.  New punishments start {@code false};
+     * records that pre-date this field are treated as already seen.
+     */
+    private boolean notified;
+
     // ── Constructors ───────────────────────────────────────────────────────────
 
     /**
@@ -207,6 +213,7 @@ public class Punishment {
         obj.addProperty("removed",   removed);
         obj.addProperty("removedAt", removedAt);
         obj.addProperty("removedBy", removedBy);
+        obj.addProperty("notified",  notified);
         return obj;
     }
 
@@ -233,6 +240,7 @@ public class Punishment {
         p.removed      = boolVal(obj, "removed",   false);
         p.removedAt    = longVal(obj, "removedAt", -1L);
         p.removedBy    = str(obj, "removedBy");
+        p.notified     = boolVal(obj, "notified",  true);
         return p;
     }
 

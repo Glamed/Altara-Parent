@@ -3,242 +3,186 @@ package games.sparking.altara.repository;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-import lombok.RequiredArgsConstructor;
+import com.google.gson.JsonPrimitive;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.model.Filters;
+import com.mongodb.client.model.Updates;
+import jakarta.inject.Singleton;
 import org.bson.Document;
-import org.bson.json.JsonMode;
-import org.bson.json.JsonWriterSettings;
-import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.query.Criteria;
-import org.springframework.data.mongodb.core.query.Query;
-import org.springframework.data.mongodb.core.query.Update;
-import org.springframework.stereotype.Repository;
+import org.bson.conversions.Bson;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.regex.Pattern;
 
 /**
- * Repository for player profiles stored in the "profiles" MongoDB collection.
- * Grants are embedded as an {@code activeGrants} array within each profile document.
+ * Player profiles in the {@code profiles} collection; {@code _id} is the player UUID.
+ * Grants are embedded as the {@code activeGrants} array and managed only through the grant methods.
  */
-@Repository
-@RequiredArgsConstructor
+@Singleton
 public class ProfileRepository {
 
-    private static final String COLLECTION = "profiles";
-    private static final JsonWriterSettings RELAXED =
-            JsonWriterSettings.builder().outputMode(JsonMode.RELAXED).build();
+    private final MongoCollection<Document> collection;
 
-    private final MongoTemplate mongoTemplate;
+    public ProfileRepository(MongoDatabase database) {
+        this.collection = database.getCollection("profiles");
+    }
 
-    // ------------------------------------------------------------------
-    // CRUD
-    // ------------------------------------------------------------------
+    // ── Profiles ───────────────────────────────────────────────────────────────
 
     public Optional<JsonObject> findByUuid(String uuid) {
-        Document doc = mongoTemplate.findOne(byUuid(uuid), Document.class, COLLECTION);
-        return Optional.ofNullable(doc).map(this::toJson);
+        return Optional.ofNullable(findDocument(uuid)).map(MongoJson::toJson);
     }
 
-    /**
-     * Find a profile by case-insensitive player name.
-     */
+    /** Case-insensitive exact name match. */
     public Optional<JsonObject> findByName(String name) {
-        Query query = Query.query(Criteria.where("name").regex("^" + java.util.regex.Pattern.quote(name) + "$", "i"));
-        Document doc = mongoTemplate.findOne(query, Document.class, COLLECTION);
-        return Optional.ofNullable(doc).map(this::toJson);
+        Bson filter = Filters.regex("name", "^" + Pattern.quote(name) + "$", "i");
+        return Optional.ofNullable(collection.find(filter).first()).map(MongoJson::toJson);
     }
 
-    /**
-     * Insert a new profile.  The {@code _id} is set to the profile UUID string.
-     * {@code activeGrants} is always initialized to an empty list so subsequent reads
-     * never encounter a missing field.
-     */
+    /** Inserts a new profile; {@code activeGrants} always exists so clients can iterate it. */
     public JsonObject insert(JsonObject profile) {
-        Document doc = Document.parse(profile.toString());
-        doc.put("_id", profile.get("uuid").getAsString());
-        // Ensure activeGrants always exists so clients can iterate it safely.
-        if (!doc.containsKey("activeGrants")) {
-            doc.put("activeGrants", List.of());
-        }
-        mongoTemplate.insert(doc, COLLECTION);
-        return findByUuid(profile.get("uuid").getAsString()).orElse(profile);
+        String uuid = profile.get("uuid").getAsString();
+        Document doc = MongoJson.toDocument(profile);
+        doc.put("_id", uuid);
+        doc.putIfAbsent("activeGrants", List.of());
+        collection.insertOne(doc);
+        return findByUuid(uuid).orElse(profile);
     }
 
-    /**
-     * Upsert a profile.  Grants are excluded from the update (they are managed separately).
-     */
+    /** Creates or updates a profile.  Grants in the body are ignored; they're managed separately. */
     public Optional<JsonObject> upsert(JsonObject profile) {
         String uuid = profile.get("uuid").getAsString();
-
-        // Build update document from the incoming JSON, excluding activeGrants
-        Document update = Document.parse(profile.toString());
-        update.remove("activeGrants");
-        update.remove("_id");
-
-        // Load existing or create a fresh skeleton
-        Document existing = mongoTemplate.findOne(byUuid(uuid), Document.class, COLLECTION);
-        Document full = (existing != null) ? existing : new Document("_id", uuid).append("activeGrants", List.of());
-
-        // Merge non-grants fields without a lambda
-        for (Map.Entry<String, Object> entry : update.entrySet()) {
-            if (!entry.getKey().equals("_id")) {
-                full.put(entry.getKey(), entry.getValue());
-            }
-        }
-
-        mongoTemplate.save(full, COLLECTION);
-
+        Document existing = findDocument(uuid);
+        Document full = existing != null ? existing : new Document("_id", uuid).append("activeGrants", List.of());
+        mergeWithoutGrants(full, profile);
+        collection.replaceOne(Filters.eq("_id", full.get("_id")), full, MongoJson.UPSERT);
         return findByUuid(uuid);
     }
 
+    /** Updates an existing profile; empty if there isn't one.  Grants in the body are ignored. */
     public Optional<JsonObject> update(String uuid, JsonObject profile) {
-        Document update = Document.parse(profile.toString());
-        update.remove("activeGrants");
-        update.remove("_id");
-
-        Document existing = mongoTemplate.findOne(byUuid(uuid), Document.class, COLLECTION);
+        Document existing = findDocument(uuid);
         if (existing == null) return Optional.empty();
-
-        update.forEach((k, v) -> { if (!k.equals("_id")) existing.put(k, v); });
-        mongoTemplate.save(existing, COLLECTION);
-
+        mergeWithoutGrants(existing, profile);
+        collection.replaceOne(Filters.eq("_id", existing.get("_id")), existing);
         return findByUuid(uuid);
     }
 
-    // ------------------------------------------------------------------
-    // Alts (profiles sharing a known IP with the given profile)
-    // ------------------------------------------------------------------
+    private static void mergeWithoutGrants(Document target, JsonObject source) {
+        Document update = MongoJson.toDocument(source);
+        update.remove("activeGrants");
+        update.remove("_id");
+        for (Map.Entry<String, Object> entry : update.entrySet()) {
+            target.put(entry.getKey(), entry.getValue());
+        }
+    }
+
+    // ── Alts: other profiles sharing a known IP ────────────────────────────────
 
     public List<JsonObject> findAlts(String uuid) {
-        Document profile = mongoTemplate.findOne(byUuid(uuid), Document.class, COLLECTION);
+        Document profile = findDocument(uuid);
         if (profile == null) return List.of();
 
-        @SuppressWarnings("unchecked")
-        List<String> knownIps = (List<String>) profile.getOrDefault("knownIps", List.of());
+        List<String> knownIps = profile.getList("knownIps", String.class, List.of());
         if (knownIps.isEmpty()) return List.of();
 
-        Query query = Query.query(
-                Criteria.where("uuid").ne(uuid)
-                        .and("knownIps").in(knownIps)
-        );
-        List<Document> docs = mongoTemplate.find(query, Document.class, COLLECTION);
         List<JsonObject> alts = new ArrayList<>();
-        for (Document doc : docs) alts.add(toJson(doc));
+        for (Document doc : collection.find(Filters.and(Filters.ne("uuid", uuid), Filters.in("knownIps", knownIps)))) {
+            alts.add(MongoJson.toJson(doc));
+        }
         return alts;
     }
 
-    // ------------------------------------------------------------------
-    // Grants — embedded in the profile document
-    // ------------------------------------------------------------------
+    // ── Grants ─────────────────────────────────────────────────────────────────
 
     public JsonArray getGrants(String uuid) {
-        Document profile = mongoTemplate.findOne(byUuid(uuid), Document.class, COLLECTION);
-        if (profile == null) return new JsonArray();
-        Object grantsList = profile.get("activeGrants");
-        if (!(grantsList instanceof List)) return new JsonArray();
-
         JsonArray array = new JsonArray();
-        for (Object g : (List<?>) grantsList) {
-            if (g instanceof Document grantDoc) {
-                array.add(JsonParser.parseString(grantDoc.toJson(RELAXED)));
-            }
-        }
+        Document profile = findDocument(uuid);
+        if (profile == null) return array;
+        for (Document grant : grantsOf(profile)) array.add(MongoJson.toJson(new Document(grant)));
         return array;
     }
 
-    /**
-     * Append a grant document to the profile's {@code activeGrants} array.
-     */
     public boolean addGrant(String uuid, JsonObject grant) {
-        Document grantDoc = Document.parse(grant.toString());
-        Update update = new Update().push("activeGrants", grantDoc);
-        return mongoTemplate.updateFirst(byUuid(uuid), update, COLLECTION).getMatchedCount() > 0;
+        return collection.updateOne(byUuid(uuid), Updates.push("activeGrants", MongoJson.toDocument(grant)))
+                .getMatchedCount() > 0;
     }
 
-    /**
-     * Update (patch) an existing grant inside the {@code activeGrants} array.
-     */
+    /** Applies {@code patch}'s fields to the grant with {@code grantId}. */
     public boolean updateGrant(String uuid, String grantId, JsonObject patch) {
-        Document profile = mongoTemplate.findOne(byUuid(uuid), Document.class, COLLECTION);
+        Document profile = findDocument(uuid);
         if (profile == null) return false;
 
-        @SuppressWarnings("unchecked")
-        List<Document> grants = (List<Document>) profile.getOrDefault("activeGrants", new ArrayList<>());
-        boolean found = false;
-        for (Document g : grants) {
-            if (grantId.equals(g.getString("id"))) {
-                patch.entrySet().forEach(e -> g.put(e.getKey(), e.getValue().isJsonPrimitive()
-                        ? (e.getValue().getAsJsonPrimitive().isBoolean()
-                            ? e.getValue().getAsBoolean()
-                            : e.getValue().isJsonNull() ? null : e.getValue().getAsString())
-                        : e.getValue().toString()));
-                // For numeric values, re-parse properly
-                if (patch.has("removedAt")) g.put("removedAt", patch.get("removedAt").getAsLong());
-                if (patch.has("removed"))   g.put("removed",   patch.get("removed").getAsBoolean());
-                found = true;
-                break;
-            }
-        }
-        if (!found) return false;
+        List<Document> grants = grantsOf(profile);
+        Document target = grants.stream().filter(g -> grantId.equals(g.getString("id"))).findFirst().orElse(null);
+        if (target == null) return false;
 
-        profile.put("activeGrants", grants);
-        mongoTemplate.save(profile, COLLECTION);
+        for (Map.Entry<String, JsonElement> entry : patch.entrySet()) {
+            target.put(entry.getKey(), toBsonValue(entry.getValue()));
+        }
+        collection.updateOne(byUuid(uuid), Updates.set("activeGrants", grants));
         return true;
     }
 
-    /**
-     * Mark all active, non-removed grants in a profile as removed.
-     * Returns the number of grants that were marked.
-     */
+    /** Marks every active grant removed.  Returns how many were removed. */
     public int clearGrants(String uuid, String removedBy, long removedAt, String removedReason) {
-        Document profile = mongoTemplate.findOne(byUuid(uuid), Document.class, COLLECTION);
+        Document profile = findDocument(uuid);
         if (profile == null) return 0;
 
-        @SuppressWarnings("unchecked")
-        List<Document> grants = (List<Document>) profile.getOrDefault("activeGrants", new ArrayList<>());
-
-        int count = 0;
+        List<Document> grants = grantsOf(profile);
         long now = System.currentTimeMillis();
-        for (Document g : grants) {
-            boolean alreadyRemoved = Boolean.TRUE.equals(g.getBoolean("removed"));
-            if (alreadyRemoved) continue;
+        int count = 0;
+        for (Document grant : grants) {
+            if (Boolean.TRUE.equals(grant.getBoolean("removed"))) continue;
+            long end = grant.get("end") instanceof Number number ? number.longValue() : -1L;
+            if (end != -1 && end < now) continue;
 
-            // Check expiry: end == -1 means permanent, otherwise check timestamp
-            Object endObj = g.get("end");
-            long end = endObj instanceof Number ? ((Number) endObj).longValue() : -1L;
-            boolean active = (end == -1 || end >= now);
-            if (!active) continue;
-
-            g.put("removed",       true);
-            g.put("removedBy",     removedBy);
-            g.put("removedAt",     removedAt);
-            g.put("removedReason", removedReason);
+            grant.put("removed", true);
+            grant.put("removedBy", removedBy);
+            grant.put("removedAt", removedAt);
+            grant.put("removedReason", removedReason);
             count++;
         }
 
-        if (count > 0) {
-            profile.put("activeGrants", grants);
-            mongoTemplate.save(profile, COLLECTION);
-        }
-
+        if (count > 0) collection.updateOne(byUuid(uuid), Updates.set("activeGrants", grants));
         return count;
     }
 
-    // ------------------------------------------------------------------
-    // Helpers
-    // ------------------------------------------------------------------
+    // ── Helpers ────────────────────────────────────────────────────────────────
 
-    private Query byUuid(String uuid) {
-        return Query.query(Criteria.where("uuid").is(uuid));
+    private Document findDocument(String uuid) {
+        return collection.find(byUuid(uuid)).first();
     }
 
-    private JsonObject toJson(Document doc) {
-        doc.remove("_id");
-        String json = doc.toJson(RELAXED);
-        JsonElement parsed = JsonParser.parseString(json);
-        return parsed.isJsonObject() ? parsed.getAsJsonObject() : new JsonObject();
+    private static List<Document> grantsOf(Document profile) {
+        List<Document> grants = profile.getList("activeGrants", Document.class);
+        return grants != null ? new ArrayList<>(grants) : new ArrayList<>();
+    }
+
+    /**
+     * Keeps JSON numbers numeric and booleans boolean.  The Spring version stored every patched
+     * value except booleans and removedAt as a string.
+     */
+    private static Object toBsonValue(JsonElement value) {
+        if (value == null || value.isJsonNull()) return null;
+        if (value.isJsonPrimitive()) {
+            JsonPrimitive primitive = value.getAsJsonPrimitive();
+            if (primitive.isBoolean()) return primitive.getAsBoolean();
+            if (primitive.isNumber()) {
+                double number = primitive.getAsDouble();
+                if (number == Math.rint(number) && !Double.isInfinite(number)) return primitive.getAsLong();
+                return number;
+            }
+            return primitive.getAsString();
+        }
+        return Document.parse("{\"v\":" + value + "}").get("v");
+    }
+
+    private static Bson byUuid(String uuid) {
+        return Filters.eq("uuid", uuid);
     }
 }

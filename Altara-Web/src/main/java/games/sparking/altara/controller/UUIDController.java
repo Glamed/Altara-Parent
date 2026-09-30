@@ -1,71 +1,44 @@
 package games.sparking.altara.controller;
 
 import games.sparking.altara.service.UUIDWebService;
+import io.micronaut.http.HttpResponse;
+import io.micronaut.http.MediaType;
+import io.micronaut.http.annotation.Controller;
+import io.micronaut.http.annotation.Get;
+import io.micronaut.http.annotation.Produces;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
 
-import java.util.Optional;
+import java.util.Locale;
 import java.util.UUID;
 
+import static games.sparking.altara.controller.Responses.notFound;
+
 /**
- * REST controller for UUID ↔ name resolution.
+ * UUID ↔ name resolution from stored profiles.
  *
  * <pre>
- *   GET  /api/uuid/name/{name}   — resolve player name to UUID
- *   GET  /api/uuid/{uuid}        — resolve UUID to player name
+ *   GET /api/uuid/name/{name}   {"uuid", "name"} or 404
+ *   GET /api/uuid/{uuid}        {"uuid", "name"} or 404
  * </pre>
- *
- * Results are backed by the "profiles" MongoDB collection so they are
- * always consistent with the stored profile data.
  */
-@RestController
-@RequestMapping("/api/uuid")
+@Controller("/api/uuid")
+@Produces(MediaType.APPLICATION_JSON)
 @RequiredArgsConstructor
 public class UUIDController {
 
     private final UUIDWebService uuidWebService;
 
-    /**
-     * Resolve a player name to their UUID.
-     * Returns {@code {"uuid":"...", "name":"..."}} or 404.
-     */
-    @GetMapping(value = "/name/{name}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<String> getByName(@PathVariable String name) {
-        Optional<String> result = uuidWebService.resolveNameToJson(name);
-        return result
-                .map(json -> ResponseEntity.ok()
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .body(json))
-                .orElse(notFound("No profile found for name: " + name));
+    @Get("/name/{name}")
+    public HttpResponse<String> getByName(String name) {
+        return uuidWebService.resolveNameToJson(name.toLowerCase(Locale.ROOT))
+                .map(Responses::ok)
+                .orElseGet(() -> notFound("No profile found for name: " + name));
     }
 
-    /**
-     * Resolve a UUID to the player's current name.
-     * Returns {@code {"uuid":"...", "name":"..."}} or 404.
-     */
-    @GetMapping(value = "/{uuid}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<String> getByUuid(@PathVariable UUID uuid) {
-        Optional<String> result = uuidWebService.resolveUuidToJson(uuid);
-        return result
-                .map(json -> ResponseEntity.ok()
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .body(json))
-                .orElse(notFound("No profile found for uuid: " + uuid));
-    }
-
-    // ------------------------------------------------------------------
-    // Helpers
-    // ------------------------------------------------------------------
-
-    private ResponseEntity<String> notFound(String message) {
-        return ResponseEntity.status(404)
-                .contentType(MediaType.APPLICATION_JSON)
-                .body("{\"error\":\"" + message + "\"}");
+    @Get("/{uuid}")
+    public HttpResponse<String> getByUuid(UUID uuid) {
+        return uuidWebService.resolveUuidToJson(uuid.toString())
+                .map(Responses::ok)
+                .orElseGet(() -> notFound("No profile found for uuid: " + uuid));
     }
 }
-

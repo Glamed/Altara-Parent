@@ -14,10 +14,10 @@ public class EnvironmentParameter implements ParameterType<World.Environment> {
     public World.Environment parse(CommandSender sender, String source) {
         World.Environment environment;
         try {
-            environment = World.Environment.valueOf(source);
+            environment = World.Environment.valueOf(source.toUpperCase());
 
         } catch (IllegalArgumentException exception) {
-            sender.sendMessage(CC.errorMsg("Invalid arguments.", "Environment " + source + " was not found."));
+            sender.sendMessage(CC.error("Invalid environment.", "*" + source + "* doesn't exist."));
             return null;
         }
 

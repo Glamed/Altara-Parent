@@ -1,100 +1,157 @@
 package games.sparking.altara.profiler;
 
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import games.sparking.altara.Altara;
+import games.sparking.altara.connection.RequestHandler;
+import games.sparking.altara.connection.RequestResponse;
 import games.sparking.altara.profile.Profile;
+import games.sparking.altara.punishment.Punishment;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 /**
- * Calculates a numeric "suspicion score" for an account when it joins the network.
+ * Scores a login for signs of a compromised account or ban evasion.
  *
- * <p><b>Score interpretation</b>
+ * <p>Being new is <b>not</b> suspicious on its own — every player starts with zero
+ * playtime.  Points only come from things that are unusual for the account:
  * <ul>
- *   <li>{@code < 100}  – account appears normal, no action taken</li>
- *   <li>{@code ≥ 100}  – account is flagged and shadow-muted</li>
+ *   <li><b>Account takeover</b> — an established account logging in from an IP and
+ *       network it has never used, especially after a long absence or with a new name.</li>
+ *   <li><b>Ban evasion</b> — accounts sharing IPs with currently-banned accounts,
+ *       weighted heavily when the joining account is brand new.</li>
+ *   <li><b>Alt farming</b> — a fresh account on IPs where several other accounts
+ *       were created in the last day.</li>
  * </ul>
  *
- * <p>The concrete criteria are intentionally not documented in player-facing resources.
+ * <p>Must run with the profile as it was <em>before</em> this login updates it (i.e. the
+ * joining IP is not yet in {@code knownIps}), so it is evaluated during pre-login.
+ * Performs blocking HTTP requests — never call on the main thread.
  */
-public class ProfilerEngine {
+public final class ProfilerEngine {
 
-    /** Minimum score required to flag an account. */
-    public static final int FLAG_THRESHOLD = ProfilerService.FLAG_THRESHOLD;
+    private static final long HOUR = TimeUnit.HOURS.toMillis(1);
+    private static final long DAY  = TimeUnit.DAYS.toMillis(1);
 
-    // ── Scoring weights ────────────────────────────────────────────────────────
+    /** Max linked accounts inspected for bans (each may cost a request). */
+    private static final int MAX_ALTS_CHECKED = 25;
 
-    private static final int SCORE_AGE_LESS_THAN_1_DAY  = 50;
-    private static final int SCORE_AGE_LESS_THAN_7_DAYS = 25;
+    private ProfilerEngine() {}
 
-    private static final int SCORE_PLAYTIME_LESS_THAN_5_MIN  = 50;
-    private static final int SCORE_PLAYTIME_LESS_THAN_30_MIN = 30;
+    @Getter
+    @RequiredArgsConstructor
+    public static final class Result {
+        private final int score;
+        private final List<String> reasons;
+        private final int bannedAltCount;
 
-    private static final int SCORE_MANY_IPS        = 40;  // > 15 known IPs
-    private static final int SCORE_ELEVATED_IPS    = 20;  // > 5 known IPs
+        public boolean shouldFlag() {
+            return score >= ProfilerService.FLAG_THRESHOLD;
+        }
+    }
 
-    private static final int SCORE_HIGH_DIGIT_RATIO  = 20;  // >50 % of name is digits
-    private static final int SCORE_UNUSUAL_NAME_LEN  = 10;  // ≤5 or ≥14 chars
+    public static Result evaluate(Profile profile, String loginName, String ip) {
+        long now = System.currentTimeMillis();
+        int score = 0;
+        List<String> reasons = new ArrayList<>();
 
-    private static final int SCORE_NO_PRIOR_HISTORY = 15;  // no punishments AND low play time
+        long ageMs      = now - profile.getFirstLogin();
+        long playTime   = profile.getPlayTime();
+        boolean fresh   = ageMs < DAY && playTime < HOUR;
+        boolean established = playTime >= 2 * HOUR || (ageMs >= 14 * DAY && playTime >= HOUR / 2);
 
-    // ── Public API ─────────────────────────────────────────────────────────────
+        // ── Account takeover signals ──────────────────────────────────────────
+        List<String> knownIps = profile.getKnownIps();
+        boolean newIp = !knownIps.isEmpty() && !knownIps.contains(ip);
+
+        if (established && newIp) {
+            score += 40;
+            reasons.add("Established account logged in from a new IP");
+
+            String network = networkOf(ip);
+            boolean knownNetwork = network != null
+                    && knownIps.stream().anyMatch(known -> network.equals(networkOf(known)));
+            if (!knownNetwork) {
+                score += 20;
+                reasons.add("IP is on a network the account has never used");
+            }
+
+            long inactiveDays = (now - profile.getLastSeen()) / DAY;
+            if (inactiveDays >= 60) {
+                score += 40;
+                reasons.add("Returned after " + inactiveDays + " days of inactivity");
+            }
+
+            if (profile.getName() != null && !profile.getName().equalsIgnoreCase(loginName)) {
+                score += 20;
+                reasons.add("Username changed since last login (" + profile.getName() + " → " + loginName + ")");
+            }
+        }
+
+        // ── Linked accounts: ban evasion & alt farming ────────────────────────
+        int bannedAlts = 0;
+        int recentAlts = 0;
+        List<JsonObject> alts = fetchAlts(profile.getUuid());
+        for (int i = 0; i < alts.size(); i++) {
+            JsonObject alt = alts.get(i);
+            if (alt.has("firstLogin") && now - alt.get("firstLogin").getAsLong() < DAY) {
+                recentAlts++;
+            }
+
+            if (i < MAX_ALTS_CHECKED) {
+                UUID altUuid = UUID.fromString(alt.get("uuid").getAsString());
+                List<Punishment> punishments = Altara.getSharedInstance().getPunishmentService().getPunishments(altUuid);
+                if (punishments.stream().anyMatch(Punishment::isBan)) bannedAlts++;
+            }
+        }
+
+        if (bannedAlts > 0) {
+            score += Math.min(100, 40 + 20 * (bannedAlts - 1));
+            reasons.add(bannedAlts + " linked account(s) currently banned");
+            if (fresh) {
+                score += 60;
+                reasons.add("Brand-new account linked to a banned account");
+            }
+        }
+
+        if (fresh && recentAlts >= 3) {
+            score += recentAlts >= 6 ? 100 : 50;
+            reasons.add(recentAlts + " other accounts created on shared IPs in the last 24h");
+        }
+
+        return new Result(score, reasons, bannedAlts);
+    }
+
+    /** Profiles sharing any known IP with this account (raw JSON, not cached). */
+    private static List<JsonObject> fetchAlts(UUID uuid) {
+        List<JsonObject> alts = new ArrayList<>();
+        RequestResponse response = RequestHandler.get("api/profile/%s/alts", uuid.toString());
+        if (!response.wasSuccessful()) return alts;
+
+        for (JsonElement element : response.asArray()) {
+            if (element.isJsonObject() && element.getAsJsonObject().has("uuid")) {
+                alts.add(element.getAsJsonObject());
+            }
+        }
+        return alts;
+    }
 
     /**
-     * Compute the profiler score for a loaded {@link Profile}.
-     *
-     * @param profile the profile of the joining player (should be fully loaded)
-     * @return a non-negative integer; values ≥ {@link #FLAG_THRESHOLD} indicate a flag
+     * Coarse network identifier: the /16 for IPv4, the /48 for IPv6.
+     * Two IPs on the same network usually mean the same ISP/region.
      */
-    public static int computeScore(Profile profile) {
-        int score = 0;
-        long now  = System.currentTimeMillis();
-
-        // ── Account age ───────────────────────────────────────────────────────
-        long ageMs = now - profile.getFirstLogin();
-        if (ageMs < 24L * 60 * 60 * 1_000) {
-            score += SCORE_AGE_LESS_THAN_1_DAY;
-        } else if (ageMs < 7L * 24 * 60 * 60 * 1_000) {
-            score += SCORE_AGE_LESS_THAN_7_DAYS;
+    static String networkOf(String ip) {
+        if (ip == null) return null;
+        if (ip.contains(":")) {
+            String[] parts = ip.split(":");
+            return parts.length >= 3 ? parts[0] + ":" + parts[1] + ":" + parts[2] : null;
         }
-
-        // ── Play time (accumulated before this session) ────────────────────────
-        long playTime = profile.getPlayTime();
-        if (playTime < 5L * 60 * 1_000) {
-            score += SCORE_PLAYTIME_LESS_THAN_5_MIN;
-        } else if (playTime < 30L * 60 * 1_000) {
-            score += SCORE_PLAYTIME_LESS_THAN_30_MIN;
-        }
-
-        // ── IP volatility ─────────────────────────────────────────────────────
-        int ipCount = profile.getKnownIps().size();
-        if (ipCount > 15) {
-            score += SCORE_MANY_IPS;
-        } else if (ipCount > 5) {
-            score += SCORE_ELEVATED_IPS;
-        }
-
-        // ── Username analysis ─────────────────────────────────────────────────
-        String name   = profile.getName();
-        int    digits = 0;
-        for (char c : name.toCharArray()) {
-            if (Character.isDigit(c)) digits++;
-        }
-        double digitRatio = name.isEmpty() ? 0 : (double) digits / name.length();
-        if (digitRatio > 0.5) {
-            score += SCORE_HIGH_DIGIT_RATIO;
-        }
-        if (name.length() <= 5 || name.length() >= 14) {
-            score += SCORE_UNUSUAL_NAME_LEN;
-        }
-
-        // ── No prior history combined with low play time (bot join pattern) ───
-        if (profile.getPunishments().isEmpty() && playTime < 30L * 60 * 1_000) {
-            score += SCORE_NO_PRIOR_HISTORY;
-        }
-
-        return score;
-    }
-
-    /** Returns {@code true} if the given score meets the flagging threshold. */
-    public static boolean shouldFlag(int score) {
-        return score >= FLAG_THRESHOLD;
+        String[] parts = ip.split("\\.");
+        return parts.length == 4 ? parts[0] + "." + parts[1] : null;
     }
 }
-

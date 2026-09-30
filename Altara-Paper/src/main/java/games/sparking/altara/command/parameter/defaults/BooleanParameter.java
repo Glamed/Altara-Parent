@@ -24,8 +24,8 @@ public class BooleanParameter implements ParameterType<Boolean> {
 
     @Override
     public Boolean parse(CommandSender sender, String source) {
-        if (!map.containsKey(source)) {
-            sender.sendMessage(CC.errorMsg("Invalid arguments.", source + " is not a valid boolean."));
+        if (!map.containsKey(source.toLowerCase())) {
+            sender.sendMessage(CC.error("Invalid value.", "Use *true* or *false*."));
             return null;
         }
         return this.map.get(source.toLowerCase());

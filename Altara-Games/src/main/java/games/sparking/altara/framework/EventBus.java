@@ -29,7 +29,7 @@ public final class EventBus {
 
     /** eventClass → ordered list of compiled handlers */
     @SuppressWarnings("rawtypes")
-    private static final Map<Class<?>, List<GameHandler>> handlerMap = new ConcurrentHashMap<>();
+    private static final Map<Key, List<GameHandler>> handlerMap = new ConcurrentHashMap<>();
 
     /**
      * Registers a compiled {@link GameHandler} for the given event type.
@@ -54,7 +54,8 @@ public final class EventBus {
     ) {
         // One atomic insertion: if the key is absent, create the list AND
         // register the Bukkit listener in the same computeIfAbsent block.
-        List<GameHandler> handlers = handlerMap.computeIfAbsent(eventType, type -> {
+        List<GameHandler> handlers = handlerMap.computeIfAbsent(new Key(eventType, priority, ignoreCancelled), key -> {
+            Class<?> type = key.type();
             List<GameHandler> list = new CopyOnWriteArrayList<>();
 
             // Single dummy Listener per event type
@@ -82,6 +83,9 @@ public final class EventBus {
     }
 
     /** Convenience overload using NORMAL priority and ignoreCancelled=false. */
+    /** One Bukkit listener per (event, priority, ignoreCancelled) so handlers keep their own priority. */
+    private record Key(Class<?> type, EventPriority priority, boolean ignoreCancelled) {}
+
     public static <T extends Event> void register(
             Class<T> eventType,
             GameHandler<T> handler,

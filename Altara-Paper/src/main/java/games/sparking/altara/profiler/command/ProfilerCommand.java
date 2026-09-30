@@ -1,199 +1,156 @@
 package games.sparking.altara.profiler.command;
 
 import games.sparking.altara.Altara;
+import games.sparking.altara.AltaraPaper;
 import games.sparking.altara.command.annotation.Command;
 import games.sparking.altara.command.annotation.Param;
-import games.sparking.altara.profiler.ProfilerListener;
 import games.sparking.altara.profiler.ProfilerRecord;
 import games.sparking.altara.profiler.ProfilerService;
 import games.sparking.altara.profiler.packet.ProfilerBanPacket;
+import games.sparking.altara.profiler.packet.ProfilerFlagPacket;
 import games.sparking.altara.profiler.packet.ProfilerVerifyPacket;
 import games.sparking.altara.punishment.InfractionType;
+import games.sparking.altara.punishment.PunishmentNotifier;
 import games.sparking.altara.punishment.PunishmentService;
 import games.sparking.altara.punishment.PunishmentType;
 import games.sparking.altara.punishment.RestrictionAction;
 import games.sparking.altara.utils.CC;
+import games.sparking.altara.utils.Panel;
+import games.sparking.altara.utils.Theme;
+import games.sparking.altara.uuid.UUIDCache;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.HoverEvent;
-import net.kyori.adventure.text.format.NamedTextColor;
-import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 /**
- * Profiler commands available to staff (Mod+).
+ * Profiler commands (staff).  Flags are network-wide, so targets don't need to be on
+ * the same server.
  *
  * <ul>
- *   <li>{@code /profiler}              — list all online flagged players.</li>
- *   <li>{@code /profilerban <name>}    — ban a flagged player for Compromised Account.</li>
- *   <li>{@code /profilerverify <name>} — clear a flagged player's shadow mute.</li>
+ *   <li>{@code /profiler}              — list all flagged accounts on the network.</li>
+ *   <li>{@code /profilerverify <name>} — clear a flag and trust the account for 30 days.</li>
+ *   <li>{@code /profilerban <name>}    — ban a flagged account for Compromised Account.</li>
  * </ul>
- *
- * <p>All three commands require the {@code altara.profiler} permission.
- * {@code /profilerban} additionally requires {@code altara.profiler.ban} (Mod+).
  */
 public class ProfilerCommand {
-
-    // ── /profiler ──────────────────────────────────────────────────────────────
 
     @Command(
             names       = {"profiler"},
             permission  = ProfilerService.PERMISSION,
-            description = "List all online flagged (shadow-muted) players."
+            description = "View flagged accounts",
+            async       = true
     )
     public void profiler(CommandSender sender) {
-        ProfilerService svc = Altara.getSharedInstance().getProfilerService();
-        List<ProfilerRecord> records = svc.getUnresolvedRecords();
+        List<ProfilerRecord> records = Altara.getSharedInstance().getProfilerService().getAllFlags();
 
+        sender.sendMessage(CC.header(Panel.STAFF, "Profiler", records.size() + " flagged"));
         if (records.isEmpty()) {
-            sender.sendMessage(CC.noticeMsg("Profiler", "No flagged players are currently online."));
-            return;
+            sender.sendMessage(CC.empty("No accounts are currently flagged."));
         }
-
-        sender.sendMessage(CC.format(
-                "<gold><bold>[PROFILER] <yellow>Currently flagged online players <gray>(" + records.size() + ")<yellow>:"));
 
         for (ProfilerRecord record : records) {
             boolean online = Bukkit.getPlayer(record.getUuid()) != null;
+            long ago = System.currentTimeMillis() - record.getFlaggedAt();
 
             Component line = Component.text()
-                    .append(Component.text("  » ", NamedTextColor.DARK_GRAY))
-                    .append(Component.text(record.getName(), NamedTextColor.YELLOW, TextDecoration.BOLD)
-                            .hoverEvent(HoverEvent.showText(buildHoverText(record))))
-                    .append(Component.text(" — ", NamedTextColor.DARK_GRAY))
-                    .append(Component.text("Score: ", NamedTextColor.GRAY))
-                    .append(Component.text(record.getScore(), NamedTextColor.GOLD))
-                    .append(Component.text("  Alts: ", NamedTextColor.GRAY))
-                    .append(Component.text(record.getCompromisedAltCount(), altColor(record.getCompromisedAltCount())))
-                    .append(Component.text(online ? "  [ONLINE]" : "  [OFFLINE]",
-                            online ? NamedTextColor.GREEN : NamedTextColor.RED, TextDecoration.ITALIC))
+                    .append(CC.statusDot(online))
+                    .append(Component.space())
+                    .append(Component.text(record.getName(), Theme.TEXT_STRONG)
+                            .hoverEvent(HoverEvent.showText(ProfilerFlagPacket.buildHover(record)))
+                            .clickEvent(ClickEvent.suggestCommand("/profilerverify " + record.getName())))
+                    .append(Component.text(" - score ", Theme.TEXT))
+                    .append(Component.text(record.getScore(), Theme.TEXT_STRONG))
+                    .append(Component.text(", flagged " + formatAgo(ago) + " ago", Theme.TEXT))
                     .build();
 
-            sender.sendMessage(line);
+            sender.sendMessage(CC.item(line));
         }
+        sender.sendMessage(CC.footer(Panel.STAFF));
     }
 
-    // ── /profilerban <name> ────────────────────────────────────────────────────
+    @Command(
+            names       = {"profilerverify"},
+            permission  = ProfilerService.PERMISSION,
+            description = "Clear a flag and trust the account for 30 days",
+            async       = true
+    )
+    public void profilerVerify(CommandSender sender, @Param(name = "player") String targetName) {
+        ProfilerService svc = Altara.getSharedInstance().getProfilerService();
+        UUID uuid = resolve(targetName);
+        ProfilerRecord record = uuid != null ? svc.loadFlag(uuid) : null;
+        if (record == null) {
+            sender.sendMessage(CC.error("Not flagged.", "*" + targetName + "* isn't flagged by the profiler."));
+            return;
+        }
+
+        svc.verify(uuid);
+        new ProfilerVerifyPacket(uuid.toString(), record.getName(), sender.getName()).publish();
+        sender.sendMessage(CC.success("Account verified.", "*" + record.getName() + "* is no longer shadow-muted."));
+    }
 
     @Command(
             names       = {"profilerban"},
             permission  = "altara.profiler.ban",
             playerOnly  = true,
-            description = "Ban a flagged player for Compromised Account.",
+            description = "Suspend a flagged account as compromised",
             async       = true
     )
     public void profilerBan(Player sender, @Param(name = "player") String targetName) {
         ProfilerService svc = Altara.getSharedInstance().getProfilerService();
-
-        // Find record (player must be in the same server/lobby)
-        Player target = Bukkit.getPlayer(targetName);
-        if (target == null) {
-            sender.sendMessage(CC.errorMsg("Profiler", "That player is not online on this server."));
-            return;
-        }
-
-        ProfilerRecord record = svc.getRecord(target.getUniqueId());
+        UUID uuid = resolve(targetName);
+        ProfilerRecord record = uuid != null ? svc.loadFlag(uuid) : null;
         if (record == null) {
-            sender.sendMessage(CC.errorMsg("Profiler", targetName + " is not currently flagged by the profiler."));
+            sender.sendMessage(CC.error("Not flagged.", "*" + targetName + "* isn't flagged by the profiler."));
             return;
         }
-
-        UUID targetUuid = target.getUniqueId();
-        int  altCount   = record.getCompromisedAltCount();
-
-        // Build the punishment reason according to the guidelines
-        String reason = buildBanReason(altCount);
 
         PunishmentService punSvc = Altara.getSharedInstance().getPunishmentService();
         punSvc.issuePunishment(
                 sender.getUniqueId(),
-                targetUuid,
+                uuid,
                 InfractionType.TEMP_AUTOMATED,
                 List.of(RestrictionAction.permanent(PunishmentType.SUSPENSION)),
-                reason,
+                "Compromised Account [Change Password & Appeal]",
                 punishment -> {
                     if (punishment == null) {
-                        sender.sendMessage(CC.errorMsg("Profiler", "Failed to issue punishment. Please try manually."));
+                        sender.sendMessage(CC.error("Unable to suspend.", "The punishment couldn't be issued — try */punish* instead."));
                         return;
                     }
 
-                    // Kick the player
-                    Bukkit.getScheduler().runTask(
-                            games.sparking.altara.AltaraPaper.getPlugin(),
-                            () -> target.kick(CC.format(
-                                    "<dark_purple>Your account has been suspended\n<gray>Compromised Account [Change Password & Appeal]"
-                            ))
-                    );
+                    svc.deleteFlag(uuid);
+                    svc.uncache(uuid);
 
-                    // Broadcast to the network
-                    new ProfilerBanPacket(targetUuid.toString(), target.getName(), sender.getName()).publish();
-                    sender.sendMessage(CC.successMsg("Profiler", "Successfully banned " + target.getName() + "."));
+                    Bukkit.getScheduler().runTask(AltaraPaper.getPlugin(), () -> {
+                        Player target = Bukkit.getPlayer(uuid);
+                        if (target != null) PunishmentNotifier.deliver(target, punishment);
+                    });
+
+                    new ProfilerBanPacket(uuid.toString(), record.getName(), sender.getName()).publish();
+                    sender.sendMessage(CC.success("Account suspended.", "*" + record.getName() + "* has been suspended."));
                 },
                 false
         );
     }
 
-    // ── /profilerverify <name> ─────────────────────────────────────────────────
-
-    @Command(
-            names       = {"profilerverify"},
-            permission  = ProfilerService.PERMISSION,
-            playerOnly  = true,
-            description = "Verify a flagged player and remove their shadow mute.",
-            async       = false
-    )
-    public void profilerVerify(Player sender, @Param(name = "player") String targetName) {
-        Player target = Bukkit.getPlayer(targetName);
-        if (target == null) {
-            sender.sendMessage(CC.errorMsg("Profiler", "That player is not online on this server."));
-            return;
-        }
-
-        ProfilerService svc = Altara.getSharedInstance().getProfilerService();
-        ProfilerRecord record = svc.getRecord(target.getUniqueId());
-        if (record == null) {
-            sender.sendMessage(CC.errorMsg("Profiler", targetName + " is not currently flagged by the profiler."));
-            return;
-        }
-
-        // Broadcast verification to the network (marks verified on all servers)
-        new ProfilerVerifyPacket(target.getUniqueId().toString(), target.getName(), sender.getName()).publish();
-
-        // Clear the shadow-mute channel on this server immediately
-        ProfilerListener.clearShadowMuteChannel(target);
-
-        sender.sendMessage(CC.successMsg("Profiler", "Verified " + target.getName() + ". Shadow mute removed."));
-    }
-
     // ── Helpers ────────────────────────────────────────────────────────────────
 
-    private static String buildBanReason(int altCount) {
-        String suffix = altCount >= 300 ? " [300+]" : "";
-        return "Compromised Account [Change Password & Appeal]" + suffix;
+    private static UUID resolve(String name) {
+        Player online = Bukkit.getPlayerExact(name);
+        return online != null ? online.getUniqueId() : UUIDCache.getUuid(name);
     }
 
-    private static Component buildHoverText(ProfilerRecord record) {
-        return Component.text()
-                .append(Component.text("Compromised alt accounts: ", NamedTextColor.GRAY))
-                .append(Component.text(record.getCompromisedAltCount(), altColor(record.getCompromisedAltCount()), TextDecoration.BOLD))
-                .append(Component.newline())
-                .append(Component.text("Score: ", NamedTextColor.GRAY))
-                .append(Component.text(record.getScore(), NamedTextColor.GOLD))
-                .append(Component.newline())
-                .append(Component.text("Verified: ", NamedTextColor.GRAY))
-                .append(Component.text(record.isVerified() ? "Yes" : "No",
-                        record.isVerified() ? NamedTextColor.GREEN : NamedTextColor.RED))
-                .build();
-    }
-
-    private static NamedTextColor altColor(int count) {
-        if (count >= 300) return NamedTextColor.RED;
-        if (count >= 150) return NamedTextColor.GOLD;
-        return NamedTextColor.GREEN;
+    private static String formatAgo(long millis) {
+        long minutes = TimeUnit.MILLISECONDS.toMinutes(millis);
+        if (minutes < 60) return minutes + "m";
+        long hours = minutes / 60;
+        if (hours < 24) return hours + "h";
+        return (hours / 24) + "d";
     }
 }
-

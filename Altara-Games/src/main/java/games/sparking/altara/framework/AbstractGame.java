@@ -2,7 +2,9 @@ package games.sparking.altara.framework;
 
 import games.sparking.altara.framework.module.team.GameTeam;
 import games.sparking.altara.framework.module.team.TeamColor;
+import games.sparking.altara.uuid.UUIDCache;
 import lombok.Getter;
+import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.entity.Player;
 
@@ -75,6 +77,9 @@ public abstract class AbstractGame implements Game {
 
     /** player UUID → team (fast reverse lookup) */
     private final Map<UUID, GameTeam> playerTeamMap = new HashMap<>();
+
+    /** Set once a winner has been announced, so later deaths don't announce again. */
+    private boolean finished = false;
 
     // -------------------------------------------------------------------------
     // Construction
@@ -289,5 +294,32 @@ public abstract class AbstractGame implements Game {
         }
         return Collections.unmodifiableList(alive);
     }
-}
 
+    // -------------------------------------------------------------------------
+    // Round end
+    // -------------------------------------------------------------------------
+
+    /** Marks the round as over.  Returns {@code false} if it already was. */
+    protected boolean finish() {
+        if (finished) return false;
+        finished = true;
+        return true;
+    }
+
+    /** Clears the finished flag for the next round; call from {@link #stop()}. */
+    protected void resetRound() {
+        finished = false;
+    }
+
+    public boolean isFinished() {
+        return finished;
+    }
+
+    /** The player's name if they're online or cached, otherwise "Unknown". */
+    protected static String nameOf(UUID player) {
+        Player online = Bukkit.getPlayer(player);
+        if (online != null) return online.getName();
+        String cached = UUIDCache.getName(player);
+        return cached != null ? cached : "Unknown";
+    }
+}

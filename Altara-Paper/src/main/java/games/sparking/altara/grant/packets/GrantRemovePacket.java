@@ -10,6 +10,7 @@ import org.bukkit.entity.Player;
 
 import java.util.UUID;
 
+/** Tells the player's server to reload their profile after one of their grants was removed. */
 @NoArgsConstructor
 public class GrantRemovePacket extends Packet {
 
@@ -24,16 +25,13 @@ public class GrantRemovePacket extends Packet {
     @Override
     public void receive() {
         Player player = Bukkit.getPlayer(uuid);
+        if (player == null) return;
+
+        AltaraPaper.getPaperInstance().getProfileService().refreshProfile(uuid);
+        AltaraPaper.getPaperInstance().updatePermissions(uuid);
+
         Rank rank = AltaraPaper.getPaperInstance().getRankService().getRank(rankUuid);
-        if (player == null) {
-            return;
-        }
-
-        AltaraPaper.getPaperInstance().getPermissionService().updatePermissions(player);
-
-        player.sendMessage(CC.format(
-                "<green>Your %s<green> grant has been removed.",
-                rank.getName()
-        ));
+        player.sendMessage(CC.notice("Rank removed.", "Your *" + (rank != null ? rank.getName() : "rank")
+                + "* grant has been removed."));
     }
 }

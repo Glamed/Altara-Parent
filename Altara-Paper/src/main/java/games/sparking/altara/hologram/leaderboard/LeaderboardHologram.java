@@ -33,13 +33,13 @@ public class LeaderboardHologram {
     // -----------------------------------------------------------------------
     // Rank decorations
     // -----------------------------------------------------------------------
-    private static final String[] RANK_COLORS  = { "<gold><bold>", "<gray><bold>", "<red><bold>" };
-    private static final String   RANK_PREFIX  = "✦ ";
-    private static final String   DEFAULT_COLOR = "<white>";
+    /** Top three get gold (special), everyone else aqua. */
+    private static final String TOP_COLOR     = "<gold>";
+    private static final String DEFAULT_COLOR = "<aqua>";
 
-    private static final String SEPARATOR = "<dark_gray><st>──────────────</st>";
-    private static final String NAV_PAGES = "<red>◀ Prev Page  <dark_gray>|  <red>Next Page ▶";
-    private static final String NAV_TYPES = "<green>◀ Shift Prev Category  <dark_gray>|  <green>Shift Next Category ▶";
+    private static final String SEPARATOR = "<dark_gray>--------------------";
+    private static final String NAV_PAGES = "<gray>Left/right click to change page";
+    private static final String NAV_TYPES = "<gray>Sneak + click to change category";
 
     // -----------------------------------------------------------------------
     // State
@@ -252,15 +252,15 @@ public class LeaderboardHologram {
 
         // --- Header ---
         String categoryNav = multiCategory
-                ? " <dark_gray>[<dark_purple>" + (categoryIndex + 1) + "<dark_gray>/<dark_purple>" + categories.size() + "<dark_gray>]"
+                ? " <dark_gray>(" + (categoryIndex + 1) + "/" + categories.size() + ")"
                 : "";
-        lines.add("<gold><bold>" + cat.getTitle() + " <yellow><bold>Leaderboard" + categoryNav);
-        lines.add("<gray>Page <yellow>" + (page + 1) + " <dark_gray>/ <yellow>" + Math.max(1, totalPages));
+        lines.add("<aqua><bold>" + cat.getTitle() + "</bold> <gray>Leaderboard" + categoryNav);
+        lines.add("<gray>Page <white>" + (page + 1) + "<gray>/<white>" + Math.max(1, totalPages));
         lines.add(SEPARATOR);
 
         // --- Entries ---
         if (entries.isEmpty()) {
-            lines.add("<gray>No entries yet.");
+            lines.add("<gray><italic>No entries yet.");
         } else {
             int start = page * pageSize;
             int end   = Math.min(start + pageSize, entries.size());
@@ -277,11 +277,9 @@ public class LeaderboardHologram {
 
     private String formatEntry(LeaderboardEntry entry) {
         int rank = entry.getRank();
-        String rankStr = (rank <= RANK_COLORS.length)
-                ? RANK_COLORS[rank - 1] + RANK_PREFIX + "#" + rank
-                : DEFAULT_COLOR + "#" + rank;
+        String rankStr = (rank <= 3 ? TOP_COLOR : DEFAULT_COLOR) + "#" + rank;
         String unitSuffix = entry.getUnit().isEmpty() ? "" : " <gray>" + entry.getUnit();
-        return rankStr + " <white>" + entry.getPlayerName() + " <dark_gray>- <yellow>"
+        return rankStr + " <white>" + entry.getPlayerName() + " <dark_gray>- <white>"
                 + String.format("%,d", entry.getScore()) + unitSuffix;
     }
 

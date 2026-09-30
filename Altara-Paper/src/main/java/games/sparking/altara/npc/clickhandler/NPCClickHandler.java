@@ -1,28 +1,22 @@
 package games.sparking.altara.npc.clickhandler;
 
-import games.sparking.altara.AltaraPaper;
 import games.sparking.altara.npc.NPC;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
 /**
- * Functional interface for handling NPC interaction events.
+ * Handles an NPC click.  Always invoked on the main thread.
  *
- * <p>The built-in {@link #COMMAND} handler dispatches the NPC's configured command
- * on the main server thread (click events arrive on the Netty I/O thread via
- * PacketEvents, so direct dispatch would violate Paper's async-catcher).
+ * <p>The built-in {@link #COMMAND} handler runs the NPC's configured command, with
+ * {@code %player%} (or the legacy {@code %s}) replaced by the clicker's name.
  */
 @FunctionalInterface
 public interface NPCClickHandler {
 
     NPCClickHandler COMMAND = (npc, player) -> {
         if (npc.getCommand() == null) return;
-        String cmd = String.format(npc.getCommand(), player.getName());
-        // dispatchCommand must run on the main thread.
-        Bukkit.getScheduler().runTask(AltaraPaper.getPlugin(), () ->
-                Bukkit.dispatchCommand(
-                        npc.isConsoleCommand() ? Bukkit.getConsoleSender() : player,
-                        cmd));
+        String cmd = npc.getCommand().replace("%player%", player.getName()).replace("%s", player.getName());
+        Bukkit.dispatchCommand(npc.isConsoleCommand() ? Bukkit.getConsoleSender() : player, cmd);
     };
 
     void click(NPC npc, Player player);

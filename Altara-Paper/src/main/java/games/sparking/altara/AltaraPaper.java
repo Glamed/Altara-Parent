@@ -38,6 +38,7 @@ import games.sparking.altara.playersetting.AltaraSettings;
 import games.sparking.altara.playersetting.PlayerSettingService;
 import games.sparking.altara.playersetting.command.SettingsCommands;
 import games.sparking.altara.playersetting.listener.PlayerSettingListener;
+import games.sparking.altara.presence.PresenceService;
 import games.sparking.altara.profile.BukkitProfileService;
 import games.sparking.altara.profile.Profile;
 import games.sparking.altara.profile.ProfileListener;
@@ -64,6 +65,9 @@ import games.sparking.altara.server.parameter.AllServersParameter;
 import games.sparking.altara.task.Tasks;
 import games.sparking.altara.task.UpdateTask;
 import games.sparking.altara.task.impl.BukkitTaskImplementor;
+import games.sparking.altara.teleport.TeleportCommand;
+import games.sparking.altara.teleport.TeleportListener;
+import games.sparking.altara.teleport.TeleportService;
 import games.sparking.altara.updater.FileUpdater;
 import games.sparking.altara.utils.json.adapter.ItemStackAdapter;
 import games.sparking.altara.utils.json.adapter.UUIDAdapter;
@@ -77,9 +81,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 
 public class AltaraPaper extends Altara {
@@ -98,15 +100,7 @@ public class AltaraPaper extends Altara {
     @Getter private Queue queue;
     @Getter private QueueService queueService;
 
-    /** UUIDs of players who are switching servers (not truly disconnecting from the network).
-     *  Add a UUID here before sending a player to another server so the quit handler knows
-     *  not to broadcast a "staff has left" message or remove them from queues. */
-    private final Set<UUID> confirmedSwitch = Collections.synchronizedSet(new java.util.HashSet<>());
-
-    public Set<UUID> getConfirmedSwitch() { return confirmedSwitch; }
-
-    public void markServerSwitch(UUID uuid) { confirmedSwitch.add(uuid); }
-    public boolean removeServerSwitch(UUID uuid) { return confirmedSwitch.remove(uuid); }
+    @Getter private TeleportService teleportService;
 
     @Getter private HologramService hologramService;
     @Getter private HologramClickListener hologramClickListener;
@@ -145,6 +139,9 @@ public class AltaraPaper extends Altara {
         this.queue = new Queue();
         this.queueService = new QueueService();
         queueService.startTask();
+
+        this.teleportService = new TeleportService();
+
         PlayerSettingService.registerProvider(new AltaraSettings());
 
         this.hologramService = new HologramService(plugin, getConfigurationService());
@@ -154,7 +151,28 @@ public class AltaraPaper extends Altara {
         npcService.load();
 
         registerChatChannels();
+        startPresenceHeartbeat();
+    }
 
+    // ── Presence ──────────────────────────────────────────────────────────────
+
+    /**
+     * Refreshes Redis presence for every player currently owned by this Paper server.
+     * <p>
+     * Presence records expire after 60 seconds, while this task refreshes them every
+     * 20 seconds. If this server crashes without receiving PlayerQuitEvent, its stale
+     * presence records will therefore disappear automatically.
+     * <p>
+     * PresenceService verifies the local session ID before refreshing a record, so an
+     * old server cannot overwrite a newer server after the player transfers.
+     */
+    private void startPresenceHeartbeat() {
+        Tasks.runTimerAsync(() -> {
+            String server = getLocalServerName();
+
+            Bukkit.getOnlinePlayers().forEach(player ->
+                    PresenceService.heartbeat(player.getUniqueId(), server));
+        }, 20L * 20L, 20L * 20L);
     }
 
     // ── Chat channels ──────────────────────────────────────────────────────────
@@ -164,7 +182,7 @@ public class AltaraPaper extends Altara {
      * Add custom channels here or load them from config as needed.
      */
     private void registerChatChannels() {
-        // Registration order matters when channels share a prefix — higher
+        // Registration order matters when channels share a prefix - higher
         // priority channels are checked first in ChatChannelRegistry.getByPrefix().
         ChatChannelRegistry.register(GlobalChannel.getInstance());     //
         ChatChannelRegistry.register(StaffChannel.getInstance());      // @
@@ -195,7 +213,8 @@ public class AltaraPaper extends Altara {
                 new ChatCommands(),
                 new RankCommands(),
                 new GrantCommands(),
-                new MessageCommands()
+                new MessageCommands(),
+                new TeleportCommand()
         );
     }
 
@@ -211,6 +230,7 @@ public class AltaraPaper extends Altara {
                 new ScoreboardListener(),
                 new HologramListener(),
                 new NPCListener(npcService),
+                new TeleportListener(),
                 new PlayerSettingListener()
         ).forEach(listener -> getPlugin().getServer().getPluginManager().registerEvents(listener, getPlugin()));
 
@@ -231,6 +251,7 @@ public class AltaraPaper extends Altara {
             getLogger().error("ConfigurationService is null in loadFiles!");
             return;
         }
+
         this.localPermissionConfig = getConfigurationService().loadConfiguration(LocalPermissionConfig.class,
                 new File(getPlugin().getDataFolder(), "permissions.json"));
     }
@@ -244,7 +265,6 @@ public class AltaraPaper extends Altara {
             e.printStackTrace();
         }
     }
-
 
     @Override
     public void startServerMonitor() {
@@ -262,18 +282,24 @@ public class AltaraPaper extends Altara {
 
             serverInfo.setLastHeartbeat(System.currentTimeMillis());
             serverInfo.setGroup(getServerGroup());
-            serverInfo.setState(Bukkit.getServer().isWhitelistEnforced() ? ServerState.WHITELISTED : ServerState.ONLINE);
+            serverInfo.setState(Bukkit.getServer().isWhitelistEnforced()
+                    ? ServerState.WHITELISTED
+                    : ServerState.ONLINE);
             serverInfo.setOnlinePlayers(Bukkit.getOnlinePlayers().size());
             serverInfo.setMaxPlayers(Bukkit.getMaxPlayers());
             serverInfo.setTps(tps);
             serverInfo.setFullTick(mspt);
-            serverInfo.setUsedMemory((Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / 2L / 1048576L);
+            serverInfo.setUsedMemory(
+                    (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / 1048576L);
             serverInfo.setAllocatedMemory(Runtime.getRuntime().totalMemory() / 1048576L);
             serverInfo.setQueueEnabled(localConfig.isQueueEnabled());
             serverInfo.setQueuePaused(localConfig.isQueuePaused());
             serverInfo.setQueueRate(localConfig.getQueueRate());
-            new UpdateServerPacket(serverInfo).publish();
-        }, 20L, 1L);
+
+            if (ServerMonitorCommands.SEND_PACKET) {
+                new UpdateServerPacket(serverInfo).publish();
+            }
+        }, 20L, 20L);
     }
 
     @Override
@@ -283,17 +309,24 @@ public class AltaraPaper extends Altara {
 
     @Override
     public void updatePermissions(UUID uuid) {
-        if (Bukkit.getPlayer(uuid) != null)
-            permissionService.updatePermissions(Bukkit.getPlayer(uuid));
+        Bukkit.getScheduler().runTask(plugin, () -> {
+            Player player = Bukkit.getPlayer(uuid);
+            if (player != null) permissionService.updatePermissions(player);
+        });
     }
 
     @Override
     public void updatePermissionsWithRank(Rank rank) {
-        for (Player player : Bukkit.getOnlinePlayers()) {
-            Profile profile = getProfileService().getProfile(player);
-            if (profile.hasGrantOf(rank))
-                permissionService.updatePermissions(player);
-        }
+        // Called from Redis / async threads; permission attachments must be edited on the main thread.
+        Bukkit.getScheduler().runTask(plugin, () -> {
+            for (Player player : Bukkit.getOnlinePlayers()) {
+                Profile profile = getProfileService().getProfile(player);
+
+                if (profile != null && profile.hasGrantOf(rank)) {
+                    permissionService.updatePermissions(player);
+                }
+            }
+        });
     }
 
     public void saveLocalPermissionConfig() {
@@ -308,6 +341,7 @@ public class AltaraPaper extends Altara {
     @Override
     public List<String> getLocalPermissions(Rank rank) {
         if (localPermissionConfig == null) return new ArrayList<>();
+
         LocalPermissionEntry entry = localPermissionConfig.getEntry(rank);
         if (entry != null) {
             return entry.getPermissions();
@@ -317,13 +351,16 @@ public class AltaraPaper extends Altara {
         entry.setUuid(rank.getUuid().toString());
         localPermissionConfig.getRankPermissions().add(entry);
         saveLocalPermissionConfig();
+
         return new ArrayList<>();
     }
 
     @Override
     public void saveLocalPermissions(Rank rank) {
         if (localPermissionConfig == null) return;
+
         LocalPermissionEntry entry = localPermissionConfig.getEntry(rank);
+
         if (entry != null) {
             entry.setPermissions(new ArrayList<>(rank.getLocalPermissions()));
         } else {
@@ -332,13 +369,16 @@ public class AltaraPaper extends Altara {
             entry.setPermissions(new ArrayList<>(rank.getLocalPermissions()));
             localPermissionConfig.getRankPermissions().add(entry);
         }
+
         saveLocalPermissionConfig();
     }
 
     @Override
     public void handleRankDeletion(Rank rank) {
         if (localPermissionConfig == null) return;
+
         LocalPermissionEntry entry = localPermissionConfig.getEntry(rank);
+
         if (entry != null) {
             localPermissionConfig.getRankPermissions().remove(entry);
             saveLocalPermissionConfig();
@@ -364,7 +404,4 @@ public class AltaraPaper extends Altara {
     public String getServerGroup() {
         return this.getMainConfig().getServerConfig().getServerType();
     }
-
 }
-
-

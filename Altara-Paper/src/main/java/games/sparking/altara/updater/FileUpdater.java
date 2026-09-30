@@ -14,7 +14,6 @@ import org.bukkit.event.Listener;
 import java.io.*;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -37,10 +36,10 @@ public class FileUpdater implements Listener {
 
     private void loadBuildProperties() {
         buildProperties = new Properties();
-        try {
-            buildProperties.load(this.getClass().getResourceAsStream("/version.properties"));
-        } catch (Exception e) {
-            System.out.println(Arrays.toString(e.getStackTrace()));
+        try (InputStream stream = this.getClass().getResourceAsStream("/version.properties")) {
+            if (stream != null) buildProperties.load(stream);
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
@@ -92,11 +91,11 @@ public class FileUpdater implements Listener {
     // -------------------------------------------------------------------------
 
     private void checkForUpdates() {
+        // Override with -Daltara.updateDir=/path/to/updates
         boolean windows = System.getProperty("os.name").startsWith("Windows");
-        File updateDir = new File(windows
+        File updateDir = new File(System.getProperty("altara.updateDir", windows
                 ? "C:\\Users\\andre\\Desktop\\Sparking\\Update"
-                : "/home/mineplex/update"
-        );
+                : "/home/mineplex/update"));
         File[] files = updateDir.listFiles(JAR_FILTER);
         if (files == null) return;
 
@@ -109,10 +108,12 @@ public class FileUpdater implements Listener {
             if (hash == null) continue;
             try (FileInputStream stream = new FileInputStream(file)) {
                 String newHash = md5Hex(stream);
-                if (!hash.equals(newHash)) {
-                    System.out.println(file.getName() + " old hash: " + hash);
-                    System.out.println(file.getName() + " new hash: " + newHash);
-                    RebootService.reboot(5 * 60 * 1000L); // 5 minute countdown
+                // Trigger once — otherwise a cancelled reboot is rescheduled 16 seconds later.
+                if (!hash.equals(newHash) && _restartTriggered.compareAndSet(false, true)) {
+                    Altara.getSharedInstance().getLogger().info("Update found for " + file.getName()
+                            + " (" + hash + " -> " + newHash + "), rebooting in 5 minutes");
+                    Tasks.run(() -> RebootService.reboot(5 * 60 * 1000L));
+                    return;
                 }
             } catch (IOException ex) {
                 System.err.println("Failed to parse hash for file: " + file.getName() + ":");
@@ -132,9 +133,9 @@ public class FileUpdater implements Listener {
     // -------------------------------------------------------------------------
 
     public FileUpdater() {
+        loadBuildProperties(); // always — /bv reads it even when updates are ignored
         _enabled = !new File("IgnoreUpdates.dat").exists();
         if (_enabled) {
-            loadBuildProperties();
             getJarHashes();
         }
         Bukkit.getPluginManager().registerEvents(this, AltaraPaper.getPlugin());

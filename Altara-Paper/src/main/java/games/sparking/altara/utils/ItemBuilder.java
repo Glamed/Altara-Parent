@@ -1,9 +1,10 @@
 package games.sparking.altara.utils;
 
 import net.kyori.adventure.text.Component;
-import org.bukkit.Bukkit;
+import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Color;
 import org.bukkit.Material;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
@@ -13,6 +14,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+/**
+ * Fluent {@link ItemStack} builder.  Display names and lore are rendered non-italic
+ * unless the component explicitly asks for italics (Minecraft italicises custom
+ * item text by default).
+ */
 public class ItemBuilder {
 
     private final ItemStack itemStack;
@@ -31,69 +37,38 @@ public class ItemBuilder {
     // --- Display Name ---
 
     public ItemBuilder setDisplayName(Component name) {
-        this.itemMeta.displayName(name);
+        this.itemMeta.displayName(plain(name));
         return this;
     }
 
-    /**
-     * Legacy fallback — translates & color codes
-     */
+    /** Trusted MiniMessage template. */
     public ItemBuilder setDisplayName(String name) {
-        this.itemMeta.displayName(CC.format(name));
-        return this;
+        return setDisplayName(CC.format(name));
     }
 
     // --- Lore ---
 
     public ItemBuilder setLore(List<Component> lore) {
-        this.itemMeta.lore(lore);
-        return this;
-    }
-
-    /**
-     * Accepts both {@code List<Component>} and {@code List<String>}.
-     * Strings are treated as MiniMessage format strings.
-     */
-    @SuppressWarnings("unchecked")
-    public ItemBuilder setLoreRaw(List<?> lore) {
-        if (lore == null || lore.isEmpty()) {
-            this.itemMeta.lore(List.of());
-            return this;
-        }
-        if (lore.get(0) instanceof Component) {
-            this.itemMeta.lore((List<Component>) lore);
-        } else {
-            List<Component> components = new ArrayList<>();
-            for (Object line : lore) {
-                components.add(CC.format(line.toString()));
-            }
-            this.itemMeta.lore(components);
-        }
+        List<Component> lines = new ArrayList<>(lore.size());
+        for (Component line : lore) lines.add(plain(line));
+        this.itemMeta.lore(lines);
         return this;
     }
 
     public ItemBuilder setLore(Component... lore) {
-        this.itemMeta.lore(Arrays.asList(lore));
-        return this;
+        return setLore(Arrays.asList(lore));
     }
 
-    /**
-     * Sets lore from plain strings. Each line is treated as a MiniMessage string.
-     */
+    /** Trusted MiniMessage template lines. */
     public ItemBuilder setLore(String... lore) {
-        List<Component> components = new ArrayList<>();
-        for (String line : lore) {
-            components.add(CC.format(line));
-        }
-        this.itemMeta.lore(components);
-        return this;
+        List<Component> components = new ArrayList<>(lore.length);
+        for (String line : lore) components.add(CC.format(line));
+        return setLore(components);
     }
 
     public ItemBuilder addToLore(Component... entries) {
-        List<Component> lore = itemMeta.hasLore()
-                ? new ArrayList<>(itemMeta.lore())
-                : new ArrayList<>();
-        lore.addAll(Arrays.asList(entries));
+        List<Component> lore = itemMeta.hasLore() ? new ArrayList<>(itemMeta.lore()) : new ArrayList<>();
+        for (Component entry : entries) lore.add(plain(entry));
         itemMeta.lore(lore);
         return this;
     }
@@ -112,19 +87,14 @@ public class ItemBuilder {
     }
 
     public ItemBuilder setGlowing(boolean glowing) {
-        if (glowing && itemMeta != null) {
-            itemMeta.addEnchant(Enchantment.UNBREAKING, 1, true);
-            itemMeta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
-        }
+        itemMeta.setEnchantmentGlintOverride(glowing ? Boolean.TRUE : null);
         return this;
     }
 
     // --- Flags & Attributes ---
 
     public ItemBuilder hideAttributes() {
-        for (ItemFlag flag : ItemFlag.values()) {
-            itemMeta.addItemFlags(flag);
-        }
+        itemMeta.addItemFlags(ItemFlag.values());
         return this;
     }
 
@@ -145,33 +115,15 @@ public class ItemBuilder {
         return this;
     }
 
-    public ItemBuilder setSkullOwner(String owner) {
+    public ItemBuilder setSkullOwner(OfflinePlayer owner) {
         if (this.itemMeta instanceof SkullMeta meta)
-            meta.setOwningPlayer(Bukkit.getOfflinePlayer(owner));
+            meta.setOwningPlayer(owner);
         return this;
     }
 
     public ItemBuilder setArmorColor(Color color) {
         if (this.itemMeta instanceof LeatherArmorMeta meta)
             meta.setColor(color);
-        return this;
-    }
-
-    public ItemBuilder setBookAuthor(String author) {
-        if (this.itemMeta instanceof BookMeta meta)
-            meta.setAuthor(author);
-        return this;
-    }
-
-    public ItemBuilder setBookTitle(String title) {
-        if (this.itemMeta instanceof BookMeta meta)
-            meta.setTitle(title);
-        return this;
-    }
-
-    public ItemBuilder setBookPages(List<String> pages) {
-        if (this.itemMeta instanceof BookMeta meta)
-            meta.setPages(pages);
         return this;
     }
 
@@ -184,6 +136,10 @@ public class ItemBuilder {
 
     @Override
     public ItemBuilder clone() {
-        return new ItemBuilder(this.itemStack.clone());
+        return new ItemBuilder(build().clone());
+    }
+
+    private static Component plain(Component component) {
+        return component.decorationIfAbsent(TextDecoration.ITALIC, TextDecoration.State.FALSE);
     }
 }

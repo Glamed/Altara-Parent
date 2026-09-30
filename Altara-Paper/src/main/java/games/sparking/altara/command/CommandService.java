@@ -12,7 +12,6 @@ import games.sparking.altara.command.permission.defaults.ConsoleOnlyPermission;
 import games.sparking.altara.command.permission.defaults.OpOnlyPermission;
 import games.sparking.altara.command.permission.defaults.PlayerOnlyPermission;
 import games.sparking.altara.utils.CC;
-import games.sparking.altara.utils.ClassUtils;
 import games.sparking.altara.utils.Messages;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
@@ -37,8 +36,8 @@ public class CommandService {
     public static final Map<String, CommandNode> REGISTERED_COMMANDS = new HashMap<>();
     private static final Map<String, PermissionAdapter> PERMISSION_ADAPTER_MAP = new HashMap<>();
     private static final Map<Class<?>, ParameterType<?>> PARAMETER_MAP = new HashMap<>();
-    public static Component NO_PERMISSION_MESSAGE = CC.errorMsg(Messages.PERMISSION);
-    public static Component UNKNOWN_COMMAND_MESSAGE = CC.errorMsg(Messages.UNKNOWN_COMMAND);
+    public static final Component NO_PERMISSION_MESSAGE = CC.error(Messages.PERMISSION);
+    public static final Component UNKNOWN_COMMAND_MESSAGE = CC.error(Messages.UNKNOWN_COMMAND);
     private static SimpleCommandMap COMMAND_MAP;
 
     static {
@@ -96,23 +95,6 @@ public class CommandService {
         return Collections.unmodifiableList(new ArrayList<>(PERMISSION_ADAPTER_MAP.values()));
     }
 
-    public static void registerPackage(JavaPlugin plugin, String packageName) {
-        Objects.requireNonNull(ClassUtils.getClassesInPackage(plugin, packageName))
-                .forEach(aClass -> {
-                    try {
-                        Object o = aClass.getDeclaredConstructor().newInstance();
-                        register(plugin, o);
-                    } catch (InstantiationException | IllegalAccessException | NoSuchMethodException |
-                             InvocationTargetException e) {
-                        e.printStackTrace();
-                    }
-                });
-    }
-
-    public static void registerAll(JavaPlugin plugin) {
-        registerPackage(plugin, plugin.getClass().getPackage().getName());
-    }
-
     public static void register(JavaPlugin plugin, Object... objects) {
         for (Object object : objects) {
             register(object, plugin);
@@ -139,6 +121,8 @@ public class CommandService {
             }
 
             Command command = method.getAnnotation(Command.class);
+            // A Player first parameter can't receive the console, whatever the annotation says.
+            boolean playerOnly = command.playerOnly() || Player.class.isAssignableFrom(method.getParameterTypes()[0]);
             List<String> flags = new ArrayList<>();
             List<Data> parameters = new ArrayList<>();
             if (method.getParameterCount() > 1) {
@@ -168,7 +152,7 @@ public class CommandService {
                                         i
                                 )
                         );
-                        flags.addAll(Arrays.asList(flag.names()));
+                        for (String flagName : flag.names()) flags.add(flagName.toLowerCase());
                     } else {
                         continue;
                     }
@@ -202,7 +186,7 @@ public class CommandService {
                         node.setAsync(command.async());
                         node.setHidden(command.hidden());
                         node.setPermission(command.permission());
-                        node.setPlayerOnly(command.playerOnly());
+                        node.setPlayerOnly(playerOnly);
                         node.setDescription(command.description());
                         node.setParameters(parameters);
                         node.setFlags(flags);
@@ -251,7 +235,7 @@ public class CommandService {
                         child.setAsync(command.async());
                         child.setHidden(command.hidden());
                         child.setPermission(command.permission());
-                        child.setPlayerOnly(command.playerOnly());
+                        child.setPlayerOnly(playerOnly);
                         child.setDescription(command.description());
                         child.setParameters(parameters);
                         child.setCommandCooldown(commandCooldown);

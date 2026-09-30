@@ -49,7 +49,8 @@ public class AccountStatus {
         int total = 0;
 
         for (Punishment p : history) {
-            if (!p.isActive() || p.getIssuedAt() < cutoff) continue;
+            // Expired punishments still count — only revoked ones are ignored.
+            if (p.isRemoved() || p.getActions() == null || p.getIssuedAt() < cutoff) continue;
 
             boolean counted = false;
             for (RestrictionAction action : p.getActions()) {

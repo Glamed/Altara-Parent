@@ -9,7 +9,6 @@ import games.sparking.altara.framework.module.chest.ChestFillerModule;
 import games.sparking.altara.framework.module.chest.LootItem;
 import games.sparking.altara.framework.module.chest.LootTable;
 import games.sparking.altara.framework.module.spectator.SpectatorModule;
-import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -43,6 +42,8 @@ import java.util.List;
  * </pre>
  */
 public class SurvivalGamesSolosGame extends SoloGame {
+
+    public static final String DISPLAY_NAME = "Survival Games Solos";
 
     // -------------------------------------------------------------------------
     // Loot table
@@ -116,6 +117,7 @@ public class SurvivalGamesSolosGame extends SoloGame {
         getActivePlayers().forEach(this::removePlayer);
         getSpectators().forEach(this::removePlayer);
         chestFiller.reset();
+        resetRound();
     }
 
     // -------------------------------------------------------------------------
@@ -138,29 +140,12 @@ public class SurvivalGamesSolosGame extends SoloGame {
     @GameEvent(value = PlayerDeathEvent.class, states = {GameState.PLAYING})
     public void onPlayerDeath(PlayerDeathEvent event, Game game, Player player, GameState state) {
         addSpectator(player);
-        checkWinCondition();
+        checkWinCondition(DISPLAY_NAME);
     }
 
     @GameEvent(value = PlayerQuitEvent.class, states = {GameState.PLAYING})
     public void onPlayerQuit(PlayerQuitEvent event, Game game, Player player, GameState state) {
         removePlayer(player.getUniqueId());
-        checkWinCondition();
-    }
-
-    // -------------------------------------------------------------------------
-    // Win condition
-    // -------------------------------------------------------------------------
-
-    private void checkWinCondition() {
-        if (!hasWinner()) return;
-
-        getWinner().ifPresent(winnerId -> {
-            Player winner = Bukkit.getPlayer(winnerId);
-            String name = winner != null ? winner.getName() : winnerId.toString();
-            org.bukkit.Bukkit.broadcast(
-                    net.kyori.adventure.text.minimessage.MiniMessage.miniMessage().deserialize(
-                            "<dark_green><bold>Survival Games <reset><gray>» <green>" + name + " <gray>has survived and won the game!"));
-        });
+        checkWinCondition(DISPLAY_NAME);
     }
 }
-

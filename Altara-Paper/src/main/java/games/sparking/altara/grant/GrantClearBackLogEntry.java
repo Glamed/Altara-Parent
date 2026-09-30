@@ -2,7 +2,6 @@ package games.sparking.altara.grant;
 
 import games.sparking.altara.connection.BackLogEntry;
 import games.sparking.altara.connection.RequestResponse;
-import games.sparking.altara.profile.packet.ProfileUpdatePacket;
 import games.sparking.altara.utils.CC;
 import games.sparking.altara.utils.PlayerMessagePacket;
 import games.sparking.altara.uuid.UUIDCache;
@@ -12,6 +11,7 @@ import org.bukkit.Bukkit;
 
 import java.util.UUID;
 
+/** A grant clear queued while the API was unreachable; reports the outcome to its issuer. */
 public class GrantClearBackLogEntry extends BackLogEntry {
 
     private final UUID uuid;
@@ -25,18 +25,20 @@ public class GrantClearBackLogEntry extends BackLogEntry {
 
     @Override
     public void onSend(RequestResponse response) {
+        String name = UUIDCache.getName(uuid);
+        String target = name != null ? name : uuid.toString();
+
         Component message;
-        if (!response.wasSuccessful())
-            message = CC.format("<red>[Grant BackLog] Could not clear grants of <white>%s</white>: %s (%d)</red>",
-                    UUIDCache.getName(uuid), response.getErrorMessage(), response.getCode());
-        else message = CC.format("<green>[Grant BackLog] Successfully cleared <white>%d</white> grants of <white>%s</white>.</green>",
-                response.asObject().get("removed").getAsInt(), UUIDCache.getName(uuid));
+        if (response.wasSuccessful()) {
+            int removed = response.asObject().get("removed").getAsInt();
+            message = CC.success("Queued clear applied.", "Removed *" + removed + "* " + CC.plural(removed, "grant")
+                    + " from *" + target + "*.");
+        } else {
+            message = CC.error("Queued clear failed.", "*" + target + "*: " + response.getErrorMessage()
+                    + " (" + response.getCode() + ")");
+        }
 
-        if (clearedBy == null)
-            Bukkit.getConsoleSender().sendMessage(message);
+        if (clearedBy == null) Bukkit.getConsoleSender().sendMessage(message);
         else new PlayerMessagePacket(clearedBy, message).publish();
-
-        if (response.wasSuccessful())
-            new ProfileUpdatePacket(uuid).publish();
     }
 }

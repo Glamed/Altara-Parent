@@ -8,10 +8,12 @@ import lombok.Getter;
 import okhttp3.*;
 
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class RequestHandler {
 
@@ -45,7 +47,7 @@ public class RequestHandler {
         return backLog.size();
     }
 
-    private static final List<BackLogEntry> backLog = new ArrayList<>();
+    private static final List<BackLogEntry> backLog = new CopyOnWriteArrayList<>();
 
     private static final OkHttpClient CLIENT = new OkHttpClient.Builder()
             .connectTimeout(Duration.ofSeconds(5L))
@@ -93,8 +95,7 @@ public class RequestHandler {
         totalRequests++;
 
         boolean newDown = false;
-        try {
-            Response response = CLIENT.newCall(builder.build()).execute();
+        try (Response response = CLIENT.newCall(builder.build()).execute()) {
             RequestResponse requestResponse = RequestResponse.ofResponse(response, builder);
             newDown = requestResponse.couldNotConnect();
 
@@ -112,16 +113,24 @@ public class RequestHandler {
             e.printStackTrace();
             return RequestResponse.ofError(e, builder);
         } finally {
+            // API just came back: replay queued requests off the calling thread.
             if (!newDown && apiDown && !fromBackLog)
-                sendBackLog();
+                Tasks.runAsync(RequestHandler::sendBackLog);
 
             apiDown = newDown;
         }
     }
 
     private static Request.Builder newBuilder(String endpoint, Object... args) {
+        Object[] encoded = new Object[args.length];
+        for (int i = 0; i < args.length; i++) {
+            encoded[i] = args[i] instanceof String string
+                    ? URLEncoder.encode(string, StandardCharsets.UTF_8).replace("+", "%20")
+                    : args[i];
+        }
+
         return new Request.Builder()
-                .url(Altara.getSharedInstance().getMainConfig().getBackendHost() + String.format(endpoint, args))
+                .url(Altara.getSharedInstance().getMainConfig().getBackendHost() + String.format(endpoint, encoded))
                 .addHeader("Authorization", Altara.getSharedInstance().getMainConfig().getBackendKey());
     }
 
@@ -132,27 +141,16 @@ public class RequestHandler {
         backLog.add(entry);
     }
 
-    public static void sendBackLog() {
-        if (backLog.isEmpty())
-            return;
-
-//        LOG.config("Attempting to send request backlog...");
-
+    public static synchronized void sendBackLog() {
         Iterator<BackLogEntry> iterator = backLog.iterator();
-        int sent = 0;
         while (iterator.hasNext()) {
             BackLogEntry next = iterator.next();
             RequestResponse response = call(next.getBuilder(), true);
-            if (!response.couldNotConnect()) {
-                next.onSend(response);
-                iterator.remove();
-                sent++;
-            }
-        }
+            if (response.couldNotConnect()) return; // still down — keep the rest queued
 
-//        if (sent == 0)
-//            LOG.warning("Could not send request backlog, API is still down");
-//        else LOG.info(String.format("Sent %d requests from backlog - %d Failed", sent, backLog.size()));
+            next.onSend(response);
+            backLog.remove(next);
+        }
     }
 
 }

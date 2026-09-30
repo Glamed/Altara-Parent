@@ -4,6 +4,7 @@ import com.google.common.io.ByteArrayDataOutput;
 import com.google.common.io.ByteStreams;
 import games.sparking.altara.AltaraPaper;
 import games.sparking.altara.redis.packet.Packet;
+import games.sparking.altara.task.Tasks;
 import games.sparking.altara.utils.CC;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
@@ -12,6 +13,7 @@ import org.bukkit.entity.Player;
 
 import java.util.UUID;
 
+/** Sends a player (wherever they are) to {@code queueName} through the proxy. */
 @NoArgsConstructor
 @AllArgsConstructor
 public class QueueSendPlayerPacket extends Packet {
@@ -21,18 +23,17 @@ public class QueueSendPlayerPacket extends Packet {
 
     @Override
     public void receive() {
-        Player player = Bukkit.getPlayer(playerUuid);
-        if (player == null)
-            return;
+        Tasks.run(() -> {
+            Player player = Bukkit.getPlayer(playerUuid);
+            if (player == null) return;
 
-        player.sendMessage(CC.successMsg("Connecting you to " + queueName + "."));
+            player.sendMessage(CC.info("Sending you to *" + queueName + "*..."));
 
-        // Mark as confirmed switch so the quit handler won't broadcast a "staff left network" message.
-        AltaraPaper.getPaperInstance().markServerSwitch(playerUuid);
+            ByteArrayDataOutput out = ByteStreams.newDataOutput();
+            out.writeUTF("Connect");
+            out.writeUTF(queueName);
 
-        ByteArrayDataOutput out = ByteStreams.newDataOutput();
-        out.writeUTF("Connect");
-        out.writeUTF(this.queueName);
-        player.sendPluginMessage(AltaraPaper.getPlugin(), "BungeeCord", out.toByteArray());
+            player.sendPluginMessage(AltaraPaper.getPlugin(), "BungeeCord", out.toByteArray());
+        });
     }
 }

@@ -11,7 +11,7 @@ import java.util.UUID;
 
 public class ScoreboardService {
 
-    public static Map<UUID, Scoreboard> scoreboards = new HashMap<>();
+    public static final Map<UUID, Scoreboard> scoreboards = new HashMap<>();
 
     @Getter
     private final ScoreboardAdapter adapter;
@@ -26,13 +26,16 @@ public class ScoreboardService {
     public void startScoreboardUpdater() {
         Tasks.runTimer(() -> {
             for (Scoreboard scoreboard : scoreboards.values()) {
+                if (scoreboard.getPlayer() == null) continue;
                 scoreboard.setTitle(getAdapter().getTitle(scoreboard.getPlayer()));
                 scoreboard.update();
             }
         }, 0, 3);
         Tasks.runTimer(() -> {
             for (Scoreboard scoreboard : scoreboards.values()) {
-                List<Component> lines = getAdapter().getLines(scoreboard.getPlayer());
+                if (scoreboard.getPlayer() == null) continue;
+                // Copy: adapters may return immutable lists.
+                List<Component> lines = new java.util.ArrayList<>(getAdapter().getLines(scoreboard.getPlayer()));
 
                 int maxLines = 15;
 

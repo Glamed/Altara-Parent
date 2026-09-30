@@ -1,45 +1,44 @@
 package games.sparking.altara.filter;
 
 import games.sparking.altara.Altara;
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.lang.NonNull;
-import org.springframework.stereotype.Component;
-import org.springframework.web.filter.OncePerRequestFilter;
+import io.micronaut.core.annotation.Nullable;
+import io.micronaut.http.HttpRequest;
+import io.micronaut.http.HttpResponse;
+import io.micronaut.http.HttpStatus;
+import io.micronaut.http.MediaType;
+import io.micronaut.http.annotation.RequestFilter;
+import io.micronaut.http.annotation.ServerFilter;
 
-import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 
 /**
- * Simple shared-secret authentication filter.
- * The backend key is read from the Altara config system (config.json) via the
- * {@link Altara} singleton — no Spring {@code @Value} needed.
+ * Shared-secret authentication: every request must carry the {@code backendKey} from
+ * config.json in its {@code Authorization} header (Altara-Shared's {@code RequestHandler}
+ * sends it automatically).  Only the health probe is public.
  */
-@Component
-public class AuthFilter extends OncePerRequestFilter {
+@ServerFilter(ServerFilter.MATCH_ALL_PATTERN)
+public class AuthFilter {
 
-    @Override
-    protected void doFilterInternal(@NonNull HttpServletRequest request,
-                                    @NonNull HttpServletResponse response,
-                                    @NonNull FilterChain filterChain) throws ServletException, IOException {
+    private static final String HEALTH_PATH = "/api/server/health";
 
-        // Health endpoint is intentionally unauthenticated (load-balancer probes, etc.)
-        if (request.getRequestURI().equals("/api/server/health")) {
-            filterChain.doFilter(request, response);
-            return;
-        }
+    /** Returns {@code null} to let the request through, or the 401 response. */
+    @RequestFilter
+    @Nullable
+    public HttpResponse<?> authenticate(HttpRequest<?> request) {
+        if (HEALTH_PATH.equals(request.getPath())) return null;
 
         String backendKey = Altara.getSharedInstance().getMainConfig().getBackendKey();
-        String auth = request.getHeader("Authorization");
+        String auth = request.getHeaders().get("Authorization");
+        if (backendKey == null || backendKey.isBlank() || auth == null || !constantTimeEquals(auth, backendKey)) {
+            return HttpResponse.status(HttpStatus.UNAUTHORIZED)
+                    .contentType(MediaType.APPLICATION_JSON_TYPE)
+                    .body("{\"error\":\"Unauthorized\"}");
+        }
+        return null;
+    }
 
-/*        if (auth == null || !auth.equals(backendKey)) {
-            response.setStatus(HttpStatus.UNAUTHORIZED.value());
-            response.setContentType("application/json");
-            response.getWriter().write("{\"error\":\"Unauthorized\"}");
-            return;
-        }*/
-
-        filterChain.doFilter(request, response);
+    private static boolean constantTimeEquals(String a, String b) {
+        return MessageDigest.isEqual(a.getBytes(StandardCharsets.UTF_8), b.getBytes(StandardCharsets.UTF_8));
     }
 }

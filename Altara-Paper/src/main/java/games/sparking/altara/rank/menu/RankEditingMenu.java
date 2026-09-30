@@ -1,62 +1,56 @@
 package games.sparking.altara.rank.menu;
 
-import games.sparking.altara.AltaraPaper;
 import games.sparking.altara.chatinput.ChatInput;
 import games.sparking.altara.menu.Button;
+import games.sparking.altara.menu.Gui;
 import games.sparking.altara.menu.Menu;
-import games.sparking.altara.menu.buttons.BackButton;
 import games.sparking.altara.menu.fill.FillTemplate;
 import games.sparking.altara.profile.Profile;
 import games.sparking.altara.rank.Rank;
+import games.sparking.altara.rank.commands.RankCommands;
 import games.sparking.altara.utils.CC;
 import games.sparking.altara.utils.ItemBuilder;
-import lombok.RequiredArgsConstructor;
+import games.sparking.altara.utils.Theme;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.ClickType;
 import org.bukkit.inventory.ItemStack;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
-
-@RequiredArgsConstructor
+/** Edits a single rank.  Text values are entered in chat; the menu reopens afterwards. */
 public class RankEditingMenu extends Menu {
 
+    /** Rank being configured by each player in the {@code Setup new rank} chat flow. */
     public static final Map<UUID, UUID> RANK_SETUPS = new HashMap<>();
 
     private final Profile profile;
     private final Rank rank;
-    private boolean save = false;
 
-    public Component getTitle(Player player) {
-        return CC.format("Editing: " + rank.getName());
+    public RankEditingMenu(Profile profile, Rank rank) {
+        this.profile = profile;
+        this.rank = rank;
     }
 
     @Override
-    public Map<Integer, Button> getButtons(Player player) {
-        Map<Integer, Button> buttons = new HashMap<>();
-        buttons.put(10, new SetWeightButton());
-        buttons.put(11, new AddPermissionButton(false));
-        buttons.put(12, new AddPermissionButton(true));
-        buttons.put(13, new ToggleInheritButton());
-        buttons.put(14, new SetPrefixButton());
-        buttons.put(15, new SetColorButton());
-        buttons.put(16, new ToggleDisguisableButton());
-
-        buttons.put(19, new SetQueuePriorityButton());
-        buttons.put(20, new RemovePermissionButton(false));
-        buttons.put(21, new RemovePermissionButton(true));
-        buttons.put(23, new SetSuffixButton());
-        buttons.put(24, new SetChatColorButton());
-
-        buttons.put(35, new BackButton(new RankEditOverviewMenu(profile)));
-        return buttons;
+    public Component getTitle(Player player) {
+        return Gui.title("Ranks", rank.getName());
     }
 
     @Override
     public int getSize() {
-        return 36;
+        return 45;
+    }
+
+    @Override
+    public FillTemplate getFillTemplate() {
+        return FillTemplate.ALTARA;
     }
 
     @Override
@@ -65,377 +59,162 @@ public class RankEditingMenu extends Menu {
     }
 
     @Override
-    public FillTemplate getFillTemplate() {
-        return FillTemplate.FILL;
+    public Map<Integer, Button> getButtons(Player player) {
+        Map<Integer, Button> buttons = new HashMap<>();
+
+        buttons.put(4, Button.createPlaceholder(new ItemBuilder(rank.getMaterial())
+                .setDisplayName(CC.format(rank.getDisplayName()))
+                .setLore(RankEditOverviewMenu.summary(rank).build())
+                .build()));
+
+        buttons.put(11, new PromptButton<>(String.class, Material.RED_DYE, "Name Color",
+                () -> CC.format(rank.getColor() + "Example"),
+                "Enter a color tag, like <red> or <#ff8800>.",
+                (player1, input) -> RankCommands.INSTANCE.rankSetColor(player1, rank, input)));
+        buttons.put(12, new PromptButton<>(String.class, Material.WHITE_DYE, "Chat Color",
+                () -> CC.format(rank.getChatColor() + "Example"),
+                "Enter a color tag, like <white> or <gray>.",
+                (player1, input) -> RankCommands.INSTANCE.rankSetChatColor(player1, rank, input)));
+        buttons.put(13, new PromptButton<>(String.class, Material.NAME_TAG, "Prefix",
+                () -> CC.format(rank.getPrefix() + rank.getColor() + "Example"),
+                "Enter the prefix, e.g. <dark_gray>[<red>Admin<dark_gray>] ",
+                (player1, input) -> RankCommands.INSTANCE.rankSetPrefix(player1, rank, input)));
+        buttons.put(14, new PromptButton<>(String.class, Material.NAME_TAG, "Suffix",
+                () -> CC.format(rank.getColor() + "Example" + rank.getSuffix()),
+                "Enter the suffix (use <white> for none).",
+                (player1, input) -> RankCommands.INSTANCE.rankSetSuffix(player1, rank, input)));
+        buttons.put(15, new DisguisableButton());
+
+        buttons.put(20, new PromptButton<>(Integer.class, Material.HEAVY_WEIGHTED_PRESSURE_PLATE, "Weight",
+                () -> Component.text(rank.getWeight()),
+                "Enter the new weight (higher ranks outrank lower ones).",
+                (player1, input) -> RankCommands.INSTANCE.rankSetWeight(player1, rank, input)));
+        buttons.put(21, new PromptButton<>(Integer.class, Material.HOPPER, "Queue Priority",
+                () -> Component.text(rank.getQueuePriority()),
+                "Enter the new queue priority.",
+                (player1, input) -> RankCommands.INSTANCE.rankSetQueuePriority(player1, rank, input)));
+        buttons.put(22, new PromptButton<>(Rank.class, Material.BOOK, "Inherits",
+                () -> Component.text(rank.getInherits().isEmpty() ? "None"
+                        : String.join(", ", rank.getInherits().stream().map(Rank::getName).toList())),
+                "Enter a rank to toggle inheriting it.",
+                (player1, input) -> RankCommands.toggleInherit(player1, rank, input)));
+        buttons.put(23, new PermissionButton(false));
+        buttons.put(24, new PermissionButton(true));
+
+        buttons.put(Gui.CLOSE_SLOT, Gui.closeButton());
+        buttons.put(Gui.backSlot(getSize()), Gui.backButton("Rank editor", () -> new RankEditOverviewMenu(profile)));
+        return buttons;
     }
 
-    @Override
-    public void onClose(Player player) {
-        if (save) {
-            rank.save(player, () -> {
-            });
+    /** Asks for a value in chat, applies it, and reopens this menu. */
+    private class PromptButton<T> extends Button {
+
+        private final Class<T> type;
+        private final Material material;
+        private final String name;
+        private final Supplier<Component> current;
+        private final String prompt;
+        private final BiConsumer<Player, T> apply;
+
+        PromptButton(Class<T> type, Material material, String name, Supplier<Component> current,
+                     String prompt, BiConsumer<Player, T> apply) {
+            this.type = type;
+            this.material = material;
+            this.name = name;
+            this.current = current;
+            this.prompt = prompt;
+            this.apply = apply;
         }
-    }
-
-    @RequiredArgsConstructor
-    public class AddPermissionButton extends Button {
-
-        private final boolean local;
 
         @Override
         public ItemStack getItem(Player player) {
-            return new ItemBuilder(local ? Material.OAK_BUTTON : Material.STONE_BUTTON)
-                    .setDisplayName(CC.format("<yellow><bold>Add %sPermission", local ? "local " : ""))
-                    .setLore(CC.format(
-                            "<yellow>%sPermissions: <red>%d",
-                            local ? "Local " : "",
-                            local ? rank.getLocalPermissions().size() : rank.getPermissions().size()
-                    )).build();
-        }
-
-        @Override
-        public void click(Player whoClicked, int slot, ClickType clickType, int hotbarButton) {
-            whoClicked.getOpenInventory().close();
-            new ChatInput<String>(String.class)
-                    .text(
-                            CC.noticeMsg("", "Please enter the new permission for this rank."),
-                            CC.noticeMsg("", "You can type *cancel* at any time to exit this process.")
-                    )
-                    .escapeMessage(CC.errorMsg("You cancelled the permission change."))
-                    .onCancel(RankEditingMenu.this::openMenu)
-                    .accept((player, input) -> {
-                        if (local) {
-                            if (rank.getLocalPermissions().contains(input.toLowerCase())) {
-                                player.sendMessage(CC.format("<red>Rank <yellow>%s <red>already has permission <yellow>%s<red>.",
-                                        rank.getName(), input));
-                                return true;
-                            }
-                            rank.getLocalPermissions().add(input.toLowerCase());
-                        } else {
-                            if (rank.getPermissions().contains(input.toLowerCase())) {
-                                player.sendMessage(CC.format("<red>Rank <yellow>%s <red>already has permission <yellow>%s<red>.",
-                                        rank.getName(), input));
-                                return true;
-                            }
-                            rank.getPermissions().add(input.toLowerCase());
-                        }
-                        rank.save(player::sendMessage, () -> {});
-                        player.sendMessage(CC.format("<yellow>You added permission <red>%s <yellow>to rank %s<yellow>.",
-                                input, rank.getName()));
-                        openMenu(player);
-                        return true;
-                    }).send(whoClicked);
-        }
-    }
-
-    @RequiredArgsConstructor
-    public class RemovePermissionButton extends Button {
-
-        private final boolean local;
-
-        @Override
-        public ItemStack getItem(Player player) {
-            return new ItemBuilder(local ? Material.OAK_BUTTON : Material.STONE_BUTTON)
-                    .setDisplayName(CC.format("<yellow><bold>Remove %sPermission", local ? "local " : ""))
-                    .setLore(CC.format(
-                            "<yellow>%sPermissions: <red>%d",
-                            local ? "Local " : "",
-                            local ? rank.getLocalPermissions().size() : rank.getPermissions().size()
-                    )).build();
-        }
-
-        @Override
-        public void click(Player whoClicked, int slot, ClickType clickType, int hotbarButton) {
-            whoClicked.getOpenInventory().close();
-            new ChatInput<String>(String.class)
-                    .text(
-                            CC.noticeMsg("", "Please enter the permission you'd like to remove from this rank."),
-                            CC.noticeMsg("", "You can type *cancel* at any time to exit this process.")
-                    )
-                    .escapeMessage(CC.errorMsg("You cancelled the permission removal."))
-                    .onCancel(RankEditingMenu.this::openMenu)
-                    .accept((player, input) -> {
-                        if (local) {
-                            if (!rank.getLocalPermissions().contains(input.toLowerCase())) {
-                                player.sendMessage(CC.format("<red>Rank <yellow>%s <red>doesn't have permission <yellow>%s<red>.",
-                                        rank.getName(), input));
-                                return true;
-                            }
-                            rank.getLocalPermissions().remove(input.toLowerCase());
-                        } else {
-                            if (!rank.getPermissions().contains(input.toLowerCase())) {
-                                player.sendMessage(CC.format("<red>Rank <yellow>%s <red>doesn't have permission <yellow>%s<red>.",
-                                        rank.getName(), input));
-                                return true;
-                            }
-                            rank.getPermissions().remove(input.toLowerCase());
-                        }
-                        rank.save(player::sendMessage, () -> {});
-                        player.sendMessage(CC.format("<yellow>You removed permission <red>%s <yellow>from rank %s<yellow>.",
-                                input, rank.getName()));
-                        openMenu(player);
-                        return true;
-                    }).send(whoClicked);
-        }
-    }
-
-    public class ToggleDisguisableButton extends Button {
-
-        @Override
-        public ItemStack getItem(Player player) {
-            return new ItemBuilder(rank.isDisguisable() ? Material.LIME_DYE : Material.GRAY_DYE)
-                    .setDisplayName("<yellow><bold>Toggle Disguisable")
-                    .setLore(CC.format("<yellow>Disguisable: " + (rank.isDisguisable() ? "<green>true" : "<red>false")))
+            return new ItemBuilder(material)
+                    .setDisplayName(Gui.name(name))
+                    .setLore(Gui.lore()
+                            .value("Current", current.get())
+                            .cta("change this")
+                            .build())
                     .build();
         }
 
         @Override
         public void click(Player player, int slot, ClickType clickType, int hotbarButton) {
-            rank.setDisguisable(!rank.isDisguisable());
-            save = true;
-            player.sendMessage(CC.format("<yellow>You set the disguisable status of " + rank.getName() +
-                    " to " + (rank.isDisguisable() ? "<green>true" : "<red>false") + "<yellow>."));
+            player.closeInventory();
+            new ChatInput<T>(type)
+                    .text(CC.notice(name + ".", prompt), CC.info("Type *cancel* to go back."))
+                    .escapeMessage(CC.info("No changes made."))
+                    .onCancel(RankEditingMenu.this::openMenu)
+                    .accept((p, input) -> {
+                        apply.accept(p, input);
+                        openMenu(p);
+                        return true;
+                    })
+                    .send(player);
         }
     }
 
-    public class SetPrefixButton extends Button {
+    /** Left click adds, right click removes. */
+    private class PermissionButton extends Button {
+
+        private final boolean local;
+
+        PermissionButton(boolean local) {
+            this.local = local;
+        }
 
         @Override
         public ItemStack getItem(Player player) {
-            return new ItemBuilder(Material.OAK_SIGN)
-                    .setDisplayName("<yellow><bold>Set Prefix")
-                    .setLore(CC.format("<yellow>Prefix: %sExample", rank.getPrefix()))
+            int count = local ? rank.getLocalPermissions().size() : rank.getPermissions().size();
+            return new ItemBuilder(local ? Material.REPEATING_COMMAND_BLOCK : Material.COMMAND_BLOCK)
+                    .setDisplayName(local ? Gui.name("Local", "Permissions") : Gui.name("Permissions"))
+                    .setLore(Gui.lore()
+                            .text(local ? "Only apply on this realm." : "Apply on every realm.")
+                            .value("Count", String.valueOf(count))
+                            .blank()
+                            .line(Gui.cta("add a permission").append(Component.text(" (left)", Theme.TEXT)))
+                            .line(Gui.cta("remove a permission").append(Component.text(" (right)", Theme.TEXT)))
+                            .build())
                     .build();
         }
 
         @Override
-        public void click(Player whoClicked, int slot, ClickType clickType, int hotbarButton) {
-            whoClicked.getOpenInventory().close();
+        public void click(Player player, int slot, ClickType clickType, int hotbarButton) {
+            boolean remove = clickType.isRightClick();
+            Function<String, Boolean> action = remove
+                    ? node -> RankCommands.removePermission(player, rank, node, local)
+                    : node -> RankCommands.addPermission(player, rank, node, local);
+
+            player.closeInventory();
             new ChatInput<String>(String.class)
-                    .text(
-                            CC.noticeMsg("", "Please enter the new prefix for this rank."),
-                            CC.noticeMsg("", "You can type *cancel* at any time to exit this process.")
-                    )
-                    .escapeMessage(CC.errorMsg("You cancelled the prefix change."))
+                    .text(CC.notice(remove ? "Remove a permission." : "Add a permission.", "Enter the permission node."),
+                            CC.info("Type *cancel* to go back."))
+                    .escapeMessage(CC.info("No changes made."))
                     .onCancel(RankEditingMenu.this::openMenu)
-                    .accept((player, input) -> {
-                        rank.setPrefix(input);
-                        rank.save(player::sendMessage, () -> {});
-                        player.sendMessage(CC.format("<yellow>You set the prefix of %s <yellow>to %sExample<yellow>.",
-                                rank.getName(), rank.getPrefix()));
-                        openMenu(player);
+                    .accept((p, input) -> {
+                        action.apply(input);
+                        openMenu(p);
                         return true;
-                    }).send(whoClicked);
+                    })
+                    .send(player);
         }
     }
 
-    public class SetSuffixButton extends Button {
+    private class DisguisableButton extends Button {
 
         @Override
         public ItemStack getItem(Player player) {
-            return new ItemBuilder(Material.OAK_SIGN)
-                    .setDisplayName("<yellow><bold>Set Suffix")
-                    .setLore(CC.format("<yellow>Suffix: <white>Example%s", rank.getSuffix()))
+            return new ItemBuilder(Gui.settingMaterial(rank.isDisguisable()))
+                    .setDisplayName(Gui.settingName("Disguisable", rank.isDisguisable()))
+                    .setLore(Gui.lore()
+                            .text("Whether staff can disguise", "as this rank.")
+                            .cta(rank.isDisguisable() ? "disable" : "enable")
+                            .build())
                     .build();
         }
 
         @Override
-        public void click(Player whoClicked, int slot, ClickType clickType, int hotbarButton) {
-            whoClicked.getOpenInventory().close();
-            new ChatInput<String>(String.class)
-                    .text(
-                            CC.noticeMsg("", "Please enter the new suffix for this rank."),
-                            CC.noticeMsg("", "You can type *cancel* at any time to exit this process.")
-                    )
-                    .escapeMessage(CC.errorMsg("You cancelled the suffix change."))
-                    .onCancel(RankEditingMenu.this::openMenu)
-                    .accept((player, input) -> {
-                        rank.setSuffix(input);
-                        rank.save(player::sendMessage, () -> {});
-                        player.sendMessage(CC.format("<yellow>You set the suffix of %s <yellow>to <white>Example%s<yellow>.",
-                                rank.getName(), rank.getSuffix()));
-                        openMenu(player);
-                        return true;
-                    }).send(whoClicked);
+        public void click(Player player, int slot, ClickType clickType, int hotbarButton) {
+            RankCommands.INSTANCE.rankSetDisguisable(player, rank, !rank.isDisguisable());
         }
     }
-
-    public class SetColorButton extends Button {
-
-        @Override
-        public ItemStack getItem(Player player) {
-            return new ItemBuilder(Material.PAPER)
-                    .setDisplayName("<yellow><bold>Set Color")
-                    .setLore(CC.format("<yellow>Color: %sExample", rank.getColor()))
-                    .build();
-        }
-
-        @Override
-        public void click(Player whoClicked, int slot, ClickType clickType, int hotbarButton) {
-            whoClicked.getOpenInventory().close();
-            new ChatInput<String>(String.class)
-                    .text(
-                            CC.noticeMsg("", "Please enter the new color for this rank."),
-                            CC.noticeMsg("", "You can type *cancel* at any time to exit this process.")
-                    )
-                    .escapeMessage(CC.errorMsg("You cancelled the color change."))
-                    .onCancel(RankEditingMenu.this::openMenu)
-                    .accept((player, input) -> {
-                        if (input.contains(" ")) {
-                            player.sendMessage(CC.format("<red>The color cannot contain a white space."));
-                            return false;
-                        }
-                        rank.setColor(input);
-                        rank.save(player::sendMessage, () -> {});
-                        player.sendMessage(CC.format("<yellow>You set the color of %s <yellow>to %sExample<yellow>.",
-                                rank.getName(), rank.getColor()));
-                        openMenu(player);
-                        return true;
-                    }).send(whoClicked);
-        }
-    }
-
-    public class SetChatColorButton extends Button {
-
-        @Override
-        public ItemStack getItem(Player player) {
-            return new ItemBuilder(Material.PAPER)
-                    .setDisplayName("<yellow><bold>Set Chat Color")
-                    .setLore(CC.format("<yellow>Chat Color: %sExample", rank.getChatColor()))
-                    .build();
-        }
-
-        @Override
-        public void click(Player whoClicked, int slot, ClickType clickType, int hotbarButton) {
-            whoClicked.getOpenInventory().close();
-            new ChatInput<String>(String.class)
-                    .text(
-                            CC.noticeMsg("", "Please enter the new color for this rank."),
-                            CC.noticeMsg("", "You can type *cancel* at any time to exit this process.")
-                    )
-                    .escapeMessage(CC.errorMsg("You cancelled the queue color change."))
-                    .onCancel(RankEditingMenu.this::openMenu)
-                    .accept((player, input) -> {
-                        if (input.contains(" ")) {
-                            player.sendMessage(CC.format("<red>The chat color cannot contain a white space."));
-                            return false;
-                        }
-                        rank.setChatColor(input);
-                        rank.save(player::sendMessage, () -> {});
-                        player.sendMessage(CC.format("<yellow>You set the chat color of %s <yellow>to %sExample<yellow>.",
-                                rank.getName(), rank.getChatColor()));
-                        openMenu(player);
-                        return true;
-                    }).send(whoClicked);
-        }
-    }
-
-    public class ToggleInheritButton extends Button {
-
-        @Override
-        public ItemStack getItem(Player player) {
-            List<Component> lore = new ArrayList<>();
-            if (rank.getInherits().isEmpty()) {
-                lore.add(CC.format("<yellow>Inherits: <red>None"));
-            } else {
-                lore.add(CC.format("<yellow>Inherits:"));
-                rank.getInherits().forEach(inherit -> lore.add(
-                        CC.format("<gray> - " + AltaraPaper.getSharedInstance().getRankService().getRank(inherit.getUuid()).getName())));
-            }
-
-            return new ItemBuilder(Material.BOOK)
-                    .setDisplayName("<yellow><bold>Toggle Inherit")
-                    .setLore(lore)
-                    .build();
-        }
-
-        @Override
-        public void click(Player whoClicked, int slot, ClickType clickType, int hotbarButton) {
-            whoClicked.getOpenInventory().close();
-            new ChatInput<Rank>(Rank.class)
-                    .text(
-                            CC.noticeMsg("", "Please enter the name of the child."),
-                            CC.noticeMsg("", "You can type *cancel* at any time to exit this process.")
-                    )
-                    .escapeMessage(CC.errorMsg("You cancelled the queue priority change."))
-                    .onCancel(RankEditingMenu.this::openMenu)
-                    .accept((player, input) -> {
-                        if (rank.getInherits().contains(input)) {
-                            rank.getInherits().remove(input);
-                            player.sendMessage(CC.format("<yellow>You made %s <yellow>no longer inherit %s<yellow>.",
-                                    rank.getName(), input.getName()));
-                        } else {
-                            rank.getInherits().add(input);
-                            player.sendMessage(CC.format("<yellow>You made %s <yellow>inherit %s<yellow>.",
-                                    rank.getName(), input.getName()));
-                        }
-                        rank.save(player::sendMessage, () -> {});
-                        openMenu(player);
-                        return true;
-                    }).send(whoClicked);
-        }
-    }
-
-    public class SetWeightButton extends Button {
-
-        @Override
-        public ItemStack getItem(Player player) {
-            return new ItemBuilder(Material.LEVER)
-                    .setDisplayName("<yellow><bold>Set Weight")
-                    .setLore(CC.format("<yellow>Weight: <red>%d", rank.getWeight()))
-                    .build();
-        }
-
-        @Override
-        public void click(Player whoClicked, int slot, ClickType clickType, int hotbarButton) {
-            whoClicked.getOpenInventory().close();
-            new ChatInput<Integer>(Integer.class)
-                    .text(
-                            CC.noticeMsg("", "Please enter the new weight for this rank."),
-                            CC.noticeMsg("", "You can type *cancel* at any time to exit this process.")
-                    )
-                    .escapeMessage(CC.errorMsg("You cancelled the weight change."))
-                    .onCancel(RankEditingMenu.this::openMenu)
-                    .accept((player, input) -> {
-                        rank.setWeight(input);
-                        rank.save(player::sendMessage, () -> {});
-                        player.sendMessage(CC.format("<yellow>You set the weight of %s <yellow>to <red>%d<yellow>.",
-                                rank.getName(), rank.getWeight()));
-                        openMenu(player);
-                        return true;
-                    }).send(whoClicked);
-        }
-    }
-
-    public class SetQueuePriorityButton extends Button {
-
-        @Override
-        public ItemStack getItem(Player player) {
-            return new ItemBuilder(Material.LEVER)
-                    .setDisplayName("<yellow><bold>Set Queue Priority")
-                    .setLore(CC.format("<yellow>Queue Priority: <red>%d", rank.getQueuePriority()))
-                    .build();
-        }
-
-        @Override
-        public void click(Player whoClicked, int slot, ClickType clickType, int hotbarButton) {
-            whoClicked.getOpenInventory().close();
-            new ChatInput<Integer>(Integer.class)
-                    .text(
-                            CC.noticeMsg("", "Please enter the new queue priority for this rank."),
-                            CC.noticeMsg("", "You can type *cancel* at any time to exit this process.")
-                    )
-                    .escapeMessage(CC.errorMsg("You cancelled the queue priority change."))
-                    .onCancel(RankEditingMenu.this::openMenu)
-                    .accept((player, input) -> {
-                        rank.setQueuePriority(input);
-                        rank.save(player::sendMessage, () -> {});
-                        player.sendMessage(CC.format("<yellow>You set the queue priority of %s <yellow>to <red>%d<yellow>.",
-                                rank.getName(), rank.getQueuePriority()));
-                        openMenu(player);
-                        return true;
-                    }).send(whoClicked);
-        }
-    }
-
 }

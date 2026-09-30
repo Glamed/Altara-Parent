@@ -1,33 +1,11 @@
 package games.sparking.altara.config;
 
-import com.github.benmanes.caffeine.cache.Caffeine;
-import org.springframework.cache.CacheManager;
-import org.springframework.cache.caffeine.CaffeineCacheManager;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-
-import java.util.concurrent.TimeUnit;
-
 /**
- * Configures per-cache Caffeine specs used throughout the Altara-Web tier.
- *
- * <h3>Cache names</h3>
- * <ul>
- *   <li>{@code profiles}      – {@link games.sparking.altara.service.ProfileWebService#getProfile}</li>
- *   <li>{@code profileAlts}   – {@link games.sparking.altara.service.ProfileWebService#getAlts}</li>
- *   <li>{@code profileGrants} – {@link games.sparking.altara.service.ProfileWebService#getGrants}</li>
- *   <li>{@code ranks}         – {@link games.sparking.altara.service.RankWebService#getAllRanks} (key {@code "all"})
- *                               and {@link games.sparking.altara.service.RankWebService#getRank} (key = UUID)</li>
- *   <li>{@code uuidByName}    – {@link games.sparking.altara.service.UUIDWebService#resolveNameToJson}</li>
- *   <li>{@code uuidByUuid}    – {@link games.sparking.altara.service.UUIDWebService#resolveUuidToJson}</li>
- * </ul>
+ * Cache names used by the {@code @Cacheable} / {@code @CacheInvalidate} annotations.  Sizes and
+ * expiry for each are configured in {@code application.properties} under {@code micronaut.caches}.
  */
-@Configuration
-public class CacheConfig {
+public final class CacheConfig {
 
-    // ------------------------------------------------------------------
-    // Cache names — referenced as constants to avoid magic strings
-    // ------------------------------------------------------------------
     public static final String PROFILES       = "profiles";
     public static final String PROFILE_ALTS   = "profileAlts";
     public static final String PROFILE_GRANTS = "profileGrants";
@@ -35,96 +13,10 @@ public class CacheConfig {
     public static final String UUID_BY_NAME   = "uuidByName";
     public static final String UUID_BY_UUID   = "uuidByUuid";
 
-    // Punishment caches
     public static final String PUNISHMENTS               = "punishments";
     public static final String PLAYER_PUNISHMENTS        = "playerPunishments";
     public static final String PLAYER_ACTIVE_PUNISHMENTS = "playerActivePunishments";
     public static final String PLAYER_BAN_STATUS         = "playerBanStatus";
 
-    @Bean
-    public CacheManager cacheManager() {
-        CaffeineCacheManager manager = new CaffeineCacheManager();
-
-        // Player profiles — moderate TTL, hot data while player is online
-        manager.registerCustomCache(PROFILES,
-                Caffeine.newBuilder()
-                        .maximumSize(1_000)
-                        .expireAfterWrite(5, TimeUnit.MINUTES)
-                        .recordStats()
-                        .build());
-
-        // Alt-account lists — same TTL as profile
-        manager.registerCustomCache(PROFILE_ALTS,
-                Caffeine.newBuilder()
-                        .maximumSize(500)
-                        .expireAfterWrite(5, TimeUnit.MINUTES)
-                        .recordStats()
-                        .build());
-
-        // Grant arrays embedded in each profile — evicted on every grant mutation
-        manager.registerCustomCache(PROFILE_GRANTS,
-                Caffeine.newBuilder()
-                        .maximumSize(500)
-                        .expireAfterWrite(5, TimeUnit.MINUTES)
-                        .recordStats()
-                        .build());
-
-        // Rank objects — changed infrequently; longer TTL is safe
-        manager.registerCustomCache(RANKS,
-                Caffeine.newBuilder()
-                        .maximumSize(200)
-                        .expireAfterWrite(10, TimeUnit.MINUTES)
-                        .recordStats()
-                        .build());
-
-        // UUID ↔ name lookups — high-cardinality; long TTL since names rarely change
-        manager.registerCustomCache(UUID_BY_NAME,
-                Caffeine.newBuilder()
-                        .maximumSize(5_000)
-                        .expireAfterWrite(30, TimeUnit.MINUTES)
-                        .recordStats()
-                        .build());
-
-        manager.registerCustomCache(UUID_BY_UUID,
-                Caffeine.newBuilder()
-                        .maximumSize(5_000)
-                        .expireAfterWrite(30, TimeUnit.MINUTES)
-                        .recordStats()
-                        .build());
-
-        // Single punishment record — evicted on revocation
-        manager.registerCustomCache(PUNISHMENTS,
-                Caffeine.newBuilder()
-                        .maximumSize(10_000)
-                        .expireAfterWrite(10, TimeUnit.MINUTES)
-                        .recordStats()
-                        .build());
-
-        // All punishments for a player — evicted on every mutation
-        manager.registerCustomCache(PLAYER_PUNISHMENTS,
-                Caffeine.newBuilder()
-                        .maximumSize(5_000)
-                        .expireAfterWrite(5, TimeUnit.MINUTES)
-                        .recordStats()
-                        .build());
-
-        // Active-punishments subset — short TTL because expiry is time-based
-        manager.registerCustomCache(PLAYER_ACTIVE_PUNISHMENTS,
-                Caffeine.newBuilder()
-                        .maximumSize(5_000)
-                        .expireAfterWrite(1, TimeUnit.MINUTES)
-                        .recordStats()
-                        .build());
-
-        // Boolean ban-status — very short TTL; critical path for login gate
-        manager.registerCustomCache(PLAYER_BAN_STATUS,
-                Caffeine.newBuilder()
-                        .maximumSize(10_000)
-                        .expireAfterWrite(30, TimeUnit.SECONDS)
-                        .recordStats()
-                        .build());
-
-        return manager;
-    }
+    private CacheConfig() {}
 }
-

@@ -5,7 +5,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 /**
- * TaskImplementor backed by a ScheduledExecutorService for use in the Web (Spring Boot) environment.
+ * TaskImplementor backed by a ScheduledExecutorService for the Web module.
  */
 public class WebTaskImplementor implements TaskImplementor {
 

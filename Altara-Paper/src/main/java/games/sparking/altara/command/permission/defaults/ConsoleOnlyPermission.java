@@ -18,7 +18,7 @@ public class ConsoleOnlyPermission extends PermissionAdapter {
         boolean b = testSilent(sender);
         if (!b) {
             if (sender.isOp())
-                sender.sendMessage(CC.errorMsg(Messages.UNKNOWN_COMMAND));
+                sender.sendMessage(CC.error(Messages.UNKNOWN_COMMAND));
             else sender.sendMessage(CommandService.NO_PERMISSION_MESSAGE);
         }
         return b;

@@ -1,125 +1,109 @@
 package games.sparking.altara.profiler;
 
 import games.sparking.altara.Altara;
-import games.sparking.altara.AltaraPaper;
-import games.sparking.altara.chat.ChatService;
-import games.sparking.altara.chat.impl.ShadowMuteChannel;
+import games.sparking.altara.grant.Grant;
+import games.sparking.altara.rank.Rank;
 import games.sparking.altara.profile.Profile;
 import games.sparking.altara.profiler.packet.ProfilerFlagPacket;
 import games.sparking.altara.task.Tasks;
-import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.player.AsyncPlayerPreLoginEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 
+import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Handles the Profiler system's join-time evaluation and channel management.
+ * Drives the profiler for each login.
  *
  * <ul>
- *   <li>{@link PlayerJoinEvent} — runs the {@link ProfilerEngine} asynchronously.
- *       If the score meets the threshold the player is flagged and silently moved
- *       into the {@link ShadowMuteChannel}.  The channel's own {@code getFormat}
- *       logic then delivers the message to the sender and to staff only.</li>
- *   <li>{@link PlayerQuitEvent} — evicts the profiler record so it doesn't
- *       accumulate stale entries.</li>
+ *   <li>{@link AsyncPlayerPreLoginEvent} <b>MONITOR</b> — the profile is loaded (LOWEST)
+ *       but not yet updated with this login's IP/name, which is exactly what the
+ *       {@link ProfilerEngine} needs.  Loads an existing flag from Redis, or evaluates
+ *       the login and persists a new flag.</li>
+ *   <li>{@link PlayerJoinEvent} — caches the flag locally (so chat is shadow-muted) and,
+ *       for new flags, alerts staff network-wide.</li>
+ *   <li>{@link PlayerQuitEvent} — drops the local cache.  The flag itself stays in Redis
+ *       until staff resolve it or it expires, so it follows the player across servers.</li>
  * </ul>
- *
- * <p>Shadow-mute enforcement is entirely handled by {@link ShadowMuteChannel} —
- * there is no need for a separate {@code AsyncPlayerChatEvent} listener.
  */
 public class ProfilerListener implements Listener {
 
-    // ── Join: run the profiler engine ──────────────────────────────────────────
+    private static final String STAFF_PERMISSION = "altara.staff";
+
+    /** Flag decided during pre-login, applied once the player has actually joined. */
+    private record Pending(ProfilerRecord record, boolean isNew) {}
+
+    private final Map<UUID, Pending> pending = new ConcurrentHashMap<>();
 
     @EventHandler(priority = EventPriority.MONITOR)
-    public void onJoin(PlayerJoinEvent event) {
-        Player player = event.getPlayer();
-        UUID   uuid   = player.getUniqueId();
+    public void onPreLogin(AsyncPlayerPreLoginEvent event) {
+        if (event.getLoginResult() != AsyncPlayerPreLoginEvent.Result.ALLOWED) return;
 
+        UUID uuid = event.getUniqueId();
+        String ip = event.getAddress().getHostAddress();
         ProfilerService svc = Altara.getSharedInstance().getProfilerService();
-        ProfilerRecord existing = svc.getRecord(uuid);
 
-        if (existing != null) {
-            if (existing.isVerified()) return; // already cleared by staff, nothing to do
-
-            // Player was already flagged (e.g. switching servers or flag packet arrived
-            // before the join event). Re-apply the shadow mute channel immediately.
-            Bukkit.getScheduler().runTask(AltaraPaper.getPlugin(),
-                    () -> applyShadowMuteChannel(player));
-            return;
-        }
-
-        // Run scoring logic off the main thread.
-        Tasks.runAsync(() -> evaluatePlayer(player));
-    }
-
-    private void evaluatePlayer(Player player) {
-        if (!player.isOnline()) return;
-
-        UUID    uuid    = player.getUniqueId();
         Profile profile = Altara.getSharedInstance().getProfileService().getProfile(uuid);
         if (profile == null) return;
 
-        int score = ProfilerEngine.computeScore(profile);
-        if (!ProfilerEngine.shouldFlag(score)) return;
+        if (isStaffRank(profile)) {
+            svc.deleteFlag(uuid);
+            return;
+        }
 
-        // Count alt accounts that are currently banned (compromised alt heuristic).
-        int compromisedAltCount = countCompromisedAlts(profile);
+        // Already flagged (e.g. switching servers) — keep the existing flag, don't re-alert.
+        ProfilerRecord existing = svc.loadFlag(uuid);
+        if (existing != null) {
+            pending.put(uuid, new Pending(existing, false));
+            return;
+        }
 
-        // Flag locally and broadcast to the network.
-        Altara.getSharedInstance().getProfilerService().flag(uuid, player.getName(), score, compromisedAltCount);
-        new ProfilerFlagPacket(uuid.toString(), player.getName(), score, compromisedAltCount).publish();
+        if (svc.isVerified(uuid) || svc.wasRecentlyChecked(uuid, ip)) return;
 
-        // Switch the player into the shadow-mute channel on the main thread.
-        Bukkit.getScheduler().runTask(AltaraPaper.getPlugin(),
-                () -> applyShadowMuteChannel(player));
+        ProfilerEngine.Result result = ProfilerEngine.evaluate(profile, event.getName(), ip);
+        svc.markChecked(uuid, ip);
+        if (!result.shouldFlag()) return;
+
+        ProfilerRecord record = new ProfilerRecord(uuid, event.getName(), result.getScore(),
+                result.getReasons(), result.getBannedAltCount(), ip, ProfilerService.FLAG_TTL);
+        svc.saveFlag(record);
+        pending.put(uuid, new Pending(record, true));
     }
 
-    /**
-     * Silently moves a player into the {@link ShadowMuteChannel}.
-     * Must be called on the main thread.
-     */
-    public static void applyShadowMuteChannel(Player player) {
-        ChatService.setChatChannel(player, ShadowMuteChannel.getInstance(), true /* silent */);
-    }
+    @EventHandler(priority = EventPriority.LOWEST)
+    public void onJoin(PlayerJoinEvent event) {
+        Player player = event.getPlayer();
+        Pending entry = pending.remove(player.getUniqueId());
+        if (entry == null) return;
 
-    /**
-     * Restores the player's channel to whatever is saved in Redis (their previous
-     * channel before the shadow mute was applied).
-     * Must be called on the main thread.
-     */
-    public static void clearShadowMuteChannel(Player player) {
-        ChatService.loadChatChannel(player.getUniqueId());
-    }
+        // Staff by permission (not just rank weight) are never shadow-muted.
+        if (player.hasPermission(STAFF_PERMISSION)) {
+            Tasks.runAsync(() -> Altara.getSharedInstance().getProfilerService().deleteFlag(player.getUniqueId()));
+            return;
+        }
 
-    /**
-     * Counts how many alt accounts (shared-IP accounts) for this profile have ever
-     * been banned.  This is the "compromised alt count" shown on hover.
-     */
-    private int countCompromisedAlts(Profile profile) {
-        int[] count = {0};
-        Altara.getSharedInstance().getProfileService().getAlts(profile, alts -> {
-            if (alts == null) return;
-            for (Profile alt : alts) {
-                boolean banned = alt.getPunishments().stream()
-                        .anyMatch(p -> !p.isRemoved() && p.isBan());
-                if (banned) count[0]++;
-            }
-        }, false);
-        return count[0];
+        Altara.getSharedInstance().getProfilerService().cache(entry.record());
+        if (entry.isNew()) {
+            Tasks.runAsync(() -> new ProfilerFlagPacket(entry.record()).publish());
+        }
     }
-
-    // ── Quit: clean up the record ──────────────────────────────────────────────
 
     @EventHandler(priority = EventPriority.MONITOR)
     public void onQuit(PlayerQuitEvent event) {
-        Altara.getSharedInstance().getProfilerService().remove(event.getPlayer().getUniqueId());
-        // Channel is cleaned up automatically by ChatService.removePlayer in ChatListener.
+        UUID uuid = event.getPlayer().getUniqueId();
+        pending.remove(uuid);
+        Altara.getSharedInstance().getProfilerService().uncache(uuid);
+    }
+
+    private static boolean isStaffRank(Profile profile) {
+        Grant grant = profile.getRealCurrentGrant();
+        Rank rank = grant != null ? grant.asRank() : null;
+        return rank != null && rank.getWeight() >= Altara.getSharedInstance().getMainConfig().getStaffWeight();
     }
 }
-

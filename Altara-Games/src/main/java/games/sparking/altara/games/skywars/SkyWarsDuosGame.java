@@ -12,7 +12,6 @@ import games.sparking.altara.framework.module.spectator.SpectatorModule;
 import games.sparking.altara.framework.module.team.GameTeam;
 import games.sparking.altara.framework.module.team.TeamColor;
 import games.sparking.altara.framework.module.team.TeamModule;
-import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -44,6 +43,8 @@ import java.util.UUID;
  * </ol>
  */
 public class SkyWarsDuosGame extends TeamGame {
+
+    public static final String DISPLAY_NAME = "SkyWars Duos";
 
     // -------------------------------------------------------------------------
     // Loot table
@@ -116,6 +117,7 @@ public class SkyWarsDuosGame extends TeamGame {
         getActivePlayers().forEach(this::removePlayer);
         getSpectators().forEach(this::removePlayer);
         chestFiller.reset();
+        resetRound();
     }
 
     // -------------------------------------------------------------------------
@@ -143,7 +145,7 @@ public class SkyWarsDuosGame extends TeamGame {
     @GameEvent(value = PlayerDeathEvent.class, states = {GameState.PLAYING})
     public void onPlayerDeath(PlayerDeathEvent event, Game game, Player player, GameState state) {
         addSpectator(player);
-        checkWinCondition();
+        checkWinCondition(DISPLAY_NAME);
     }
 
     /**
@@ -152,30 +154,6 @@ public class SkyWarsDuosGame extends TeamGame {
     @GameEvent(value = PlayerQuitEvent.class, states = {GameState.PLAYING})
     public void onPlayerQuit(PlayerQuitEvent event, Game game, Player player, GameState state) {
         removePlayer(player.getUniqueId());
-        checkWinCondition();
-    }
-
-    // -------------------------------------------------------------------------
-    // Win condition
-    // -------------------------------------------------------------------------
-
-    private void checkWinCondition() {
-        if (!hasWinner()) return;
-
-        getWinnerTeam().ifPresent(team -> {
-            String memberNames = team.getMembers().stream()
-                    .map(uuid -> {
-                        Player p = Bukkit.getPlayer(uuid);
-                        return p != null ? p.getName() : uuid.toString();
-                    })
-                    .reduce((a, b) -> a + " & " + b)
-                    .orElse("Unknown");
-
-            Bukkit.broadcast(
-                    net.kyori.adventure.text.minimessage.MiniMessage.miniMessage().deserialize(
-                            "<gold><bold>SkyWars Duos <reset><gray>» <yellow>" + memberNames
-                            + " <gray>(" + team.getDisplayName() + "<gray>) have won the game!"));
-        });
+        checkWinCondition(DISPLAY_NAME);
     }
 }
-

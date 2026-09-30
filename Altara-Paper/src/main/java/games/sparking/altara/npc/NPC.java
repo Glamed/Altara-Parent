@@ -369,7 +369,7 @@ public class NPC {
         UserProfile profile = new UserProfile(uuid, getProfileName(), props);
         WrapperPlayServerPlayerInfoUpdate.PlayerInfo info =
                 new WrapperPlayServerPlayerInfoUpdate.PlayerInfo(
-                        profile, true, 0, GameMode.SURVIVAL, Component.text(displayName), null);
+                        profile, true, 0, GameMode.SURVIVAL, Component.empty(), null);
 
         return new WrapperPlayServerPlayerInfoUpdate(
                 EnumSet.of(
@@ -440,12 +440,14 @@ public class NPC {
     }
 
     /**
-     * Converts a legacy §-formatted string to a MiniMessage string so it
-     * renders correctly inside a hologram TEXT_DISPLAY entity.
+     * Nametag lines are MiniMessage.  Older configs used legacy {@code §}/{@code &} codes,
+     * which are converted so they keep rendering.
      */
-    static String toNametag(String legacy) {
-        if (legacy == null || legacy.isEmpty()) return "";
-        Component component = LegacyComponentSerializer.legacySection().deserialize(legacy);
+    static String toNametag(String text) {
+        if (text == null || text.isEmpty()) return "";
+        if (text.indexOf('§') < 0 && !text.matches(".*&[0-9a-fk-or].*")) return text;
+        Component component = LegacyComponentSerializer.legacyAmpersand()
+                .deserialize(text.replace('§', '&'));
         return MiniMessage.miniMessage().serialize(component);
     }
 
@@ -495,7 +497,8 @@ public class NPC {
 
     private static String getResponse(String urlString) {
         try {
-            HttpURLConnection conn = (HttpURLConnection) new URL(urlString).openConnection();
+            HttpURLConnection conn = (HttpURLConnection) java.net.URI.create(urlString).toURL().openConnection();
+            conn.setConnectTimeout(5_000);
             conn.setReadTimeout(5_000);
             if (conn.getResponseCode() == HttpURLConnection.HTTP_OK) {
                 StringBuilder sb = new StringBuilder();

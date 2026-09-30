@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 
 import java.util.UUID;
 
+/** Asks the server named {@code queueName} to remove a player from its queue. */
 @NoArgsConstructor
 @AllArgsConstructor
 public class QueueLeavePacket extends Packet {
@@ -16,10 +17,8 @@ public class QueueLeavePacket extends Packet {
 
     @Override
     public void receive() {
-        if (AltaraPaper.getSharedInstance().getLocalServerName().equals(queueName))
-            AltaraPaper.getSharedInstance().getProfileService().loadProfile(playerUuid, profile ->
-                    AltaraPaper.getPaperInstance().getQueue().removePlayer(profile), true);
+        if (AltaraPaper.getSharedInstance().getLocalServerName().equals(queueName)) {
+            AltaraPaper.getPaperInstance().getQueue().removePlayer(playerUuid);
+        }
     }
-
-
 }

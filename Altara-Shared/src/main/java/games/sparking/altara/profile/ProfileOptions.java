@@ -2,7 +2,6 @@ package games.sparking.altara.profile;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import games.sparking.altara.utils.JsonObjClass;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -10,7 +9,7 @@ import java.util.*;
 
 @Data
 @NoArgsConstructor
-public class ProfileOptions extends JsonObjClass {
+public class ProfileOptions {
 
     private Map<String, String> customOptions = new HashMap<>();
 
@@ -56,9 +55,8 @@ public class ProfileOptions extends JsonObjClass {
         customOptions.put(key, value);
     }
 
-    // ── Serialisation (override broken reflection-based default) ───────────────
+    // ── Serialisation ─────────────────────────────────────────────────────────
 
-    @Override
     public JsonObject toJson() {
         JsonObject obj = new JsonObject();
 

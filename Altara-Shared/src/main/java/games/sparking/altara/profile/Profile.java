@@ -1,6 +1,7 @@
 package games.sparking.altara.profile;
 
 import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import games.sparking.altara.Altara;
 import games.sparking.altara.SystemType;
@@ -9,17 +10,16 @@ import games.sparking.altara.connection.RequestResponse;
 import games.sparking.altara.disguise.DisguiseData;
 import games.sparking.altara.grant.Grant;
 import games.sparking.altara.grant.GrantProcedure;
-import games.sparking.altara.profile.packet.ProfileUpdatePacket;
 import games.sparking.altara.punishment.Punishment;
 import games.sparking.altara.punishment.PunishmentType;
 import games.sparking.altara.rank.Rank;
 import games.sparking.altara.task.Tasks;
+import games.sparking.altara.utils.CC;
 import games.sparking.altara.utils.IllegalSystemTypeException;
 import games.sparking.altara.utils.Timings;
 import games.sparking.altara.utils.json.JsonBuilder;
 import lombok.Data;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
@@ -87,6 +87,27 @@ public class Profile {
         this.options = new ProfileOptions();
     }
 
+    /**
+     * Folds the session's elapsed time into {@link #playTime} and restarts the session
+     * clock, so each moment of play is counted exactly once no matter how often the
+     * profile is saved.
+     */
+    public void commitSession() {
+        this.lock.lock();
+        try {
+            this.playTime += session.calculateDifference();
+            session.restart();
+        } finally {
+            this.lock.unlock();
+        }
+    }
+
+    /** {@link #commitSession()} then {@link #toJson()} — use for every PUT to the API. */
+    public JsonObject toSaveJson() {
+        commitSession();
+        return toJson();
+    }
+
     public JsonObject toJson() {
         JsonBuilder builder = new JsonBuilder();
 
@@ -112,79 +133,94 @@ public class Profile {
         return builder.build();
     }
 
-    public void save(Runnable callable, boolean async) {
-        if (!async)
-            this.lock.lock();
-        try {
-            if (async) {
-                Tasks.runAsync(() -> save(callable, false));
-                return;
-            }
-
-            this.disguiseData.save(() -> {}, false);
-
-            RequestResponse response = RequestHandler.put("profile", toJson());
-            if (response.wasSuccessful())
-                new ProfileUpdatePacket(this.uuid).publish();
-            else Altara.getSharedInstance().getLogger().warn(String.format(
-                    "Could not save profile of %s (%s): %s (%d)",
-                    uuid.toString(),
-                    name,
-                    response.getErrorMessage(),
-                    response.getCode()
-            ));
-            callable.run();
-        } finally {
-            if (!async)
-                this.lock.unlock();
+    /**
+     * Persists this profile to the Web API and refreshes it from the response.
+     * {@code callback} runs afterwards whether or not the save succeeded.
+     */
+    public void save(Runnable callback, boolean async) {
+        if (async) {
+            Tasks.runAsync(() -> save(callback, false));
+            return;
         }
+
+        if (this.isDisguised && this.disguiseData != null) {
+            this.disguiseData.save(() -> {}, false);
+        }
+
+        // The API publishes a ProfileUpdatePacket for this save itself.
+        RequestResponse response = RequestHandler.put("api/profile/%s", toSaveJson(), uuid.toString());
+        if (response.wasSuccessful()) {
+            update(response.asObject());
+        } else {
+            Altara.getSharedInstance().getLogger().warn(String.format(
+                    "Could not save profile of %s (%s): %s (%d)",
+                    uuid, name, response.getErrorMessage(), response.getCode()));
+        }
+        callback.run();
     }
 
     public void update(JsonObject object) {
         this.lock.lock();
         try {
-            this.name = object.get("name").getAsString();
-            this.lastIp = object.get("lastIp").getAsString();
+            this.name = string(object, "name", this.name);
+            this.lastIp = string(object, "lastIp", "N/A");
 
-            this.knownIps.clear();
-            object.get("knownIps").getAsJsonArray().forEach(element ->
-                    this.knownIps.add(element.getAsString()));
+            List<String> ips = new ArrayList<>();
+            array(object, "knownIps").forEach(element -> ips.add(element.getAsString()));
+            this.knownIps = ips;
 
-            this.options = new ProfileOptions(object.get("options").getAsJsonObject());
+            this.options = object.has("options") && object.get("options").isJsonObject()
+                    ? new ProfileOptions(object.get("options").getAsJsonObject())
+                    : new ProfileOptions();
 
-            this.activeGrants.clear();
-            object.get("activeGrants").getAsJsonArray().forEach(element ->
-                    activeGrants.add(new Grant(element.getAsJsonObject())));
+            List<Grant> grants = new ArrayList<>();
+            array(object, "activeGrants").forEach(element -> grants.add(new Grant(element.getAsJsonObject())));
+            this.activeGrants = new CopyOnWriteArrayList<>(grants);
 
-            this.permissions.clear();
-            if (object.has("permissions")) {
-                object.get("permissions").getAsJsonArray().forEach(element ->
-                        permissions.add(element.getAsString()));
-            }
+            List<String> perms = new ArrayList<>();
+            array(object, "permissions").forEach(element -> perms.add(element.getAsString()));
+            this.permissions = perms;
 
-            this.punishments.clear();
-            punishments.addAll(Altara.getSharedInstance().getPunishmentService().getPunishments(uuid));
+            this.punishments = new ArrayList<>(Altara.getSharedInstance().getPunishmentService().getPunishments(uuid));
 
-            this.disguiseData = Altara.getSharedInstance().getDisguiseService().getDisguiseData(this.uuid);
-            this.isDisguised = !disguiseData.getDisguiseName().equals("N/A");
+            DisguiseData disguise = Altara.getSharedInstance().getDisguiseService().getDisguiseData(this.uuid);
+            this.disguiseData = disguise != null ? disguise : new DisguiseData(this.uuid);
+            this.isDisguised = !"N/A".equals(disguiseData.getDisguiseName());
             this.disguiseName = disguiseData.getDisguiseName();
 
-            this.firstLogin = object.get("firstLogin").getAsLong();
-            this.lastSeen = object.get("lastSeen").getAsLong();
-            this.playTime = object.get("playTime").getAsLong();
-            this.joinTime = object.get("joinTime").getAsLong();
+            this.firstLogin = number(object, "firstLogin", this.firstLogin);
+            this.lastSeen = number(object, "lastSeen", this.lastSeen);
+            this.joinTime = number(object, "joinTime", -1);
+            this.lastServer = string(object, "lastServer", null);
 
-            if (object.has("lastServer"))
-                this.lastServer = object.get("lastServer").getAsString();
-            else this.lastServer = null;
+            // While the player is online the local play time is authoritative (the session is
+            // committed on every save), so only adopt the stored value for offline profiles.
+            if (!session.isRunning()) {
+                this.playTime = number(object, "playTime", this.playTime);
+            }
 
             if (Altara.getSystemType() == SystemType.PAPER) {
-                if (Bukkit.getPlayer(this.uuid) != null)
-                    Objects.requireNonNull(Bukkit.getPlayer(this.uuid)).setDisplayName(this.getDisplayName());
+                Player player = Bukkit.getPlayer(this.uuid);
+                if (player != null) player.displayName(CC.format(getDisplayName()));
             }
         } finally {
             this.lock.unlock();
         }
+    }
+
+    private static String string(JsonObject object, String key, String fallback) {
+        JsonElement element = object.get(key);
+        return element == null || element.isJsonNull() ? fallback : element.getAsString();
+    }
+
+    private static long number(JsonObject object, String key, long fallback) {
+        JsonElement element = object.get(key);
+        return element == null || element.isJsonNull() ? fallback : element.getAsLong();
+    }
+
+    private static JsonArray array(JsonObject object, String key) {
+        JsonElement element = object.get(key);
+        return element != null && element.isJsonArray() ? element.getAsJsonArray() : new JsonArray();
     }
 
     public boolean canInteract(Profile other) {
@@ -226,7 +262,7 @@ public class Profile {
 
     public boolean hasGrantOf(Rank rank) {
         for (Grant grant : getActiveGrants()) {
-            if (grant.getUuid().equals(rank.getUuid()))
+            if (rank.getUuid().equals(grant.getRank()))
                 return true;
         }
 
@@ -249,7 +285,7 @@ public class Profile {
                     this.disguiseData.getDisguiseRank(),
                     "Console",
                     System.currentTimeMillis(),
-                    "Disgused",
+                    "Disguised",
                     -1,
                     Collections.singletonList("GLOBAL")
             );
@@ -295,7 +331,7 @@ public class Profile {
                     this.disguiseData.getDisguiseRank(),
                     "Console",
                     System.currentTimeMillis(),
-                    "Disgused",
+                    "Disguised",
                     -1,
                     Collections.singletonList("GLOBAL")
             );
@@ -408,7 +444,7 @@ public class Profile {
 
         return this.getDisplayName() +
                 (((target == null || target.hasPermission("altara.disguise.bypass")) && this.isDisguised) ?
-                        ChatColor.GRAY + "(" + this.name + ")" : "");
+                        " <gray>(" + this.name + ")" : "");
     }
 
 

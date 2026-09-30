@@ -1,49 +1,44 @@
 package games.sparking.altara.punishment;
 
 import games.sparking.altara.Altara;
+import games.sparking.altara.utils.CC;
 import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
+/**
+ * Issues a punishment through the Web API.  The API persists it and publishes a
+ * {@link games.sparking.altara.punishment.packet.PunishmentIssuedPacket}, which enforces
+ * it on whichever server the player is on.
+ */
 public class PunishManager {
 
-    private final UUID playerUUID;
-    private final UUID staffUUID;
+    private final Player staff;
+    private final PunishTarget target;
     private final List<RestrictionAction> actions;
     private final InfractionType reason;
     private final String message;
 
-    public PunishManager(Player staff, Player target, PunishmentType type, long duration, InfractionType reason) {
-        this(staff, target, type, duration, reason, null);
+    public PunishManager(Player staff, PunishTarget target, List<RestrictionAction> actions,
+                         InfractionType reason, String message) {
+        this.staff   = staff;
+        this.target  = target;
+        this.actions = new ArrayList<>(actions);
+        this.reason  = reason;
+        this.message = message;
     }
 
-    public PunishManager(Player staff, Player target, PunishmentType type, long duration, InfractionType reason, String message) {
-        this(staff, target, List.of(new RestrictionAction(type, duration)), reason, message);
-    }
-
-    public PunishManager(Player staff, Player target, List<RestrictionAction> actions, InfractionType reason, String message) {
-        this.playerUUID = target.getUniqueId();
-        this.staffUUID  = staff.getUniqueId();
-        this.actions    = new ArrayList<>(actions);
-        this.reason     = reason;
-        this.message    = message;
-    }
-
-    /**
-     * Issues the punishment asynchronously.
-     *
-     * <p>Flow:
-     * <ol>
-     *   <li>POST to {@code /api/punishment} via the Web REST API.</li>
-     *   <li>Web persists to MongoDB and publishes a {@link games.sparking.altara.punishment.packet.PunishmentIssuedPacket} via Redis.</li>
-     *   <li>All Paper servers receive the packet and enforce locally (kick / notify).</li>
-     * </ol>
-     */
+    /** Issues asynchronously and reports the outcome to the staff member. */
     public void issue() {
         if (actions.isEmpty()) return;
-        Altara.getSharedInstance().getPunishmentService()
-              .issuePunishment(staffUUID, playerUUID, reason, actions, message, null, true);
+
+        Altara.getSharedInstance().getPunishmentService().issuePunishment(
+                staff.getUniqueId(), target.uuid(), reason, actions, message,
+                punishment -> staff.sendMessage(punishment == null
+                        ? CC.error("Unable to punish.", "The punishment couldn't be saved. Please try again.")
+                        : CC.success("Punishment issued.", "*" + target.name() + "* was punished for *"
+                                + reason.getDisplayName() + "*.")),
+                true);
     }
 }

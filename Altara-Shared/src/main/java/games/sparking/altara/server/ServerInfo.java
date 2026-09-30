@@ -4,7 +4,7 @@ import games.sparking.altara.Altara;
 import lombok.Data;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -12,7 +12,7 @@ import java.util.stream.Collectors;
 @Data
 public class ServerInfo {
 
-    private static final Map<String, ServerInfo> servers = new HashMap<>();
+    private static final Map<String, ServerInfo> servers = new ConcurrentHashMap<>();
     public static final long MAX_TIMEOUT = 5000L;
 
     private String name = "";

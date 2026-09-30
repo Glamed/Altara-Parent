@@ -16,7 +16,7 @@ public class WorldParameter implements ParameterType<World> {
     public World parse(CommandSender sender, String source) {
         World world = Bukkit.getWorld(source);
         if (world == null) {
-            sender.sendMessage(CC.errorMsg("Invalid arguments.", "World " + source + " was not found."));
+            sender.sendMessage(CC.error("Invalid world.", "*" + source + "* doesn't exist."));
             return null;
         }
         return world;

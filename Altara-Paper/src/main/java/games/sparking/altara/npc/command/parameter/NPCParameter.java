@@ -1,7 +1,6 @@
 package games.sparking.altara.npc.command.parameter;
 
 import games.sparking.altara.AltaraPaper;
-import games.sparking.altara.command.CommandService;
 import games.sparking.altara.command.parameter.ParameterType;
 import games.sparking.altara.npc.NPC;
 import games.sparking.altara.utils.CC;
@@ -17,16 +16,15 @@ public class NPCParameter implements ParameterType<NPC> {
         NPC npc = AltaraPaper.getPaperInstance().getNpcService().getNpc(source);
         if (npc != null) return npc;
 
-        Integer id = CommandService.getParameter(Integer.class).parse(sender, source);
-        if (id == null) {
-            sender.sendMessage(CC.format("<red>NPC with name or id <yellow>%s <red>not found.", source));
-            return null;
+        try {
+            npc = AltaraPaper.getPaperInstance().getNpcService().getNpc(Integer.parseInt(source));
+        } catch (NumberFormatException ignored) {
+            npc = null;
         }
 
-        npc = AltaraPaper.getPaperInstance().getNpcService().getNpc(id);
-        if (npc == null)
-            sender.sendMessage(CC.format("<red>NPC with name or id <yellow>%s <red>not found.", source));
-
+        if (npc == null) {
+            sender.sendMessage(CC.error("Invalid NPC.", "*" + source + "* doesn't exist."));
+        }
         return npc;
     }
 

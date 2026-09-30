@@ -12,13 +12,13 @@ public class MotdListener {
         MiniMessage mm = MiniMessage.miniMessage();
 
         String motd =
-                "<dark_gray>><dark_aqua>><dark_gray>> " +
-                        "<aqua><bold>McFriends</bold> Network " +
+                "<dark_gray>><dark_red>><dark_gray>> " +
+                        "<red><bold>Sparking</bold> Games " +
                         "<dark_gray><italic>[<yellow>1.21<dark_gray>] " +
-                        "<dark_gray><<dark_aqua><<dark_gray>< " +
-                        "<dark_gray>mcfriends.us\n" +
+                        "<dark_gray><<dark_red><<dark_gray>< " +
+                        "<dark_gray>sparking.games\n" +
 
-                        "<gray>Releasing SOON more at <light_purple>discord.mcfriends.us";
+                        "<gray>Releasing SOON more at <light_purple>discord.sparking.games";
 
         var newPing = event.getPing().asBuilder()
                 .description(mm.deserialize(motd))

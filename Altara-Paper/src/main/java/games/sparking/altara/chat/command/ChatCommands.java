@@ -7,50 +7,35 @@ import games.sparking.altara.chat.impl.StaffChannel;
 import games.sparking.altara.command.annotation.Command;
 import games.sparking.altara.command.annotation.Param;
 import games.sparking.altara.utils.CC;
+import games.sparking.altara.utils.Theme;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.event.ClickEvent;
+import net.kyori.adventure.text.event.HoverEvent;
 import org.bukkit.entity.Player;
 
 /**
- * Commands for switching and sending to chat channels.
- *
- * <ul>
- *   <li>{@code /channel [name]} / {@code /ch [name]} — switch active channel or list
- *       available channels.</li>
- *   <li>{@code /sc <message>} — quick-send to {@link StaffChannel} without switching.</li>
- * </ul>
+ * {@code /channel [name]} switches the active chat channel (or lists channels);
+ * {@code /sc <message>} sends to staff chat without switching.
  */
 public class ChatCommands {
 
-    // ── /channel ───────────────────────────────────────────────────────────────
-
     @Command(names = {"channel", "ch"},
-            description = "Switch your active chat channel",
+            description = "Switch your chat channel",
             permission = "player")
-    public boolean channel(Player sender,
-                           @Param(name = "channel", defaultValue = "") String name) {
+    public boolean channel(Player sender, @Param(name = "channel", defaultValue = "") String name) {
         if (name.isEmpty()) {
-            // List available channels.
-            sender.sendMessage(CC.CHAT_BAR);
-            sender.sendMessage(CC.format("<yellow><bold>Chat Channels</bold></yellow>"));
-            for (ChatChannel ch : ChatChannelRegistry.getChannels()) {
-                if (ch.getPrefix() == null) continue; // system-only
-                boolean active = ChatService.getChatChannel(sender).getName()
-                        .equalsIgnoreCase(ch.getName());
-                sender.sendMessage(CC.format(
-                        (active ? "<green>▶ " : "  ") + "<yellow>" + ch.getName() +
-                        (ch.getPrefix() != null ? " <gray>(" + ch.getPrefix() + ")" : "")));
-            }
-            sender.sendMessage(CC.CHAT_BAR);
+            listChannels(sender);
             return true;
         }
 
         ChatChannel channel = ChatChannelRegistry.getByName(name);
-        if (channel == null) {
-            sender.sendMessage(CC.format("<red>Unknown channel <yellow>" + name + "<red>."));
+        if (channel == null || !channel.isSelectable() || !channel.canUse(sender)) {
+            sender.sendMessage(CC.error("Invalid channel.", "Use */channel* to see the channels you can use."));
             return false;
         }
 
-        if (channel.getPrefix() == null) {
-            sender.sendMessage(CC.format("<red>You cannot switch to that channel."));
+        if (ChatService.getChatChannel(sender) == channel) {
+            sender.sendMessage(CC.info("You're already talking in *" + channel.getName() + "*."));
             return false;
         }
 
@@ -58,15 +43,33 @@ public class ChatCommands {
         return true;
     }
 
-    // ── /sc ────────────────────────────────────────────────────────────────────
+    private void listChannels(Player sender) {
+        ChatChannel active = ChatService.getChatChannel(sender);
+
+        sender.sendMessage(CC.header("Chat Channels"));
+        for (ChatChannel channel : ChatChannelRegistry.getChannels()) {
+            if (!channel.isSelectable() || !channel.canUse(sender)) continue;
+
+            boolean current = channel == active;
+            Component line = Component.text()
+                    .append(Component.text(channel.getName(), current ? Theme.PRIMARY : Theme.TEXT_STRONG))
+                    .append(channel.getPrefix() == null ? Component.empty()
+                            : Component.text(" (prefix " + channel.getPrefix() + ")", Theme.TEXT))
+                    .append(current ? Component.text(" (current)", Theme.TEXT) : Component.empty())
+                    .hoverEvent(HoverEvent.showText(Component.text("Click to select this channel.", Theme.TEXT)))
+                    .clickEvent(ClickEvent.runCommand("/channel " + channel.getName()))
+                    .build();
+            sender.sendMessage(CC.item(line));
+        }
+        sender.sendMessage(CC.footer());
+    }
 
     @Command(names = {"sc", "staffchat"},
             description = "Send a message to staff chat",
-            permission = "altara.staff")
-    public boolean staffChat(Player sender,
-                             @Param(name = "message", wildcard = true) String message) {
+            permission = StaffChannel.PERMISSION,
+            playerOnly = true)
+    public boolean staffChat(Player sender, @Param(name = "message", wildcard = true) String message) {
         StaffChannel.getInstance().dispatch(sender, message);
         return true;
     }
 }
-

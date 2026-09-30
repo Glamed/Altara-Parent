@@ -28,7 +28,7 @@ public class Duration {
 
             long parsed = Time.parseTime(source);
             if (parsed == -1) {
-                sender.sendMessage(CC.errorMsg("Invalid arguments.", source + " is not a valid duration."));
+                sender.sendMessage(CC.error("Invalid duration.", "Use a format like *1d12h* or *perm*."));
                 return null;
             }
 

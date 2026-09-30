@@ -16,12 +16,9 @@ public class EquipmentSlotParameter implements ParameterType<EquipmentSlot> {
         try {
             return EquipmentSlot.valueOf(source.toUpperCase());
         } catch (IllegalArgumentException ignored) {
-            sender.sendMessage(CC.format(
-                    "<red>Slot <yellow>%s <red>not found. Available: <yellow>%s",
-                    source,
-                    Arrays.stream(EquipmentSlot.values())
-                          .map(Enum::name)
-                          .collect(Collectors.joining("<red>, <yellow>"))));
+            sender.sendMessage(CC.error("Invalid slot.", "Use one of *" + Arrays.stream(EquipmentSlot.values())
+                    .map(slot -> slot.name().toLowerCase())
+                    .collect(Collectors.joining("*, *")) + "*."));
             return null;
         }
     }

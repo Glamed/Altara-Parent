@@ -15,8 +15,9 @@ public class DoubleParameter implements ParameterType<Double> {
         Double value;
         try {
             value = Double.parseDouble(source);
+            if (!Double.isFinite(value)) throw new NumberFormatException();
         } catch (NumberFormatException e) {
-            sender.sendMessage(CC.errorMsg("Invalid arguments.", source + " is not a valid number."));
+            sender.sendMessage(CC.error("Invalid number.", "*" + source + "* isn't a valid number."));
             return null;
         }
         return value;

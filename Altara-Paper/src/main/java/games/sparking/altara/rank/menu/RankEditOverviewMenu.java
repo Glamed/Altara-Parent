@@ -3,27 +3,23 @@ package games.sparking.altara.rank.menu;
 import games.sparking.altara.Altara;
 import games.sparking.altara.chatinput.ChatInputChain;
 import games.sparking.altara.menu.Button;
-import games.sparking.altara.menu.Menu;
+import games.sparking.altara.menu.Gui;
+import games.sparking.altara.menu.page.PagedMenu;
 import games.sparking.altara.profile.Profile;
 import games.sparking.altara.rank.Rank;
 import games.sparking.altara.rank.setup.*;
 import games.sparking.altara.utils.CC;
 import games.sparking.altara.utils.ItemBuilder;
-import lombok.RequiredArgsConstructor;
-import net.kyori.adventure.text.Component;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.ClickType;
 import org.bukkit.inventory.ItemStack;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
-
-@RequiredArgsConstructor
-public class RankEditOverviewMenu extends Menu {
+/** {@code /rank edit}: every rank, plus a button to set up a new one through chat. */
+public class RankEditOverviewMenu extends PagedMenu {
 
     private static final ChatInputChain SETUP_CHAIN = new ChatInputChain()
             .next(new NamePrompt())
@@ -34,54 +30,54 @@ public class RankEditOverviewMenu extends Menu {
 
     private final Profile profile;
 
-    @Override
-    public Component getTitle(Player player) {
-        return CC.format("Rank Editor");
+    public RankEditOverviewMenu(Profile profile) {
+        this.profile = profile;
     }
 
     @Override
-    public Map<Integer, Button> getButtons(Player player) {
+    public String[] getBreadcrumb(Player player) {
+        return new String[]{"Ranks"};
+    }
+
+    @Override
+    public Map<Integer, Button> getAllPagesButtons(Player player) {
         Map<Integer, Button> buttons = new HashMap<>();
-        Altara.getSharedInstance().getRankService().getRanksSorted().forEach(rank -> buttons.put(buttons.size(), new RankButton(rank)));
-        buttons.put(buttons.size(), new SetupRankButton());
+        Altara.getSharedInstance().getRankService().getRanksSorted()
+                .forEach(rank -> buttons.put(buttons.size(), new RankButton(rank)));
         return buttons;
     }
 
-    @RequiredArgsConstructor
-    public class RankButton extends Button {
+    @Override
+    public Map<Integer, Button> getGlobalButtons(Player player) {
+        return Map.of(49, new SetupRankButton());
+    }
+
+    /** Lore lines describing a rank, shared with {@link RankEditingMenu}. */
+    static Gui.Lore summary(Rank rank) {
+        return Gui.lore()
+                .value("Prefix", CC.format(rank.getPrefix() + rank.getColor() + "Example"))
+                .value("Chat", CC.format(rank.getChatColor() + "Example"))
+                .value("Weight", String.valueOf(rank.getWeight()))
+                .value("Queue priority", String.valueOf(rank.getQueuePriority()))
+                .value("Default", CC.state(rank.isDefaultRank(), "Yes", "No"))
+                .value("Inherits", rank.getInherits().isEmpty() ? "None"
+                        : String.join(", ", rank.getInherits().stream().map(Rank::getName).toList()))
+                .value("Permissions", rank.getPermissions().size() + " (+" + rank.getLocalPermissions().size() + " local)");
+    }
+
+    private class RankButton extends Button {
 
         private final Rank rank;
 
+        RankButton(Rank rank) {
+            this.rank = rank;
+        }
+
         @Override
         public ItemStack getItem(Player player) {
-            List<Component> lore = new ArrayList<>();
-            lore.add(CC.MENU_BAR);
-            lore.add(CC.format("<yellow>Color: %sExample", rank.getColor()));
-            lore.add(CC.format("<yellow>Chat Color: %sExample", rank.getChatColor()));
-            lore.add(CC.format(" "));
-            lore.add(CC.format("<yellow>Prefix: %sExample", rank.getPrefix()));
-            lore.add(CC.format("<yellow>Suffix: <white>Example%s", rank.getSuffix()));
-            lore.add(CC.format(" "));
-            lore.add(CC.format("<yellow>Weight: <red>%d", rank.getWeight()));
-            lore.add(CC.format("<yellow>Queue Priority: <red>%d", rank.getQueuePriority()));
-            lore.add(CC.format(" "));
-            lore.add(CC.format("<yellow>Default: " + (rank.isDefaultRank() ? "<green>true" : "<red>false")));
-            lore.add(CC.format("<yellow>Disguisable: " + (rank.isDisguisable() ? "<green>true" : "<red>false")));
-            lore.add(CC.format(" "));
-            lore.add(CC.format("<yellow>Inherits: %s", rank.getInherits().isEmpty() ? "None" : ""));
-            if (!rank.getInherits().isEmpty()) {
-                rank.getInherits().forEach(inherit -> lore.add(
-                        CC.format("<gray> - " + Altara.getSharedInstance().getRankService().getRank(inherit.getUuid()).getName())));
-            }
-            lore.add(CC.format(" "));
-            lore.add(CC.format("<yellow>Permissions: <red>%d", rank.getPermissions().size()));
-            lore.add(CC.format("<yellow>Local Permissions: <red>%d", rank.getLocalPermissions().size()));
-            lore.add(CC.format("<yellow>Inherited Permissions: <red>%d", rank.getInheritPermissions().size()));
-            lore.add(CC.MENU_BAR);
-
             return new ItemBuilder(rank.getMaterial())
-                    .setDisplayName(rank.getName())
-                    .setLore(lore)
+                    .setDisplayName(CC.format(rank.getDisplayName()))
+                    .setLore(summary(rank).cta("edit this rank").build())
                     .build();
         }
 
@@ -91,18 +87,22 @@ public class RankEditOverviewMenu extends Menu {
         }
     }
 
-    public class SetupRankButton extends Button {
+    private static class SetupRankButton extends Button {
 
         @Override
         public ItemStack getItem(Player player) {
             return new ItemBuilder(Material.EMERALD)
-                    .setDisplayName("<green><bold>Setup new rank")
+                    .setDisplayName(Gui.name("New", "Rank"))
+                    .setLore(Gui.lore()
+                            .text("Create a rank and set its", "color, prefix and weight in chat.")
+                            .cta("set up a new rank")
+                            .build())
                     .build();
         }
 
         @Override
         public void click(Player player, int slot, ClickType clickType, int hotbarButton) {
-            player.getOpenInventory().close();
+            player.closeInventory();
             SETUP_CHAIN.start(player);
         }
     }

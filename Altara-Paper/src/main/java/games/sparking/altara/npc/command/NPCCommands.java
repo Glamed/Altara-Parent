@@ -9,248 +9,171 @@ import games.sparking.altara.npc.NPC;
 import games.sparking.altara.npc.NPCBuilder;
 import games.sparking.altara.npc.NPCService;
 import games.sparking.altara.npc.equipment.EquipmentSlot;
+import games.sparking.altara.task.Tasks;
 import games.sparking.altara.utils.CC;
+import games.sparking.altara.utils.Panel;
+import games.sparking.altara.utils.Theme;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.HoverEvent;
+import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 
 import java.util.List;
 
-@Header(
-        primaryColor = "blue",
-        secondaryColor = "dark_gray",
-        tertiaryColor = "aqua",
-        header = "NPC"
-)
+/**
+ * NPC management.  Display names are MiniMessage; use {@code \n} for multiple nametag
+ * lines.  Commands may contain {@code %player%}, replaced with the clicker's name.
+ */
+@Header(value = "NPC", panel = Panel.DEV)
 public class NPCCommands {
+
+    private static final String PERMISSION = "altara.npcs";
 
     private NPCService npcService() {
         return AltaraPaper.getPaperInstance().getNpcService();
     }
 
-    @Command(names = {"npc create"},
-            permission = "altara.npcs",
-            description = "Create a new NPC at your location",
-            playerOnly = true)
+    private static String label(NPC npc) {
+        return npc.getName() != null ? npc.getName() : "#" + npc.getId();
+    }
+
+    @Command(names = {"npc create"}, permission = PERMISSION, description = "Create an NPC where you stand")
     public boolean create(Player sender, @Param(name = "name") String name) {
-        try {
-            Integer.parseInt(name);
-            sender.sendMessage(CC.format("<red>NPC names cannot be pure integers."));
+        if (name.matches("\\d+")) {
+            sender.sendMessage(CC.error("Invalid name.", "Names can't be numbers — those are used for IDs."));
             return false;
-        } catch (NumberFormatException ignored) {
+        }
+        if (npcService().getNpc(name) != null) {
+            sender.sendMessage(CC.error("Name taken.", "An NPC called *" + name + "* already exists."));
+            return false;
         }
 
-        NPC npc = new NPCBuilder()
-                .at(sender.getLocation())
-                .buildAndSpawn();
-
+        NPC npc = new NPCBuilder().at(sender.getLocation()).buildAndSpawn();
         npc.setName(name);
         npc.spawn();
         npcService().register(npc);
         npcService().save();
-
-        sender.sendMessage(CC.format(
-                "<blue>NPC <yellow>#%d <blue>(<yellow>%s<blue>) created.",
-                npc.getId(),
-                name
-        ));
+        sender.sendMessage(CC.success("NPC created.", "*" + name + "* (#" + npc.getId() + ") is ready."));
         return true;
     }
 
-    @Command(names = {"npc delete", "npc remove"},
-            permission = "altara.npcs",
-            description = "Delete a NPC")
+    @Command(names = {"npc delete", "npc remove"}, permission = PERMISSION, description = "Delete an NPC")
     public boolean delete(CommandSender sender, @Param(name = "npc") NPC npc) {
         npcService().remove(npc);
         npcService().save();
-
-        sender.sendMessage(CC.format(
-                "<blue>Deleted NPC <yellow>#%d<blue>.",
-                npc.getId()
-        ));
+        sender.sendMessage(CC.success("NPC deleted.", "*" + label(npc) + "* has been removed."));
         return true;
     }
 
-    @Command(names = {"npc list"},
-            permission = "altara.npcs",
-            description = "List all NPCs")
+    @Command(names = {"npc list"}, permission = PERMISSION, description = "List saved NPCs")
     public boolean list(CommandSender sender) {
         List<NPC> npcs = npcService().getSerializedNpcs();
 
-        if (npcs.isEmpty()) {
-            sender.sendMessage(CC.format("<red>No NPCs exist."));
-            return true;
-        }
+        sender.sendMessage(CC.header(Panel.DEV, "NPCs"));
+        if (npcs.isEmpty()) sender.sendMessage(CC.empty("No NPCs have been created yet."));
 
         for (NPC npc : npcs) {
-            String location = String.format(
-                    "[%.1f, %.1f, %.1f]",
-                    npc.getLocation().getX(),
-                    npc.getLocation().getY(),
-                    npc.getLocation().getZ()
-            );
-
-            StringBuilder hover = new StringBuilder()
-                    .append("<green>Location: <white>")
-                    .append(location)
-                    .append("\n<yellow>Click to teleport");
-
+            Location loc = npc.getLocation();
+            TextComponent.Builder hover = Component.text()
+                    .append(Component.text(String.format("%s %.1f, %.1f, %.1f", loc.getWorld().getName(),
+                            loc.getX(), loc.getY(), loc.getZ()), Theme.TEXT));
             if (npc.getCommand() != null) {
-                hover.append("\n\n")
-                        .append("<blue>Command: <yellow>")
-                        .append(npc.getCommand());
-
-                if (npc.isConsoleCommand()) {
-                    hover.append("\n<gray>(Console Command)");
-                }
+                hover.append(Component.newline())
+                        .append(Component.text("Runs /" + npc.getCommand() + (npc.isConsoleCommand() ? " as console" : ""), Theme.TEXT));
             }
+            hover.append(Component.newline()).append(Component.newline())
+                    .append(Component.text("Click to teleport to this NPC.", Theme.TEXT));
 
-            Component message = CC.format(
-                            "<red>%s <dark_gray>- <yellow>#%d",
-                            npc.getName(),
-                            npc.getId()
-                    ).hoverEvent(HoverEvent.showText(CC.format(hover.toString())))
-                    .clickEvent(ClickEvent.runCommand("/npc tpto " + npc.getId()));
-
-            sender.sendMessage(message);
+            sender.sendMessage(CC.item(Component.text()
+                    .append(Component.text(label(npc), Theme.TEXT_STRONG))
+                    .append(Component.text(" #" + npc.getId(), Theme.TEXT))
+                    .hoverEvent(HoverEvent.showText(hover.build()))
+                    .clickEvent(ClickEvent.runCommand("/npc tpto " + npc.getId()))
+                    .build()));
         }
-
+        sender.sendMessage(CC.footer(Panel.DEV));
         return true;
     }
 
-    @Command(names = {"npc setname", "npc name"},
-            permission = "altara.npcs",
-            description = "Set the display name of a NPC")
-    public boolean setName(CommandSender sender,
-                           @Param(name = "npc") NPC npc,
+    @Command(names = {"npc setname", "npc name"}, permission = PERMISSION, description = "Set an NPC's nametag")
+    public boolean setName(CommandSender sender, @Param(name = "npc") NPC npc,
                            @Param(name = "displayName", wildcard = true) String displayName) {
-        npc.setDisplayName(displayName);
+        npc.setDisplayName(displayName.equalsIgnoreCase("none") ? "" : displayName);
         npcService().save();
-
-        sender.sendMessage(CC.format(
-                "<blue>Set display name of NPC <yellow>#%d <blue>to <white>%s<blue>.",
-                npc.getId(),
-                displayName
-        ));
+        sender.sendMessage(CC.success("Nametag updated.", "*" + label(npc) + "*'s nametag was changed."));
         return true;
     }
 
-    @Command(names = {"npc command"},
-            permission = "altara.npcs",
-            description = "Set the command run when a NPC is clicked")
-    public boolean command(CommandSender sender,
-                           @Param(name = "npc") NPC npc,
+    @Command(names = {"npc command"}, permission = PERMISSION, description = "Set the command an NPC runs")
+    public boolean command(CommandSender sender, @Param(name = "npc") NPC npc,
                            @Param(name = "command", wildcard = true) String command,
-                           @Flag(names = {"-console"}, description = "Execute from the console") boolean consoleCommand) {
-        npc.setCommand(command);
-        npc.setConsoleCommand(consoleCommand);
+                           @Flag(names = {"console"}, description = "Run as the console") boolean console) {
+        String normalized = command.startsWith("/") ? command.substring(1) : command;
+        npc.setCommand(normalized);
+        npc.setConsoleCommand(console);
         npcService().save();
-
-        sender.sendMessage(CC.format(
-                "<blue>Set the command of NPC <yellow>#%d <blue>to <yellow>%s<blue>.%s",
-                npc.getId(),
-                command,
-                consoleCommand ? " <gray>(Console Command)" : ""
-        ));
-
+        sender.sendMessage(CC.success("Command set.", "*" + label(npc) + "* now runs */" + normalized + "*"
+                + (console ? " as the console." : ".")));
         return true;
     }
 
-    @Command(names = {"npc removecommand"},
-            permission = "altara.npcs",
-            description = "Remove the command from a NPC")
+    @Command(names = {"npc removecommand"}, permission = PERMISSION, description = "Remove an NPC's command")
     public boolean removeCommand(CommandSender sender, @Param(name = "npc") NPC npc) {
         npc.setCommand(null);
         npc.setConsoleCommand(false);
         npcService().save();
-
-        sender.sendMessage(CC.format(
-                "<blue>Removed the command from NPC <yellow>#%d<blue>.",
-                npc.getId()
-        ));
+        sender.sendMessage(CC.success("Command removed.", "*" + label(npc) + "* no longer runs a command."));
         return true;
     }
 
-    @Command(names = {"npc skin"},
-            permission = "altara.npcs",
-            description = "Set the skin of a NPC by player name",
-            async = true)
-    public boolean skin(CommandSender sender,
-                        @Param(name = "npc") NPC npc,
-                        @Param(name = "playerName") String playerName) {
+    @Command(names = {"npc skin"}, permission = PERMISSION, async = true, description = "Copy a player's skin")
+    public boolean skin(CommandSender sender, @Param(name = "npc") NPC npc, @Param(name = "player") String playerName) {
         String[] skin = NPC.fetchSkin(playerName);
-
-        npc.setSkin(skin);
-        npcService().save();
-
         if (skin == null) {
-            sender.sendMessage(CC.format(
-                    "<red>Could not fetch skin for <yellow>%s<red>. NPC reset to default.",
-                    playerName
-            ));
-        } else {
-            sender.sendMessage(CC.format(
-                    "<blue>NPC <yellow>#%d <blue>now has the skin of <yellow>%s<blue>.",
-                    npc.getId(),
-                    playerName
-            ));
+            sender.sendMessage(CC.error("Skin not found.", "Couldn't load *" + playerName + "*'s skin from Mojang."));
+            return false;
         }
 
+        Tasks.run(() -> {
+            npc.setSkin(skin);
+            npcService().save();
+        });
+        sender.sendMessage(CC.success("Skin updated.", "*" + label(npc) + "* now uses *" + playerName + "*'s skin."));
         return true;
     }
 
-    @Command(names = {"npc tphere", "npc movehere"},
-            permission = "altara.npcs",
-            description = "Teleport a NPC to your location",
-            playerOnly = true)
+    @Command(names = {"npc tphere", "npc movehere"}, permission = PERMISSION, description = "Move an NPC to you")
     public boolean tphere(Player sender, @Param(name = "npc") NPC npc) {
         npc.setLocation(sender.getLocation());
         npcService().save();
-
-        sender.sendMessage(CC.format(
-                "<blue>Teleported NPC <yellow>#%d <blue>to your location.",
-                npc.getId()
-        ));
+        sender.sendMessage(CC.success("NPC moved.", "*" + label(npc) + "* is now at your location."));
         return true;
     }
 
-    @Command(names = {"npc tpto"},
-            permission = "altara.npcs",
-            description = "Teleport to a NPC",
-            playerOnly = true)
+    @Command(names = {"npc tpto"}, permission = PERMISSION, description = "Teleport to an NPC")
     public boolean tpto(Player sender, @Param(name = "npc") NPC npc) {
         sender.teleport(npc.getLocation());
-
-        sender.sendMessage(CC.format(
-                "<blue>Teleported to NPC <yellow>#%d<blue>.",
-                npc.getId()
-        ));
+        sender.sendMessage(CC.info("Teleported to *" + label(npc) + "*."));
         return true;
     }
 
-    @Command(names = {"npc equipment", "npc equip"},
-            permission = "altara.npcs",
-            description = "Set equipment on a NPC from your held item",
-            playerOnly = true)
-    public boolean equipment(Player sender,
-                             @Param(name = "npc") NPC npc,
-                             @Param(name = "slot") EquipmentSlot slot) {
-        var held = sender.getInventory().getItemInMainHand();
-        var item = held.getType() == Material.AIR ? null : held.clone();
+    @Command(names = {"npc equipment", "npc equip"}, permission = PERMISSION,
+            description = "Give an NPC your held item")
+    public boolean equipment(Player sender, @Param(name = "npc") NPC npc, @Param(name = "slot") EquipmentSlot slot) {
+        ItemStack held = sender.getInventory().getItemInMainHand();
+        ItemStack item = held.getType() == Material.AIR ? null : held.clone();
 
         npc.setEquipment(slot, item);
         npcService().save();
-
-        sender.sendMessage(CC.format(
-                "<blue>Set <yellow>%s <blue>slot of NPC <yellow>#%d <blue>to <yellow>%s<blue>.",
-                slot.name(),
-                npc.getId(),
-                item == null ? "empty" : item.getType().name()
-        ));
-
+        String slotName = slot.name().toLowerCase();
+        sender.sendMessage(item == null
+                ? CC.success("Equipment cleared.", "*" + label(npc) + "*'s " + slotName + " slot is now empty.")
+                : CC.success("Equipment set.", "*" + label(npc) + "* is now holding your item in its " + slotName + " slot."));
         return true;
     }
 }

@@ -3,77 +3,69 @@ package games.sparking.altara.controller;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import games.sparking.altara.server.ServerInfo;
-import games.sparking.altara.utils.Statics;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import io.micronaut.http.HttpResponse;
+import io.micronaut.http.MediaType;
+import io.micronaut.http.annotation.Controller;
+import io.micronaut.http.annotation.Get;
+import io.micronaut.http.annotation.Produces;
+
+import static games.sparking.altara.controller.Responses.notFound;
+import static games.sparking.altara.controller.Responses.ok;
 
 /**
- * Read-only view of servers that have pushed heartbeat packets via Redis.
- * The actual {@link ServerInfo} map is populated by {@code UpdateServerPacket.receive()}.
+ * Servers known from Redis heartbeats ({@code UpdateServerPacket}).
+ *
+ * <pre>
+ *   GET /api/server           every server
+ *   GET /api/server/{name}    one server
+ *   GET /api/server/count     {"count"} players network-wide
+ *   GET /api/server/health    {"status": "UP"} (no auth, for load-balancer probes)
+ * </pre>
  */
-@RestController
-@RequestMapping("/api/server")
+@Controller("/api/server")
+@Produces(MediaType.APPLICATION_JSON)
 public class ServerController {
 
-    @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<String> getAllServers() {
+    @Get
+    public HttpResponse<String> getAllServers() {
         JsonArray array = new JsonArray();
-        for (ServerInfo server : ServerInfo.getServers()) {
-            array.add(serverToJson(server));
-        }
+        for (ServerInfo server : ServerInfo.getServers()) array.add(toJson(server));
         return ok(array.toString());
     }
 
-    @GetMapping(value = "/{name}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<String> getServer(@PathVariable String name) {
+    @Get("/{name}")
+    public HttpResponse<String> getServer(String name) {
         ServerInfo server = ServerInfo.getServerInfo(name);
-        if (server == null) {
-            return ResponseEntity.status(404)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .body("{\"error\":\"Server not found: " + name + "\"}");
-        }
-        return ok(Statics.GSON.toJson(serverToJson(server)));
+        return server == null ? notFound("Server not found: " + name) : ok(toJson(server));
     }
 
-    @GetMapping(value = "/count", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<String> getGlobalPlayerCount() {
+    @Get("/count")
+    public HttpResponse<String> getGlobalPlayerCount() {
         JsonObject json = new JsonObject();
         json.addProperty("count", ServerInfo.getGlobalPlayerCount());
-        return ok(Statics.GSON.toJson(json));
+        return ok(json);
     }
 
-    // ------------------------------------------------------------------
-    // Health check — no auth required (useful for load-balancer probes)
-    // ------------------------------------------------------------------
-    @GetMapping(value = "/health", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<String> health() {
+    @Get("/health")
+    public HttpResponse<String> health() {
         return ok("{\"status\":\"UP\"}");
     }
 
-    private static JsonObject serverToJson(ServerInfo s) {
+    private static JsonObject toJson(ServerInfo server) {
         JsonObject obj = new JsonObject();
-        obj.addProperty("name", s.getName());
-        obj.addProperty("group", s.getGroup());
-        obj.addProperty("state", s.getState().name());
-        obj.addProperty("online", s.isOnline());
-        obj.addProperty("onlinePlayers", s.getOnlinePlayers());
-        obj.addProperty("maxPlayers", s.getMaxPlayers());
-        obj.addProperty("tps", s.getTps());
-        obj.addProperty("fullTick", s.getFullTick());
-        obj.addProperty("usedMemory", s.getUsedMemory());
-        obj.addProperty("allocatedMemory", s.getAllocatedMemory());
-        obj.addProperty("host", s.getHost());
-        obj.addProperty("port", s.getPort());
-        obj.addProperty("lastHeartbeat", s.getLastHeartbeat());
+        obj.addProperty("name", server.getName());
+        obj.addProperty("group", server.getGroup());
+        obj.addProperty("state", server.getState().name());
+        obj.addProperty("online", server.isOnline());
+        obj.addProperty("onlinePlayers", server.getOnlinePlayers());
+        obj.addProperty("maxPlayers", server.getMaxPlayers());
+        obj.addProperty("tps", server.getTps());
+        obj.addProperty("fullTick", server.getFullTick());
+        obj.addProperty("usedMemory", server.getUsedMemory());
+        obj.addProperty("allocatedMemory", server.getAllocatedMemory());
+        obj.addProperty("host", server.getHost());
+        obj.addProperty("port", server.getPort());
+        obj.addProperty("lastHeartbeat", server.getLastHeartbeat());
         return obj;
     }
-
-    private ResponseEntity<String> ok(String json) {
-        return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(json);
-    }
 }
-
